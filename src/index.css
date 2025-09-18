@@ -1,0 +1,94 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* @font-face {
+  font-family: 'Avenir';
+  src: url('./assets/fonts/AvenirLTProLight.otf') format('otf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Avenir';
+  src: url('./assets/fonts/AvenirLTProBook.otf') format('otf');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Avenir';
+  src: url('./assets/fonts/AvenirLTProRoman.otf') format('otf');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Avenir';
+  src: url('./assets/fonts/AvenirLTProMedium.otf') format('otf');
+  font-weight: 700;
+  font-style: normal;
+} */
+
+
+body {
+  font-family: 'Outfit', sans-serif;
+}
+
+
+.hide-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+::-webkit-scrollbar {
+  @apply hidden
+}
+
+
+.scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 5px;
+}
+
+.scroll::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.scroll::-webkit-scrollbar-thumb {
+  background-color: #E5E7EE;
+  border-radius: 10px;
+}
+
+.editor ul,
+ol {
+  margin-left: 20px;
+}
+
+.editor ul li {
+  list-style-type: disc;
+}
+
+.editor ol li {
+  list-style-type: decimal;
+}
+
+.editor a {
+  text-decoration: underline;
+  color: blue;
+}
+
+.times {
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.input-checked {
+  @apply appearance-none w-5 h-5 border border-gray-300 rounded-md 
+         checked:bg-primary checked:border-blue-500 
+         checked:before:content-['✔'] checked:before:text-white 
+         checked:before:flex checked:before:items-center checked:before:justify-center 
+         focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all;
+}

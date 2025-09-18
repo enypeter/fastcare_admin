@@ -1,0 +1,84 @@
+
+
+export const ROUTES = {
+  signin: '/',
+  forgot: '/auth/forgot-password',
+  reset: '/auth/create-password',
+
+  // Dashboard
+  home: '/home',
+
+  enrolees: {
+    all: '/enrolees/all-enrolees',
+     register: '/enrolees/registration',
+   individual: '/enrolees/registration/individual',
+   corporate: '/enrolees/registration/corporate',
+    details: '/enrolees/details/:id',
+  },
+
+  providers: {
+    all: '/providers/all-providers',
+    register: '/providers/registration',
+    details: '/providers/details/:id',
+  },
+
+
+
+   hospitals: {
+    all: '/hospitals/all-hospitals',
+    details: '/hospitals/details',
+  },
+
+  doctors: {
+    request: '/doctors/request',
+    all: '/doctors/all-doctors',
+    details: '/doctors/doctor-details',
+  },
+
+  transactions: {
+    all: '/transactions/all-transactions',
+    refunds: '/transactions/refunds',
+  },
+
+  checkers: '/checkers',
+  marketing: '/marketing-campaign',
+
+
+  payments: {
+    claims: '/payments/claims',
+    claimsDetails: '/payments/claims/claims-details/:id',
+    auth: '/payments/authorization',
+    authDetails: '/payments/auth/auth-details/:id',
+    tracker: '/payments/tracker',
+  },
+
+  reports: {
+     users: '/reports/users',
+     userdetails: '/reports/users/user-details/:id',
+     reporting: '/reports/reporting',
+     call: '/reports/emergency-call',
+  },
+
+  ambulance: {
+     amenities: '/ambulance/amenities',
+     all: '/ambulance/all',
+     providers: '/ambulance/providers',
+     requests: '/ambulance/requests',
+     drivers: '/ambulance/drivers',
+     responders: '/ambulance/responders',
+     note: '/ambulance/note',
+     history: '/ambulance/dispatch-history',
+  },
+
+   helpdesk: {
+     faq: '/help-desk/faq',
+     tutorial: '/help-desk/tutorials',
+     articles: '/help-desk/articles',
+     details: '/help-desk/articles/:id',
+     feedback: '/help-desk/feedback',  
+  },
+
+
+  hmo: '/hmo-management',
+  settings: '/settings',
+};

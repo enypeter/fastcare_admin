@@ -1,0 +1,124 @@
+import {X} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import {useState} from 'react';
+import Confirm from './confirm';
+import Reject from './reject';
+
+type Props = {
+  data?: any;
+};
+
+export default function DoctorVerificationDetails({data}: Props) {
+  const [open, setOpen] = useState(false);
+    const [openConfirm, setOpenConfirm] = useState(false);
+       const [openReject, setOpenReject] = useState(false);
+
+  const handleReject = () => {
+    setOpen(false);
+    setOpenReject(true)
+  };
+   const handleApprove = () => {
+    setOpen(false);
+    setOpenConfirm(true)
+  };
+
+  return (
+    <>
+     <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <div className="flex text-center justify-center cursor-pointer font-semibold items-center gap-2 bg-[#E4F1FC] p-2 rounded-md text-[#135E9B]">
+          View Details
+        </div>
+      </DialogTrigger>
+      <DialogContent className="max-w-xl">
+        <DialogHeader className="flex w-full items-center justify-between">
+          <DialogTitle className="flex w-full items-center justify-between border-b">
+            <span className="text-gray-800 text-xl font-normal py-3">
+              Doctor Verification Detail Panel
+            </span>
+
+            <button
+              onClick={() => setOpen(false)}
+              type="button"
+              className="p-1 border border-gray-300 rounded-full hover:bg-gray-100"
+            >
+              <X className="w-5 h-5 text-primary" />
+            </button>
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Doctor Details Section */}
+        {data ? (
+          <div>
+            <div className="flex items-center justify-between">
+              <h1 className="text-primary  text-xl">{data.name}</h1>
+
+              <div className='flex items-center gap-3'>
+                <Button
+                  onClick={handleApprove}
+                  className="py-2 bg-green-500 w-28   border-none"
+                >
+                  Approve
+                </Button>
+
+                 <Button
+                  onClick={handleReject}
+                  className="py-2  w-28 bg-red-100 text-red-500 border border-red-500"
+                >
+                  Reject
+                </Button>
+              </div>
+            </div>
+            <div className="mt-6">
+              <h1 className="text-primary border-b text-lg">
+                Doctor Information
+              </h1>
+            </div>
+            <div className="space-y-2 mt-4 text-md">
+              <div className="flex gap-2 ">
+                <span className=" text-gray-600">Full Name:</span>
+                <span className="text-gray-900">{data.name}</span>
+              </div>
+              <div className="flex gap-2 ">
+                <span className=" text-gray-600">Speciality:</span>
+                <span className="text-gray-900">{data.speciality}</span>
+              </div>
+              <div className="flex gap-2 ">
+                <span className=" text-gray-600">License No:</span>
+                <span className="text-gray-900">{data.license}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className=" text-gray-600">Expiry Date:</span>
+                <span className="text-gray-900">{data.date}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-gray-500 mt-4">No details available.</p>
+        )}
+      </DialogContent>
+    </Dialog>
+
+
+    <Confirm 
+      open={openConfirm}
+      setOpen={setOpenConfirm}
+      data={data}
+    />
+
+     <Reject
+      open={openReject}
+      setOpen={setOpenReject}
+      data={data}
+    />
+    </>
+   
+  );
+}

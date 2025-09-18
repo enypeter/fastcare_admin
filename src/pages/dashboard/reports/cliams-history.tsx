@@ -1,0 +1,384 @@
+import { DashboardLayout } from "@/layout/dashboard-layout";
+import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowDownLeft } from "lucide-react";
+import claim from '/svg/claim.svg'
+import approved from '/svg/approved.svg'
+import disputed from '/svg/disputed.svg';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+
+import {
+    ColumnDef,
+    SortingState,
+    VisibilityState,
+    flexRender,
+    getCoreRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    getFilteredRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+
+import { Pagination } from "@/components/ui/pagination";
+
+
+import { PaymentFilter } from "@/features/modules/payment/filter";
+
+
+const claims = [
+    {
+        id: '1',
+        claim_id: 'Xy1234Zq',
+        enrolee_id: 'Xy1234Zq',
+        name: 'Thelma George',
+        type: 'Indvidual',
+        provider: 'FMC Asaba',
+        plan_type: 'Premium',
+        amount: '#50,000.00',
+        status: 'Approved',
+        date: '2023-01-01',
+        action: '',
+    },
+    {
+        id: '2',
+        claim_id: 'Xy1234Zq',
+        enrolee_id: 'Xy1234Zq',
+        name: 'Thelma George',
+        type: 'Indvidual',
+        provider: 'FMC Asaba',
+        plan_type: 'Premium',
+        amount: '#50,000.00',
+        status: 'Disputed',
+        date: '2023-01-01',
+        action: '',
+    },
+    {
+        id: '3',
+        claim_id: 'Xy1234Zq',
+        enrolee_id: 'Xy1234Zq',
+        name: 'Thelma George',
+        type: 'Indvidual',
+        provider: 'FMC Asaba',
+        plan_type: 'Premium',
+        amount: '#50,000.00',
+        status: 'Approved',
+        date: '2023-01-01',
+        action: '',
+    },
+    {
+        id: '4',
+        claim_id: 'Xy1234Zq',
+        enrolee_id: 'Xy1234Zq',
+        name: 'Thelma George',
+        type: 'Indvidual',
+        provider: 'FMC Asaba',
+        plan_type: 'Premium',
+        amount: '#50,000.00',
+        status: 'Approved',
+        date: '2023-01-01',
+        action: '',
+    },
+
+
+
+];
+
+const claimStats = [
+    {
+        id: 1,
+        title: "Total Claims",
+        value: 185,
+        borderColor: "#2f80ed",
+        bgColor: "rgba(80, 159, 239, 0.2)", // #509fef 20%
+        icon: claim,
+    },
+    {
+        id: 2,
+        title: "Approved Claims",
+        value: 120,
+        borderColor: "#0e9f2e",
+        bgColor: "rgba(14, 159, 46, 0.05)", // #0e9f2e 5%
+        icon: approved,
+    },
+    {
+        id: 3,
+        title: "Disputed Claims",
+        value: 85,
+        borderColor: "#cf2323",
+        bgColor: "rgba(207, 35, 35, 0.05)", // #cf2323 5%
+        icon: disputed,
+    },
+];
+
+
+const ClaimsHistory = () => {
+    const [searchTerm, setSearchTerm] = useState("");
+
+
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [rowSelection, setRowSelection] = useState({});
+    const [columnFilters, setColumnFilters] = useState<any[]>([]);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+
+
+    const filteredClaims = claims.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.claim_id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const totalPages = Math.ceil(filteredClaims.length / pageSize);
+    const paginatedProviders = useMemo(() => {
+        const start = (page - 1) * pageSize;
+        return filteredClaims.slice(start, start + pageSize);
+    }, [filteredClaims, page]);
+
+
+    const columns: ColumnDef<any>[] = [
+
+        {
+            accessorKey: 'claim_id',
+            header: 'Claim ID',
+        },
+        {
+            accessorKey: 'enrolee_id',
+            header: 'Enrolee ID',
+        },
+
+        {
+            accessorKey: 'name',
+            header: 'Enrolee Name',
+        },
+
+        {
+            accessorKey: 'provider',
+            header: 'Health Provider',
+        },
+        {
+            accessorKey: 'date',
+            header: 'Reciever Date',
+        },
+        {
+            accessorKey: 'plan_type',
+            header: 'Plan Type',
+        },
+        {
+            accessorKey: 'amount',
+            header: 'Amount',
+        },
+
+        {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ getValue }) => {
+                const value = getValue() as string; // ✅ cast from unknown to string
+                const status = (value || "").toLowerCase();
+
+                let statusClasses =
+                    " py-1  text-md font-medium w-fit";
+
+                if (status === "approved") {
+                    statusClasses += "  text-green-500";
+                } else if (status === "pending") {
+                    statusClasses += "  text-yellow-500";
+                } else if (status === "disputed") {
+                    statusClasses += "  text-red-500";
+                } else {
+                    statusClasses += "  text-gray-500";
+                }
+
+                return (
+                    <span className={statusClasses}>
+                        {value || "-"}
+                    </span>
+                );
+            },
+        },
+
+    ];
+
+    const table = useReactTable({
+        data: paginatedProviders,
+        columns,
+        state: {
+            sorting,
+            columnVisibility,
+            rowSelection,
+            columnFilters,
+        },
+        onSortingChange: setSorting,
+        onColumnVisibilityChange: setColumnVisibility,
+        onRowSelectionChange: setRowSelection,
+        onColumnFiltersChange: setColumnFilters,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+    });
+
+    // Function to apply filters from FilterDialog
+    const handleApplyFilter = (filters: any) => {
+        const newFilters: any[] = [];
+
+        if (filters.status) {
+            newFilters.push({ id: "status", value: filters.status });
+        }
+        if (filters.type) {
+            newFilters.push({ id: "type", value: filters.type });
+        }
+        if (filters.planType) {
+            newFilters.push({ id: "plan_type", value: filters.planType });
+        }
+        if (filters.date) {
+            newFilters.push({ id: "date", value: filters.date });
+        }
+
+        setColumnFilters(newFilters);
+    };
+    // Function to reset filters
+    const handleResetFilter = () => {
+        setColumnFilters([]);
+    };
+
+
+    return (
+        <DashboardLayout>
+            <div className="bg-gray-200 overflow-scroll h-full ">
+                <div className="my-10 mx-8 flex flex-col lg:flex-row justify-between gap-6 items-center">
+                    {claimStats.map((stat) => (
+                        <div
+                            key={stat.id}
+                            className="flex justify-between items-center rounded-md bg-white p-6 w-full"
+                            style={{
+                                border: `2px solid ${stat.borderColor}`,
+                                backgroundColor: stat.bgColor,
+                            }}
+                        >
+                            <div>
+                                <h4 className="text-3xl  leading-tight mb-2">{stat.value}</h4>
+                                <p className="text-lg text-gray-600">{stat.title}</p>
+                            </div>
+                            <div>
+                                <img src={stat.icon} alt={stat.title} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="lg:mx-8 mt-10 bg-white mb-32 rounded-md flex flex-col h-[620px]">
+                    <div className="flex flex-wrap gap-4 justify-between items-center p-6">
+                        <div className="flex items-center gap-8">
+                            <input
+                                type="text"
+                                placeholder="Search claim Id or enrollee"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className=" bg-gray-100 rounded-lg  px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
+                            />
+
+
+                        </div>
+                        <div className="flex gap-4 items-center">
+                            <PaymentFilter
+                                onApply={handleApplyFilter}
+                                onReset={handleResetFilter}
+                            />
+                            <Button variant="ghost" className="py-2.5 w-44">
+                                <ArrowDownLeft size={30} />
+                                Export
+                            </Button>
+
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-auto px-6 lg:px-0 mt-4">
+                        <Table className="min-w-[600px]">
+                            <TableHeader>
+                                {table.getHeaderGroups().map(headerGroup => (
+                                    <TableRow key={headerGroup.id}>
+                                        {headerGroup.headers.map(header => (
+                                            <TableHead key={header.id}>
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext(),
+                                                    )}
+                                            </TableHead>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableHeader>
+                            <TableBody>
+                                {table.getRowModel().rows.length ? (
+                                    table.getRowModel().rows.map(row => (
+                                        <TableRow
+                                            key={row.id}
+                                            data-state={row.getIsSelected() && 'selected'}
+                                        >
+                                            {row.getVisibleCells().map(cell => (
+                                                <>
+                                                    <TableCell
+                                                        key={cell.id}
+                                                        className={
+                                                            cell.column.id === 'actions' ? 'text-right' : ''
+                                                        }
+                                                    >
+                                                        {flexRender(
+                                                            cell.column.columnDef.cell,
+                                                            cell.getContext(),
+                                                        )}
+                                                    </TableCell>
+                                                </>
+                                            ))}
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={columns.length}
+                                            className="h-24 text-center"
+                                        >
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-medium">No data available</span>
+
+
+                                            </div>
+
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Pagination stuck at bottom */}
+                    <div className="p-4 flex items-center justify-end ">
+                        <Pagination
+                            totalEntriesSize={filteredClaims.length}
+                            currentEntriesSize={paginatedProviders.length}
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={setPage}
+                            pageSize={pageSize}
+                            onPageSizeChange={size => {
+                                setPageSize(size);
+                                setPage(1);
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+};
+
+export default ClaimsHistory;
