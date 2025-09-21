@@ -140,7 +140,7 @@ const AllHospitals = () => {
           return null; // nothing rendered for empty row
         }
         return (
-          <div onClick={() => navigate('/doctors/doctor-details')} className="flex text-center justify-center cursor-pointer font-semibold items-center gap-2 bg-[#E4F1FC] p-2 rounded-md text-[#135E9B]">
+          <div onClick={() => navigate('/doctors/doctor-details')} className="flex text-center justify-center  text-sm whitespace-nowrap cursor-pointer font-semibold items-center gap-2 bg-[#E4F1FC] p-2 rounded-md text-[#135E9B]">
             View Details
           </div>
         );
@@ -189,7 +189,7 @@ const AllHospitals = () => {
         <div className="lg:mx-8 mt-10 bg-white  rounded-md flex flex-col h-[600px] mb-36">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
-              <h1 className="text-xl text-gray-800">All Hospitals</h1>
+              <h1 className="text-lg text-gray-800">All Hospitals</h1>
 
               <input
                 type="text"

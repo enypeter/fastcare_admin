@@ -39,7 +39,7 @@ export const ReportingFilter = ({onApply, onReset}: any) => {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-6 py-3">
-        <Label className="text-xl">Filter By</Label>
+        <Label className="text-lg">Filter By</Label>
         <span
           onClick={handleReset}
           className="text-primary cursor-pointer hover:underline"
@@ -56,14 +56,14 @@ export const ReportingFilter = ({onApply, onReset}: any) => {
           <div className="flex items-center gap-2">
             <input
               type="date"
-              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-44 outline-none"
+              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-36 outline-none"
               value={startDate ?? ''}
               onChange={e => setStartDate(e.target.value || null)}
             />
-            <p className="text-lg font-semibold">To</p>
+            <p className="text-md font-semibold">To</p>
             <input
               type="date"
-              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-44 outline-none"
+              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-36 outline-none"
               value={endDate ?? ''}
               onChange={e => setEndDate(e.target.value || null)}
             />

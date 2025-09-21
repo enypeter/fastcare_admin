@@ -217,8 +217,8 @@ const MarketingCampaign = () => {
               }}
             >
               <div>
-                <h4 className="text-3xl  leading-tight mb-2">{stat.value}</h4>
-                <p className="text-lg text-gray-600">{stat.title}</p>
+                <h4 className="text-xl  leading-tight mb-2">{stat.value}</h4>
+                <p className="text-md text-gray-600">{stat.title}</p>
               </div>
               <div>
                 <img src={stat.icon} alt={stat.title} />

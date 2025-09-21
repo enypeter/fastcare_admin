@@ -50,25 +50,25 @@ export const User = () => {
               <div className="space-y-1">
 
                 <button
-                  className="flex items-center text-gray-700 py-[7px] gap-x-4 text-md  rounded-lg"
+                  className="flex items-center text-gray-700 py-[7px] gap-x-4 text-sm  rounded-lg"
                 >
-                  <UserCircle className="size-[24px]" />
+                  <UserCircle className="size-[20px]" />
                   Profile
                 </button>
 
                 <button
-                  className="flex items-center text-gray-700 py-[7px] gap-x-4 text-md  rounded-lg"
+                  className="flex items-center text-gray-700 py-[7px] gap-x-4 text-sm  rounded-lg"
                 >
-                  <Settings className="size-[24px]" />
+                  <Settings className="size-[20px]" />
                   Account Settings
                 </button>
 
 
                 <button
                  onClick={() => setOpenLogout(true)}
-                  className="flex items-center text-gray-700 py-[7px] gap-x-4 text-md  rounded-lg"
+                  className="flex items-center text-gray-700 py-[7px] gap-x-4 text-sm  rounded-lg"
                 >
-                  <FiLogOut className="size-[24px]" />
+                  <FiLogOut className="size-[20px]" />
                   Log out
                 </button>
 

@@ -76,7 +76,7 @@ const Finance = () => {
       <div className="flex items-end justify-end">
         {/* Filter */}
         <Select defaultValue="monthly">
-          <SelectTrigger className=" px-3 py-1 w-32 font-semibold rounded-lg bg-blue-100 text-primary text-md border-none">
+          <SelectTrigger className=" px-3 py-1 w-32 font-semibold rounded-lg bg-blue-100 text-primary text-sm border-none">
             <SelectValue placeholder="Filter" />
           </SelectTrigger>
           <SelectContent>
@@ -95,7 +95,7 @@ const Finance = () => {
           <div className=" p-6">
             <div>
               <div className="flex items-center justify-between">
-                <h2 className="text-gray-600 text-xl">Total Earnings</h2>
+                <h2 className="text-gray-600 text-md">Total Earnings</h2>
                 {/* Range buttons */}
                 <div className="flex gap-2 mt-4 md:mt-0">
                   {ranges.map(r => (
@@ -115,7 +115,7 @@ const Finance = () => {
               </div>
 
               <div className="flex items-center justify-between  gap-2 mt-4">
-                <span className="text-2xl font-semibold text-gray-700">
+                <span className="text-xl font-semibold text-gray-700">
                   NGN 34,566.66
                 </span>
                 <span className="text-green-600 font-medium text-sm">
@@ -175,7 +175,7 @@ const Finance = () => {
               >
                 <div className="flex flex-col  justify-between gap-1 mt-1">
                   <p className=" text-md text-gray-600 mt-">{item.title}</p>
-                  <h4 className="text-2xl font-semibold leading-tight">
+                  <h4 className="text-xl font-semibold leading-tight">
                     {item.count}
                   </h4>
                 </div>

@@ -135,7 +135,7 @@ const Drivers = () => {
             </div>
 
             <div>
-              <Trash className="text-red-500 w-6 h-6 cursor-pointer" />
+              <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
             </div>
           </div>
         );

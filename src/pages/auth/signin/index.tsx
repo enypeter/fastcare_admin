@@ -68,9 +68,9 @@ const SignIn = () => {
       {/* White card */}
       <div className="  px-14 py-16 flex flex-col mt-10">
         {/* {user ? <p>Welcome {user.name}</p> : <p>Please log in</p>} */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-medium">Log in</h2>
-          <p className="text-lg text-gray-600 mt-2">
+        <div className="mb-6">
+          <h2 className="text-xl font-medium">Log in</h2>
+          <p className="text-md text-gray-600 mt-2">
             Enter your details to proceed.
           </p>
         </div>
@@ -93,7 +93,7 @@ const SignIn = () => {
                       label="Email"
                       type="email"
                       placeholder="Email"
-                      className="w-full border-[#b6c2cc] bg-gray-50 rounded-lg px-3 py-4 h-13"
+                      className="w-full border-[#b6c2cc] bg-gray-50 rounded-lg px-3 py-4 h-12"
                     />
                   </FormControl>
                   <FormMessage />
@@ -116,7 +116,7 @@ const SignIn = () => {
                           label="Password"
                           type={!showPassword ? 'password' : 'text'}
                           placeholder="Password"
-                          className="w-full border-[#b6c2cc] bg-gray-50 rounded-lg px-3 py-4 h-13"
+                          className="w-full border-[#b6c2cc] bg-gray-50 rounded-lg px-3 py-4 h-12"
                         />
                         <button
                           type="button"
@@ -137,7 +137,7 @@ const SignIn = () => {
               />
 
               {/* Remember Me */}
-              <div className="flex items-center justify-between text-md mt-4">
+              <div className="flex items-center justify-between text-md mt-2">
                 <FormField
                   control={form.control}
                   name="remember"
@@ -166,7 +166,7 @@ const SignIn = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full mt-4">
+            <Button type="submit" className="w-full mt-2 py-3">
               Log in
             </Button>
             {/*             

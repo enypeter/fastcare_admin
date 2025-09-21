@@ -22,7 +22,7 @@ const buttonVariants = cva(
         link: 'border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-gray-800 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-800/80 bg-white hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50',
       },
       size: {
-        default: 'h-13 px-4 py-4',
+        default: 'h-11 px-4 py-4',
         sm: 'h-9 px-3',
         lg: 'h-11 px-8',
         icon: 'h-10 w-10',

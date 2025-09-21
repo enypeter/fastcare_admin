@@ -118,11 +118,11 @@ const Providers = () => {
         return (
           <div className="flex items-center gap-4">
             <div>
-               <EyeIcon className='cursor-pointer w-6 h-6' />
+               <EyeIcon className='cursor-pointer w-4 h-4' />
             </div>
 
             <div>
-              <Trash className="text-red-500 w-6 h-6 cursor-pointer" />
+              <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
             </div>
           </div>
         );
@@ -171,7 +171,7 @@ const Providers = () => {
         <div className="lg:mx-8 mt-10 bg-white  rounded-md flex flex-col h-[500px] mb-36">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
-              <h1 className="text-xl text-gray-800">All Providers</h1>
+              <h1 className="text-lg text-gray-800">All Providers</h1>
 
               {/* <input
                 type="text"

@@ -185,7 +185,7 @@ const UserRole = () => {
           <div className=" bg-white  rounded-md flex flex-col ">
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">
-                <h1 className="text-xl text-gray-800">Teammates</h1>
+                <h1 className="text-lg text-gray-800">Teammates</h1>
               </div>
 
               <GenerateCode />
@@ -197,7 +197,7 @@ const UserRole = () => {
                   {table.getHeaderGroups().map(headerGroup => (
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map(header => (
-                        <TableHead className="px-16" key={header.id}>
+                        <TableHead className="px-10" key={header.id}>
                           {header.isPlaceholder
                             ? null
                             : flexRender(
@@ -223,7 +223,7 @@ const UserRole = () => {
                               className={
                                 cell.column.id === 'actions'
                                   ? 'text-right px-24'
-                                  : 'px-16'
+                                  : 'px-10'
                               }
                             >
                               {flexRender(

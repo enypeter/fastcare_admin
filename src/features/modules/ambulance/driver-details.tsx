@@ -22,13 +22,13 @@ export default function DriverDetails({data}: Props) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <div>
-            <EyeIcon className="w-6 h-6 cursor-pointer" />
+            <EyeIcon className="w-4 h-4 cursor-pointer" />
           </div>
         </DialogTrigger>
         <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
           <DialogHeader className="flex w-full items-center justify-between">
             <DialogTitle className="flex w-full items-center justify-between border-b">
-              <span className="text-gray-800 text-2xl font-semibold py-3">
+              <span className="text-gray-800 text-xl font-semibold py-3">
                 Driver Details
               </span>
 

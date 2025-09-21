@@ -229,11 +229,11 @@ const Request = () => {
               }}
             >
               <div>
-                <h4 className="text-3xl  leading-tight mb-2">{stat.value}</h4>
-                <p className="text-lg text-gray-600">{stat.title}</p>
+                <h4 className="text-2xl  leading-tight mb-2">{stat.value}</h4>
+                <p className="text-sm text-gray-600">{stat.title}</p>
               </div>
               <div>
-                <img src={stat.icon} alt={stat.title} />
+                <img src={stat.icon} alt={stat.title} className='w-8 h-8' />
               </div>
             </div>
           ))}
@@ -242,7 +242,7 @@ const Request = () => {
         <div className="lg:mx-8 mt-10 bg-white mb-32 rounded-md flex flex-col ">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-4">
-              <h1 className="text-xl text-gray-800">All Ambulances Request</h1>
+              <h1 className="text-lg text-gray-800">All Ambulances Request</h1>
               <input
                 type="text"
                 placeholder="Search driver or ambulance number"

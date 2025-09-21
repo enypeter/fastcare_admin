@@ -36,7 +36,7 @@ const HospitalDetails = () => {
               </AvatarFallback>
             </Avatar>
 
-            <h1 className="text-2xl font-medium text-gray-700">
+            <h1 className="text-xl font-medium text-gray-700">
               Federal Medical Center, Asaba
             </h1>
           </div>

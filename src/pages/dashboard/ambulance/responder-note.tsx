@@ -167,7 +167,7 @@ const ResponderNote = () => {
         <div className="lg:mx-8 mt-10 bg-white  rounded-md flex flex-col h-[600px] mb-36">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
-              <h1 className="text-xl text-gray-800">All Responder's Notes</h1>
+              <h1 className="text-lg text-gray-800">All Responder's Notes</h1>
 
               {/* <input
                 type="text"

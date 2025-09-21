@@ -71,7 +71,7 @@ const Consultation = () => {
               className="flex flex-col gap-5 rounded-md bg-white border p-5 w-full"
             >
               <div className="flex items-center justify-between gap-2 mt-1">
-                <h4 className="text-2xl font-semibold leading-tight">
+                <h4 className="text-xl font-semibold leading-tight">
                   {item.count}
                 </h4>
                 <img src={item.icon} alt={item.title} className="w-8 h-8" />
@@ -86,7 +86,7 @@ const Consultation = () => {
             <div className="flex items-end justify-end">
               {/* Filter */}
               <Select defaultValue="monthly">
-                <SelectTrigger className=" px-3 py-1 w-32 font-semibold rounded-lg bg-blue-100 text-primary text-md border-none">
+                <SelectTrigger className=" px-3 py-1 w-32 font-semibold rounded-lg bg-blue-100 text-primary text-sm border-none">
                   <SelectValue placeholder="Filter" />
                 </SelectTrigger>
                 <SelectContent>
@@ -101,9 +101,9 @@ const Consultation = () => {
             <div className="mt-6 flex  items-center gap-6">
               {/* LEFT SIDE */}
               <div className="flex flex-col items-center justify-center gap-2 w-[50%]">
-                <h3 className="text-lg text-gray-700">Average Wait Time</h3>
+                <h3 className="text-md text-gray-700">Average Wait Time</h3>
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-gray-900">
+                  <span className="text-2xl font-bold text-gray-900">
                     1.32 min
                   </span>
                 </div>

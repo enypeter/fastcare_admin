@@ -39,7 +39,7 @@ const DoctorDetails = () => {
             </Avatar>
 
             <div>
-              <h1 className="text-xl font-medium text-gray-700">John Doe</h1>
+              <h1 className="text-lg font-medium text-gray-700">John Doe</h1>
 
               <div className="flex items-center gap-6">
                 <p className="text-gray-600 text-md">MBBS, Psychotherapist</p>
@@ -69,7 +69,7 @@ const DoctorDetails = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-6 py-3  whitespace-nowrap -mb-px  text-lg transition-all border-b-4
+                className={`px-6 py-3  whitespace-nowrap -mb-px  text-md transition-all border-b-4
                                     ${
                                       activeTab === tab.key
                                         ? 'border-primary text-gray-700 font-medium'

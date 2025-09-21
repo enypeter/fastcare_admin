@@ -20,7 +20,7 @@ export default function RespondersNoteDetails({data}: Props) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <div>
-            <EyeIcon className="w-6 h-6 cursor-pointer" />
+            <EyeIcon className="w-4 h-4 cursor-pointer" />
           </div>
         </DialogTrigger>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">

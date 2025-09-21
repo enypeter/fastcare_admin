@@ -29,7 +29,7 @@ export default function EditAmenities({ data}: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <EditIcon className='w-6 h-6 cursor-pointer' />
+        <EditIcon className='w-4 h-4 cursor-pointer' />
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader className="flex w-full items-center justify-between">

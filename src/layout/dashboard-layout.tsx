@@ -70,7 +70,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
         // {name: 'Dashboard', icon: <MdDashboard />, url: '/home'},
         {
           name: 'Hospitals',
-          icon: <HospitalIcon />,
+          icon: <HospitalIcon className='w-5 h-6' />,
           url: '/hospitals',
           children: [
             {name: 'All Hospital', url: '/hospitals/all-hospitals'},
@@ -79,7 +79,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
         },
         {
           name: 'Doctors',
-          icon: <User2 />,
+          icon: <User2 className='w-5 h-6'/>,
           url: '/doctors',
           children: [
             {name: 'Verification request', url: '/doctors/request'},
@@ -90,7 +90,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
 
         {
           name: 'Reports',
-          icon: <PieChart />,
+          icon: <PieChart className='w-5 h-6' />,
           url: '/reports',
           children: [
             {name: 'Users', url: '/reports/users'},
@@ -101,7 +101,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
 
         {
           name: 'Transactions',
-          icon: <FaMoneyBill />,
+          icon: <FaMoneyBill className='w-5 h-6' />,
           url: '/transactions',
           children: [
             {name: 'All transaction', url: '/transactions/all-transactions'},
@@ -111,7 +111,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
 
         {
           name: 'Ambulance',
-          icon: <Ambulance />,
+          icon: <Ambulance className='w-5 h-6' />,
           url: '/ambulance',
           children: [
             {name: 'Amenities', url: '/ambulance/amenities'},
@@ -127,13 +127,13 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
 
         {
           name: 'Marketing campaign',
-          icon: <Share2Icon />,
+          icon: <Share2Icon className='w-5 h-6' />,
           url: '/marketing-campaign',
         },
 
         {
           name: 'Help desk',
-          icon: <HelpCircleIcon />,
+          icon: <HelpCircleIcon className='w-5 h-6' />,
           url: '/help-desk',
 
           children: [
@@ -144,9 +144,9 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
           ],
         },
 
-        {name: 'Checker', icon: <ShieldCheck />, url: '/checkers'},
+        {name: 'Checker', icon: <ShieldCheck className='w-5 h-6' />, url: '/checkers'},
 
-        {name: 'Settings', icon: <Settings />, url: '/settings'},
+        {name: 'Settings', icon: <Settings className='w-5 h-6' />, url: '/settings'},
 
         // {
         //   name: 'Enrolees',
@@ -193,7 +193,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
     <div className="flex h-screen">
       {/* Sidebar */}
       <div className="bg-[#F9FBFA] relative overflow-scroll pb-24">
-        <aside className="hidden lg:flex flex-col justify-between transition-all duration-300 m-3 w-72 h-[calc(100vh-24px)]  bg-[#F9FBFA] rounded-lg px-2 py-4">
+        <aside className="hidden lg:flex flex-col justify-between transition-all duration-300 m-3 w-64 h-[calc(100vh-24px)]  bg-[#F9FBFA] rounded-lg px-2 py-4">
           {/* Top Section: Logo, Navigation */}
           <div>
             <div className="flex items-center gap-4 mx-4   mb-12">
@@ -220,7 +220,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
                                 ) // pass first submenu url
                               : navigate(child.url)
                           }
-                          className={`flex items-center justify-between w-full text-lg p-4 rounded-sm ${
+                          className={`flex items-center justify-between w-full text-md p-4 rounded-sm ${
                             isActive
                               ? 'text-primary bg-[#E4F1FC] border-l-8 border-primary font-semibold'
                               : 'text-[#88888C]'
@@ -255,7 +255,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
                                   <Link
                                     key={subIndex}
                                     to={sub.url}
-                                    className={`flex items-center gap-2 text-lg p-2 rounded-md transition-colors ${
+                                    className={`flex items-center gap-2 text-md p-2 rounded-md transition-colors ${
                                       isActive
                                         ? 'text-primary font-semibold'
                                         : 'text-gray-500 hover:text-gray-700'
@@ -322,7 +322,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
 
                   return (
                     <React.Fragment key={child.url}>
-                      <h1 className="text-xl capitalize text-[#11362f] font-semibold">
+                      <h1 className="text-lg capitalize text-[#11362f] font-semibold">
                         {title}
                       </h1>
                       {searchBar && <div className="px-10">{searchBar}</div>}

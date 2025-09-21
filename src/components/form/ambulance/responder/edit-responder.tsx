@@ -36,12 +36,12 @@ export default function EditResponder({data}: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <EditIcon className="w-6 h-6 cursor-pointer" />
+        <EditIcon className="w-4 h-4 cursor-pointer" />
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
         <DialogHeader className="flex w-full items-center justify-between">
           <DialogTitle className="flex w-full items-center justify-between border-b py-2">
-            <span className="text-gray-800 text-2xl font-normal py-3">
+            <span className="text-gray-800 text-xl font-normal py-3">
               Add New Responder
             </span>
 

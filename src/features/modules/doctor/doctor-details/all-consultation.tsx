@@ -194,7 +194,7 @@ const AllConsultation = () => {
         <div className=" rounded-md flex flex-col">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
-              <h1 className="text-xl text-gray-800">All Consultations</h1>
+              <h1 className="text-lg text-gray-800">All Consultations</h1>
 
               <input
                 type="text"
