@@ -10,16 +10,16 @@ import {EyeOffIcon, EyeOpenIcon} from '@/components/ui/icons';
 import {useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {z} from 'zod';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {Button} from '@/components/ui/button';
 import {useNavigate} from 'react-router-dom';
 import {Checkbox} from '@/components/ui/checkbox';
 import AuthLayout from '@/layout/auth-layout';
 
-//import {  useSelector } from "react-redux";
-//import { loginUser } from '@/services/slice/services/authServices';
-//import {  RootState, AppDispatch  } from '@/services/store';
-//import toast from 'react-hot-toast';
+import { loginUser } from '@/services/thunks';
+import toast from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/services/store';
 
 const formSchema = z.object({
   email: z.string().email({message: 'Email address is required.'}),
@@ -28,40 +28,38 @@ const formSchema = z.object({
 });
 
 const SignIn = () => {
-  //const dispatch = useDispatch<AppDispatch>();
-  //const { loading, error, user, token } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, error, user, token } = useSelector((state: RootState) => state.auth);
 
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {email: '', password: '', remember: false},
+    defaultValues: {email: '', password: ''},
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    //dispatch(loginUser({ email: values.email, password: values.password }));
-    const payload = {
-      email: values.email,
-      password: values.password,
-      remember: values.remember,
-    };
+    dispatch(loginUser({ email: values.email, password: values.password }));
+    // const payload = {
+    //   email: values.email,
+    //   password: values.password,
+    // };
 
-    console.log(payload);
+    // console.log(payload);
 
-    navigate('/hospitals/all-hospitals');
+    // navigate('/hospitals/all-hospitals');
   }
 
   // ✅ Handle success / error
-  // useEffect(() => {
-  //   if (user && token) {
-  //     toast.success("Login successful 🎉");
-  //    // navigate("/home");
-  //   }
-  //   if (error) {
-  //     toast.error(error);
-  //   }
-  // }, [user, token, error, navigate]);
+  useEffect(() => {
+    if (user && token) {
+      navigate('/hospitals/all-hospitals');
+    }
+    if (error) {
+      toast.error(error);
+    }
+  }, [user, token, error, navigate]);
 
   return (
     <AuthLayout>
@@ -137,7 +135,7 @@ const SignIn = () => {
               />
 
               {/* Remember Me */}
-              <div className="flex items-center justify-between text-md mt-2">
+              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between text-md mt-2">
                 <FormField
                   control={form.control}
                   name="remember"
@@ -154,7 +152,7 @@ const SignIn = () => {
                     </FormItem>
                   )}
                 />
-
+{/* 
                 <p>
                   <span
                     className="font-medium cursor-pointer text-green-600 text-[16px]"
@@ -162,17 +160,14 @@ const SignIn = () => {
                   >
                     Forgot your password?
                   </span>
-                </p>
+                </p> */}
               </div>
             </div>
 
-            <Button type="submit" className="w-full mt-2 py-3">
-              Log in
-            </Button>
-            {/*             
-            <Button type="submit" className="w-full mt-4" disabled={loading}>
+                       
+            <Button type="submit" className="w-full mt-2 py-3" disabled={loading}>
               {loading ? "Logging in..." : "Log in"}
-            </Button> */}
+            </Button> 
           </form>
         </Form>
       </div>

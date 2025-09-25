@@ -1,15 +1,10 @@
-import { createSlice, createAsyncThunk  } from "@reduxjs/toolkit";
+import { createSlice  } from "@reduxjs/toolkit";
 
 import toast from "react-hot-toast";
-import apiClient from "../axiosInstance";
-import { CreatePasswordT, LoginT } from "@/types";
 
-interface AuthState {
-  user: any | null;
-  token: string | null;
-  loading: boolean;
-  error: string | null;
-}
+import { createPasswordUser, loginUser } from "../thunks";
+import { AuthState } from "@/types";
+
 
 const initialState: AuthState = {
   user: JSON.parse(localStorage.getItem("user") || "null"),
@@ -18,36 +13,6 @@ const initialState: AuthState = {
   error: null,
 };
 
-export const loginUser = createAsyncThunk(
-    "auth/login",
-    async (payload: LoginT, { rejectWithValue }) => {
-      try {
-        const res = await apiClient.post("/auth/login", payload);
-        const { user, token } = res.data.data;
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("token", token);
-        return { user, token };
-      } catch (err: any) {
-        return rejectWithValue(err.response?.data?.message || "Login failed");
-      }
-    }
-  );
-  
-  export const createPasswordUser = createAsyncThunk(
-    "auth/createPassword",
-    async (payload: CreatePasswordT, { rejectWithValue }) => {
-      try {
-        const res = await apiClient.post("/auth/create-password", payload);
-        const { user, token } = res.data.data;
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("token", token);
-        return { user, token };
-      } catch (err: any) {
-        return rejectWithValue(err.response?.data?.message || "Password creation failed");
-      }
-    }
-  )
-  
 
 
 const authSlice = createSlice({

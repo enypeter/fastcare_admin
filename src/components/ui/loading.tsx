@@ -12,7 +12,7 @@ export const Loader = ({ height }: { height?: string }) => {
         cssOverride={{
           display: 'block',
           margin: '0 auto',
-          borderColor: '#0086F2',
+          borderColor: '#1B88DF',
         }}
         aria-label="Loading Spinner"
       />

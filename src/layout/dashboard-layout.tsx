@@ -74,7 +74,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
           url: '/hospitals',
           children: [
             {name: 'All Hospital', url: '/hospitals/all-hospitals'},
-            {name: 'Hospitals Details', url: '/hospitals/details'},
+            //{name: 'Hospitals Details', url: '/hospitals/details'},
           ],
         },
         {
@@ -84,7 +84,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
           children: [
             {name: 'Verification request', url: '/doctors/request'},
             {name: 'All doctor', url: '/doctors/all-doctors'},
-            {name: 'Doctor detail', url: '/doctors/doctor-details'},
+            // {name: 'Doctor detail', url: '/doctors/doctor-details'},
           ],
         },
 
@@ -287,9 +287,9 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
         <div className="flex items-center justify-between shadow-lg py-5 px-6 bg-white border-gray-200 ">
           <Link to={'/dashboard/home'} className="block lg:hidden">
             <img
-              src="/images/logo.png"
+              src={logo}
               alt=""
-              className="w-10 lg:w-24  object-contain"
+              className="w-28  object-contain"
             />
           </Link>
 
@@ -336,7 +336,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
 
           <div className="flex items-center gap-6 lg:mr-14">
             <div className="flex items-center gap-12">
-              <BellIcon className="w-6 h-6 text-gray-600" />
+              <BellIcon className="w-6 h-6 hidden lg:block text-gray-600" />
               <User />
             </div>
 
@@ -357,7 +357,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
                     <div className="flex items-center justify-between h-12 border-b">
                       <SheetTitle>
                         <img
-                          src="/images/fulllogo.png"
+                          src={logo}
                           alt="Logo"
                           className="w-40 object-contain"
                         />

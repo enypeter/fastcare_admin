@@ -26,13 +26,13 @@ export const ROUTES = {
 
    hospitals: {
     all: '/hospitals/all-hospitals',
-    details: '/hospitals/details',
+    details: '/hospitals/details/:id',
   },
 
   doctors: {
     request: '/doctors/request',
     all: '/doctors/all-doctors',
-    details: '/doctors/doctor-details',
+    details: '/doctors/doctor-details/:id',
   },
 
   transactions: {

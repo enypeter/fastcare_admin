@@ -1,42 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export type SignUpT = {
-  email: string;
-  password: string;
-  school: string;
-  year: string;
-};
-
-
-export type FileType = {
-  name: string;
-  format: string;
-  url: string;
-};
-
-export type ApiResponseT = {
-  message: string;
-  status: number;
-  data: any;
-};
-
-export type ApiErrorT = {
-  response: {
-    data: {
-      message: string;
-    };
-  };
-};
-
-export type UserT = {
-  admin_id: string;
-  verified: boolean;
-  email: string;
-  first_name: string;
-  last_name: string;
-  type: string;
-  role_id: string;
-};
 
 export type CreatePasswordT = {
   password: string;
@@ -46,331 +9,170 @@ export type CreatePasswordT = {
 export type LoginT = {
   email: string;
   password: string;
-};
-
-export type CourseT = {
+  deviceToken? : string;
+  role?: string;
+};// types/auth.ts
+export interface User {
   id: string;
+  email: string;
+  userRole: string;
+  firstName: string;
+  lastName: string;
   name: string;
-  description: string;
-  tagline: string;
-  image_url: string;
-  completion_percentage: string;
-  total_enrolled: string;
-  total_chapters: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  published: boolean;
-  status: CourseStatusT;
-  is_deleted: boolean;
-  chapters: ChapterT[];
-};
+  phoneNumber: string;
+  countryCode: string;
+  residentialAddress: string;
+  hospitalID: string;
+  patientId: string;
+  hospital: number;
+  hospitalName: string;
+  hospitalCode: string;
+  hospitalLogo: string;
+  profileImage: string;
+  phoneNumberVerified: boolean;
+  emailVerified: boolean;
+  websiteUrl: string;
+  gender: string;
+}
 
-export type CourseStatusT = 'started' | 'completed';
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  error: string | null;
+}
 
-export type CourseOverviewT = {
-  completion_percentage: string;
-  total_enrolled: string;
-  fully_completed_count: string;
-  chat: string | null;
-};
 
-export type CourseDetailsT = {
-  course: CourseT;
-  course_completion_rate: CompletedLessonT[];
-  quiz_completion_rate: AssessmentQuestionT[];
-  top_user_data: TopStudentT[];
-};
-
-export type AddChapterT = {
-  course_id: string;
-  ordered_completion: boolean;
-};
-
-export type ChapterT = {
-  id: string;
-  completion_percentage: string;
-  created_at: string;
-  description: string;
-  ordered_completion: string;
+export interface Hospital {
+  id: number;
+  hospitalName: string;
+  hospitalCode: string;
+  userId: string;
+  hospitalNumber: string;
+  virtualConsultationFee: number;
+  registrationFee: number;
+  physicalConsultationFee: number;
+  consultationFee: number;
   status: string;
-  updated_at: string;
-  lessons: LessonT[];
-};
-
-export type AddLessonT = {
-  uid: string;
-  type: string;
-  chapter_id: string;
-  description: string;
-  authenticated: boolean;
-};
-
-export type EditLessonT = {
-  uid: string;
-  type: string;
-  chapter_id: string;
-  description: string;
-  authenticated?: boolean;
-};
-
-export type LessonT = {
-  id: string;
-  chapter_id: string;
-  uid: string;
-  created_by: string;
-  description: string;
-  video_url: string;
-  type: LessonTypeT;
-  uploaded_at: string;
-  size: number;
-  thumbnail_url: string;
-  duration: string | null;
-  question: string | null;
-  meta: {
-    name: string;
-    filetype: 'video/mp4';
-    firebase_media_id: string;
-  };
-};
-
-export type LessonTypeT = 'video' | 'quiz';
-
-export type QuizT = {
-  questions: QuestionT[];
-};
-
-export type QuestionT = {
-  text: string;
-  options: QuestionOptionT[];
-  field_type: QuestionTypeT;
-  answer: any;
-};
-
-export type QuestionOptionT = {
-  text: string;
-};
-
-export type QuestionTypeT = 'single choice' | 'multiple choice' | 'toggle';
-
-export type CompletedLessonT = {
-  name: string;
-  completions: string;
-};
-
-export type AssessmentQuestionT = {
-  assessment: string;
-  question: string;
-  average_score: string;
-};
-
-export type TopStudentT = {
-  user_id: string;
-  user_name: string;
-  total_courses_enrolled: string;
-  average_completion_percentage: string;
-};
-
-export type TopCourseT = {
-  id: string;
-  name: string;
-  completion_percentage: string;
-  average_rating: string;
-};
-
-export type UserEngagementT = {
-  month: string;
-  active_members: string;
-  inactive_members: string;
-};
-
-export type NewRegT = {
-  month: string;
-  user_count: string;
-};
-
-export type AddCourseT = {
-  name: string;
-  tagline: string;
-  description: string;
-  image_url: string;
-  ingenium_unlimited: boolean;
-  price?: string;
-};
-
-export type ForumChatT = {
-  id: string;
-  senderId: string;
-  messageText: string;
-  sentAt: string;
-};
-
-export type IndividualT = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  created_at: string;
-  last_login: string;
-  status: boolean;
-  total_course_enrolled: string;
-  subscription: boolean;
-};
-
-export type IndividualDetailsT = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  status: boolean;
-  last_login: string;
-  avatar: string | null;
-  created_at: string;
-  courses: {
-    name: string;
-    tagline: string;
-    lesson_completed: number;
-    total_video_lesson: number;
-    total_quiz_lesson: number;
-    total_enrolled: number;
-    started_at: string;
-  }[];
-  transactions: {
-    id: string;
-    transaction_id: string;
-    amount: string;
-    method: string;
-    status: PaymentStatusT;
-    date: string;
-  }[];
-};
-
-export type RoleT = {
-  name: string;
-  permissions: string[];
-  description?: string | null;
-};
-
-export type UserStatusT = 'pending' | 'active' | 'inactive';
-
-export type SubscriptionT = 'subscribed' | 'not subscribed';
-
-export type PaymentStatusT = 'pending' | 'success' | 'failed';
-
-export type BusinessT = {
-  id: string;
-  user_id: string;
-  business_name: string;
-  business_email: string;
-  created_at: string;
-  status: boolean;
-  team_members: string;
-  courses_enrolled: string;
-};
-
-export type BusinessDetailsT = {
-  id: string;
-  business_name: string;
-  business_email: string;
-  created_at: string;
-  team_members: string;
-  status: boolean;
-  courses_enrolled: string;
-  member: IndividualT[];
-  courses_details: {
-    id: string;
-    course_name: string;
-    status: string;
-    member: number;
-  }[];
-  transactions: {
-    id: string;
-    transaction_id: string;
-    amount: string;
-    method: string;
-    status: PaymentStatusT;
-    date: string;
-  }[];
-};
-
-export type MemberT = {
-  id: string;
-  full_name: string;
-  email: string;
-  role: string;
-  status: UserStatusT;
-  last_usage: string;
-  created_at: string;
-};
-
-export type TransactionT = {
-  id: string;
-  transaction_id: string;
-  user_name: string;
-  email: string;
-  subscription_plan: SubscriptionPlanT;
-  method: string;
-  status: PaymentStatusT;
+  isActive: boolean;
   date: string;
-};
-
-export type SubscriptionPlanT = 'pro plan' | 'basic plan' | 'free plan';
-
-export type ApplicationT = {
-  id: string;
-  first_name: string;
-  last_name: string;
+  hospitalAddresses: string;
+  isPatient: boolean;
+  logoContent: string;
+  hospitalLogo: string;
+  logoUrl: string;
+  address: string;
+  website: string;
+  phoneNumber: string;
+  countryCode: string;
   email: string;
-  phone_number: string;
-  status: ApplicationStatusT;
-  job_title: string;
-  created_by: string;
-  date_applied: string;
-};
+  patientId: string;
+  accountNumber: string;
+  invoiceAccountNumber: string;
+  bankCode: string;
+  invoiceBankCode: string;
+  ipAddress?: string;
+}
 
-export type ApplicationStatusT = 'applied';
+export interface HospitalState {
+  hospitals: Hospital[];
+  selectedHospital: Hospital | null; 
+  loading: boolean;
+  error: string | null;
+}
 
-export type JobT = {
+
+
+
+export interface LicenseFile {
+  licenseName: string;
+  licenseType: string;
+  licenseContent: string;
+}
+
+export interface Doctor {
   id: string;
-  job_title: string;
-  applications: string;
-  status: boolean;
-  created_by: string;
-  created_at: string;
-  page_view: string;
-};
+  firstName: string;
+  lastName: string;
+  otherNames: string;
+  dateOfBirth?: string;
+  residentialAddress ?: string;
+  licenseExpirationDate?: string;
+  email: string;
+  phoneNumber: string;
+  bio: string;
+  licenseNumber: string;
+  consultancyFee: number;
+  agreeToTerms: boolean;
+  specialization: string;
+  isActive: boolean;
+  isDoctorAvailable: boolean;
+  feePercentage: number;
+  bankCode: string;
+  accountNumber: string;
+  name: string;
+  photo: string;
+  password: string;
+  yearsOfExperience: number;
+  role: string;
+  deviceToken: string;
+  licenseFile: LicenseFile;
+  languages: string[];
+  qualifications: string[];
+  hospital: string;
+  profileImage: string;
+  averageRating: number;
+  totalPatientsServed: number;
+  isApproved: boolean;
+  totalReviews: number;
+  status: number;
+  userId?: string
+}
+export interface CallsStatistics {
+  totalEarned: number;
+  todayEarned: number;
+  totalCalls: number;
+  todayCalls: number;
+  completedCalls: number;
+  missedCalls: number;
+  percentageMissedCalls: number;
+  percentageCompletedCalls: number;
+}
 
-export type JobStatusT = 'pending' | 'active' | 'inactive';
+export interface PerformanceMetric {
+  satisfactionPercentage: string;
+  rating: string;
+  averageCallDuration: string;
+  responseTime: string;
+}
 
-export type AdminT = {
-  id: string;
-  total: string;
-  first_name: string;
-  last_name: string;
-  status: boolean;
-  last_login: string;
-  created_at: string;
-};
+export interface DoctorRecentCall {
+  patientName: string;
+  reason: string;
+  createdDate: string;
+  callDuration: string;
+  amount: number;
+  status: string;
+}
 
-export type DeleteAdmin = {
-  adminId: string;
-};
+export interface DashboardData {
+  callsStatistics: CallsStatistics | null;
+  performanceMetric: PerformanceMetric | null;
+  doctorRecentCalls: DoctorRecentCall[];
+}
 
-export type Question = {
-  question: string;
-  answer: string;
-  field_type: string;
-  options: string[];
-};
+export interface DoctorsState {
+  doctors: Doctor[];
+  pendingDoctors: Doctor[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  loading: boolean;
+  selectedDoctor: Doctor | null;
+  error: string | null;
 
-export type AddQuizT = {
-  chapter_id: string;
-  questions: Question[];
-  description: string;
-};
-
-export type VideoUrlPollingT = {
-  id: string;
-  video_url: string;
-  signToken: string;
-} | null;
+  dashboard: DashboardData | null;
+}
