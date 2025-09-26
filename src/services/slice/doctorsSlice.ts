@@ -1,6 +1,6 @@
 import { Doctor, DoctorsState } from "@/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { approveDoctor, fetchDoctorById, fetchDoctorDashboardById, fetchDoctors, fetchPendingDoctors } from "../thunks";
+import { approveDoctor, deleteDoctor, fetchDoctorById, fetchDoctorDashboardById, fetchDoctors, fetchPendingDoctors } from "../thunks";
 
 const initialState: DoctorsState = {
   doctors: [],
@@ -53,6 +53,25 @@ const doctorsSlice = createSlice({
       state.selectedDoctor = action.payload;
     })
 
+    .addCase(deleteDoctor.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    })
+    .addCase(deleteDoctor.fulfilled, (state, action) => {
+      state.loading = false;
+
+      // remove doctor from list if present
+     state.doctors = state.doctors.filter(d => d.id !== action.meta.arg);
+
+    // clear selected doctor if you are on detail page
+    // if (state.selectedDoctor?.id === action.meta.arg) {
+    //   state.selectedDoctor = null;
+    // }
+    })
+    .addCase(deleteDoctor.rejected, (state, action) => {
+       state.loading = false;
+        state.error = action.payload as string;
+    })
 
      // Fetch pending doctors
     .addCase(fetchPendingDoctors.pending, state => {

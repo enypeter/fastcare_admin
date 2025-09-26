@@ -2,8 +2,7 @@ import {DashboardLayout} from '@/layout/dashboard-layout';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Button} from '@/components/ui/button';
 import {useEffect, useState} from 'react';
-import Deactivate from '@/features/modules/hospital/deactivate';
-import {useParams, useSearchParams} from 'react-router-dom';
+import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import DoctorInformation from '@/features/modules/doctor/doctor-details/doctor-information';
 import Consultation from '@/features/modules/doctor/doctor-details/consultation';
 import Finance from '@/features/modules/doctor/doctor-details/finance';
@@ -11,6 +10,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {AppDispatch, RootState} from '@/services/store';
 import {fetchDoctorById, fetchDoctorDashboardById} from '@/services/thunks';
 import {Loader} from '@/components/ui/loading';
+import DelectDoctor from '@/features/modules/doctor/delete';
 
 const DoctorDetails = () => {
   const [open, setOpen] = useState(false);
@@ -48,6 +48,8 @@ const DoctorDetails = () => {
     setSearchParams({tab: activeTab});
   }, [activeTab, setSearchParams]);
 
+  const navigate = useNavigate()
+
   return (
     <DashboardLayout>
       {loading ? (
@@ -60,6 +62,13 @@ const DoctorDetails = () => {
         </div>
       ) : (
         <div className="bg-gray-100 overflow-scroll flex flex-col h-full">
+          <Button
+          className='w-16'
+            onClick={() => navigate('/doctors/all-doctors')} // go back in history
+          
+          >
+            ← Back
+          </Button>
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-6 mx-4 lg:mx-10 mt-16">
             <div className="flex items-center gap-4">
@@ -99,7 +108,7 @@ const DoctorDetails = () => {
               variant="destructive"
               className="py-3 rounded-md"
             >
-              Deactivate Account
+              Delete account
             </Button>
           </div>
 
@@ -129,7 +138,7 @@ const DoctorDetails = () => {
               )}
               {activeTab === 'consultation' && (
                 <>
-                  {(dashboard?.doctorRecentCalls || []).length > 0 ? (
+                  {(dashboard?.doctorRecentCalls || [])?.length > 0 ? (
                     <Consultation
                       consulation={selectedDoctor}
                       dashboard={dashboard}
@@ -145,13 +154,19 @@ const DoctorDetails = () => {
                 </>
               )}
 
-              {activeTab === 'finance' && <Finance />}
+              {activeTab === 'finance' && (
+                <Finance
+                  finance={selectedDoctor}
+                  dashboard={dashboard}
+                  loading={loading}
+                />
+              )}
             </div>
           </div>
         </div>
       )}
 
-      <Deactivate open={open} setOpen={setOpen} />
+      <DelectDoctor open={open} setOpen={setOpen} data={selectedDoctor} />
     </DashboardLayout>
   );
 };

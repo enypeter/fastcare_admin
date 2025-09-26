@@ -35,13 +35,14 @@ const AllDoctors = () => {
   const {doctors, totalCount, totalPages, currentPage, loading, error} =
     useSelector((state: RootState) => state.doctors);
 
-
-useEffect(() => {
-  dispatch(fetchDoctors({ page, pageSize }));
-}, [dispatch, page, pageSize]);
-
-
-  
+  useEffect(() => {
+    // if you want API defaults on first load
+    if (page && pageSize) {
+      dispatch(fetchDoctors({page: page, pageSize: pageSize}));
+    } else {
+      dispatch(fetchDoctors()); // let API decide
+    }
+  }, [dispatch, page, pageSize]);
 
   const filteredDoctors = useMemo(() => {
     return doctors.filter(d => {
@@ -79,22 +80,22 @@ useEffect(() => {
       accessorKey: 'licenseNumber',
       header: 'License Number',
     },
-   {
-  accessorKey: 'isDoctorAvailable',
-  header: 'Status',
-  cell: ({ getValue }) => {
-    const isAvailable = getValue() as boolean;
+    {
+      accessorKey: 'isDoctorAvailable',
+      header: 'Status',
+      cell: ({getValue}) => {
+        const isAvailable = getValue() as boolean;
 
-    const statusText = isAvailable ? 'Available' : 'Offline';
-    const status = statusText.toLowerCase();
+        const statusText = isAvailable ? 'Available' : 'Offline';
+        const status = statusText.toLowerCase();
 
-    let statusClasses = 'py-1 text-md font-semibold w-fit ';
-    if (status === 'available') statusClasses += 'text-green-700';
-    else statusClasses += 'text-red-800';
+        let statusClasses = 'py-1 text-md font-semibold w-fit ';
+        if (status === 'available') statusClasses += 'text-green-700';
+        else statusClasses += 'text-red-800';
 
-    return <span className={statusClasses}>{statusText}</span>;
-  },
-},
+        return <span className={statusClasses}>{statusText}</span>;
+      },
+    },
 
     {
       accessorKey: 'date',

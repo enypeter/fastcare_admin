@@ -92,15 +92,23 @@ export const updateHospital = createAsyncThunk(
 
 export const fetchDoctors = createAsyncThunk(
   'doctors/fetchDoctors',
-  async ({ page, pageSize }: { page: number; pageSize: number }) => {
-    const res = await apiClient.get(`/doctors?page=${page}&pageSize=${pageSize}`);
-    const data = res.data.data.flat(); 
+  async (
+    params?: { page?: number; pageSize?: number } // ✅ optional param
+  ) => {
+    const { page, pageSize } = params || {};
+
+    const res = await apiClient.get(
+      `/doctors?page=${page ?? ''}&pageSize=${pageSize ?? ''}`
+    );
+
+    const data = res.data.data.flat();
+
     return {
       doctors: data,
       totalCount: res.data.metaData?.totalCount ?? data.length,
       totalPages: res.data.metaData?.totalPages ?? 1,
       currentPage: res.data.metaData?.currentPage ?? 1,
-      pageSize: res.data.metaData?.pageSize ?? pageSize,
+      pageSize: res.data.metaData?.pageSize ?? pageSize ?? data.length,
       hasNext: res.data.metaData?.hasNext ?? false,
       hasPrevious: res.data.metaData?.hasPrevious ?? false,
     };
@@ -161,6 +169,54 @@ export const fetchDoctorDashboardById = createAsyncThunk(
        return res.data.data; 
     } catch (err: any) {
       return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const deleteDoctor = createAsyncThunk(
+  "doctors/deleteDoctor",
+  async (doctorId: string, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.delete(`/doctors/${doctorId}`);
+      return res.data; // { statusCode, data, metaData }
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || "Failed to delete doctor");
+    }
+  }
+);
+
+export const fetchFAQs = createAsyncThunk(
+  "faq/fetchFAQs",
+  async () => {
+    const res = await apiClient.get("/FAQ");  
+    return res.data;
+  }
+);
+
+export const addFAQ = createAsyncThunk(
+  "faq/addFAQ",
+  async (
+    payload: { question: string; answer: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.post("/FAQ", payload);
+      return res.data; // return the new FAQ
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "Failed to add FAQ");
+    }
+  }
+);
+
+
+export const deleteFAQ = createAsyncThunk<number, number>(
+  "faq/deleteFAQ",
+  async (faqId, { rejectWithValue }) => {
+    try {
+      await apiClient.put(`/FAQ/delete/${faqId}`);
+      return faqId; // returns a number
+    } catch (err) {
+      return rejectWithValue(err);
     }
   }
 );

@@ -3,6 +3,7 @@ import authReducer from '../slice/authSlice'
 import enrolleesReducer from "../slice/enrolleesSlice";
 import hospitalsReducer from "../slice/hospitalSlice"
 import doctorsReducer from "../slice/doctorsSlice"
+import faqsReducer from '../slice/faqsSlice'
 
 
 export const store = configureStore({
@@ -10,7 +11,8 @@ export const store = configureStore({
     auth: authReducer,
     enrollees: enrolleesReducer,
     hospitals: hospitalsReducer,
-    doctors: doctorsReducer
+    doctors: doctorsReducer,
+    faqs: faqsReducer
   },
 });
 

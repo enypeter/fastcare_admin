@@ -13,6 +13,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Loader } from '@/components/ui/loading';
+import { Doctor } from '@/types';
+
+
+type Props = {
+  finance: Doctor | null;
+  dashboard: any;
+  loading: boolean;
+};
+
+
+type Consultation = {
+  id: string;
+  patientName: string;
+  type: string;
+  duration: string;
+  status: string;
+  reason: string;
+  amount: number;
+  date: string;
+}
 
 const data = [
   {date: '2025-09-01', earnings: 4000},
@@ -67,7 +88,32 @@ const CustomTooltip = ({active, payload, label}: any) => {
   return null;
 };
 
-const Finance = () => {
+const Finance = ({  dashboard, loading }: Props) => {
+
+   if (loading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <Loader />
+        </div>
+      );
+    }
+
+     const { doctorRecentCalls = [] } = dashboard || {};
+
+  // ✅ Map API response into table shape
+  const mappedConsultations: Consultation[] = doctorRecentCalls?.map(
+    (item: any, index: number) => ({
+      id: String(index + 1),
+      patientName: item.patientName,
+      type: item.type || '-', // optional, default to "-"
+      duration: item.callDuration,
+      status: item.status,
+      reason: item.reason,
+      amount: item.amount,
+      date: item.createdDate,
+    })
+  );
+
   const [activeRange, setActiveRange] = useState('1M');
 
   return (
@@ -189,7 +235,9 @@ const Finance = () => {
 
       {/* Below chart: AllConsultation */}
       <div className="mt-10">
-        <AllConsultation />
+        <AllConsultation
+            consultations={mappedConsultations}
+        />
       </div>
     </div>
   );

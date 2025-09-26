@@ -176,3 +176,17 @@ export interface DoctorsState {
 
   dashboard: DashboardData | null;
 }
+
+
+
+export interface FAQ {
+  id: number;
+  question: string;
+  answer: string;
+}
+
+export interface FAQState {
+  faqs: FAQ[];
+  loading: boolean;
+  error: string | null;
+}
