@@ -33,7 +33,8 @@ const faqSlice = createSlice({
       .addCase(addFAQ.fulfilled, (state, action) => {
         state.faqs.unshift(action.payload); // optimistic update
       })
-       .addCase(deleteFAQ.fulfilled, (state, action) => {
+
+      .addCase(deleteFAQ.fulfilled, (state, action) => {
         state.faqs = state.faqs.filter(f => f.id !== Number(action.payload));
         })
       .addCase(deleteFAQ.rejected, (state, action) => {

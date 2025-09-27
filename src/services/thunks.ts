@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiClient from "@/services/axiosInstance";
-import { CreatePasswordT, LoginT } from "@/types";
+import { CreateAdminPayload, CreatePasswordT, LoginT } from "@/types";
 
 export const loginUser = createAsyncThunk(
   "auth/login",
@@ -217,6 +217,54 @@ export const deleteFAQ = createAsyncThunk<number, number>(
       return faqId; // returns a number
     } catch (err) {
       return rejectWithValue(err);
+    }
+  }
+);
+
+export const fetchProfile = createAsyncThunk(
+  "account/fetchProfile",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get("/Account/profile");
+      return res.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Failed to fetch profile");
+    }
+  }
+)
+
+export const fetchRoles = createAsyncThunk(
+  "account/fetchRole",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get("/Account/get-roles");
+      return res.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Failed to fetch role");
+    }
+  }
+)
+
+export const createAdmin = createAsyncThunk(
+  "account/createAdmin",
+  async (payload: CreateAdminPayload, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.post("/Account/create-admin", payload);
+      return res.data; // newly created admin data
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const updateProfile = createAsyncThunk(
+  "account/updateProfile",
+  async (payload: any, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.post("/Account/update", payload);
+      return res.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || "Error updating profile");
     }
   }
 );

@@ -190,3 +190,65 @@ export interface FAQState {
   loading: boolean;
   error: string | null;
 }
+
+// types/account.ts
+export interface MedicalDetail {
+  weight: number | null;
+  height: number | null;
+  bloodGroup: string | null;
+  genotype: string | null;
+  allergies: string | null;
+  knownMedicalConditions: string | null;
+}
+
+export interface ProfileType {
+  id: string;
+  dateRegistered: string | null;
+  dateOfBirth: string | null;
+  userName: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  stateCode: string | null;
+  countryCode: string | null;
+  country: string | null;
+  residentialAddress: string | null;
+  nextOfKinFirstName: string | null;
+  nextOfKinMiddleName: string | null;
+  nextOfKinLastName: string | null;
+  nextOfKinEmail: string | null;
+  nextOfKinPhone: string | null;
+  nextOfkinRelationship: string | null;
+  nextOfKinAddress: string | null;
+  lgaOfOrigin: string | null;
+  gender: string | null;
+  maritalStatus: string | null;
+  phoneNumber: string | null;
+  medicalDetail: MedicalDetail;
+  deviceToken: string | null;
+  profileImageName: string | null;
+  profileImagePath: string | null;
+}
+
+export interface AccountState {
+  profile: ProfileType | null;
+  loading: boolean;
+  error: string | null;
+    roles: any | null;
+  rolesLoading: boolean;
+  rolesError: string | null;
+   createLoading: boolean;
+  createError: string | null;
+    updateLoading: boolean;
+  updateSuccess: boolean;
+
+}
+
+
+
+export type CreateAdminPayload = {
+  name: string;
+  email: string;
+  role: string;
+};

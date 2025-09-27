@@ -1,34 +1,56 @@
-import {X} from 'lucide-react';
+import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {useState} from 'react';
-import Success from '../../../features/modules/dashboard/success';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import Success from "../../../features/modules/dashboard/success";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import { useSelector, useDispatch } from "react-redux";
+import { AppDispatch, RootState } from "@/services/store";
+import { fetchRoles, createAdmin } from "@/services/thunks"; // make sure you have this thunk
+import { useEffect } from "react";
 
 export default function AddUser() {
   const [openSuccess, setOpenSuccess] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const role = [
-    {key: 'virtual', label: 'Virtual Consultation'},
-    {key: 'physical', label: 'Physical Consultation'},
-    {key: 'registration', label: 'Registration'},
-  ];
+  const dispatch = useDispatch<AppDispatch>();
+  const { roles, rolesLoading, rolesError } = useSelector(
+    (state: RootState) => state.account
+  );
 
-  const handleSubmit = () => {
-    setOpenSuccess(true);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
+
+  useEffect(() => {
+    dispatch(fetchRoles());
+  }, [dispatch]);
+
+  const handleSubmit = async () => {
+    if (!name || !email || !role) return;
+
+    try {
+      await dispatch(createAdmin({ name, email, role })).unwrap();
+      setOpenSuccess(true);
+      setOpen(false);
+      setName("");
+      setEmail("");
+      setRole("");
+    } catch (error) {
+      console.error("Failed to create admin:", error);
+    }
   };
 
   return (
@@ -58,35 +80,53 @@ export default function AddUser() {
             <div className="grid grid-cols-1 gap-2 mt-6">
               <div>
                 <label className="text-gray-800">Name</label>
-                <input className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none" />
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none"
+                />
               </div>
 
               <div>
                 <label className="text-gray-800">Email</label>
-                <input className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none" />
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none"
+                />
               </div>
 
               <div className="flex flex-col gap-2">
                 <label className="text-gray-800">Role</label>
-                <Select>
-                  <SelectTrigger className="border border-gray-300 rounded-lg px-3 py-3 text-gray-800">
-                    <SelectValue placeholder="Select Role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {role.map(opt => (
-                      <SelectItem key={opt.key} value={opt.key}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {rolesLoading ? (
+                  <p>Loading roles...</p>
+                ) : rolesError ? (
+                  <p className="text-red-500">Failed to load roles</p>
+                ) : (
+                  <Select value={role} onValueChange={(val) => setRole(val)}>
+                    <SelectTrigger className="border border-gray-300 rounded-lg px-3 py-3 text-gray-800">
+                      <SelectValue placeholder="Select Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles?.map((r: string) => (
+                        <SelectItem key={r} value={r}>
+                          {r}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         <div className="flex justify-between items-center gap-4 mt-8">
-          <Button onClick={handleSubmit} className="py-3 w-48 rounded-md">
+          <Button
+            disabled={!name || !email || !role}
+            onClick={handleSubmit}
+            className="py-3 w-48 rounded-md"
+          >
             Add user
           </Button>
         </div>

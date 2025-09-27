@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import { useState} from 'react';
 import {Button} from '@/components/ui/button';
 
 import {
@@ -31,6 +31,7 @@ import {Trash} from 'lucide-react';
 import AddUser from '@/components/form/settings/add-user';
 import NewRole from '@/components/form/settings/new-role';
 import GenerateCode from '@/components/form/settings/generate-code';
+
 
 //import {ProviderFilter} from '@/features/modules/providers/filter';
 
@@ -74,16 +75,10 @@ const UserRole = () => {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
-  //const [page, setPage] = useState(1);
-  //const [pageSize, setPageSize] = useState(10);
+  
 
   const [open, setOpen] = useState(false);
 
-  //   const totalPages = Math.ceil(users.length / pageSize);
-  //   const paginatedProviders = useMemo(() => {
-  //     const start = (page - 1) * pageSize;
-  //     return users.slice(start, start + pageSize);
-  //   }, [users, page]);
 
   const columns: ColumnDef<any>[] = [
     {

@@ -124,9 +124,7 @@ const doctorsSlice = createSlice({
     state.loading = false;
     state.error = action.payload as string;
   });
-
-
-    
+   
   },
 });
 
