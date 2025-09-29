@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiClient from "@/services/axiosInstance";
-import { CreateAdminPayload, CreatePasswordT, LoginT } from "@/types";
+import { CreateAdminPayload, CreatePasswordT, CreateRolePayload, LoginT } from "@/types";
 
 export const loginUser = createAsyncThunk(
   "auth/login",
@@ -250,6 +250,18 @@ export const createAdmin = createAsyncThunk(
   async (payload: CreateAdminPayload, { rejectWithValue }) => {
     try {
       const res = await apiClient.post("/Account/create-admin", payload);
+      return res.data; // newly created admin data
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const createRole = createAsyncThunk(
+  "account/addRole",
+  async (payload: CreateRolePayload, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.post("/Account/add-role", payload);
       return res.data; // newly created admin data
     } catch (err: any) {
       return rejectWithValue(err.response?.data || err.message);

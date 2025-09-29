@@ -1,6 +1,6 @@
 // accountSlice.ts
 import { createSlice } from "@reduxjs/toolkit";
-import { createAdmin, fetchProfile, fetchRoles, updateProfile } from "@/services/thunks";
+import { createAdmin, createRole, fetchProfile, fetchRoles, updateProfile } from "@/services/thunks";
 import { AccountState } from "@/types";
 
 
@@ -16,6 +16,9 @@ const initialState: AccountState = {
   createError: null,
   updateLoading: false,
   updateSuccess: false,
+   createroleLoading: false,
+  createroleError: null,
+
 };
 
 const accountSlice = createSlice({
@@ -48,6 +51,7 @@ const accountSlice = createSlice({
         state.rolesLoading = false;
         state.rolesError = action.payload as string;
       })
+
       .addCase(createAdmin.pending, (state) => {
         state.createLoading = true;
         state.createError = null;
@@ -59,6 +63,7 @@ const accountSlice = createSlice({
         state.createLoading = false;
         state.createError = action.payload as string;
       })
+
       .addCase(updateProfile.pending, state => {
         state.updateLoading = true;
         state.updateSuccess = false;
@@ -73,7 +78,18 @@ const accountSlice = createSlice({
         state.updateLoading = false;
         state.updateSuccess = false;
         state.error = action.payload as string;
-      });
+      })
+      .addCase(createRole.pending, (state) => {
+        state.createroleLoading = true;
+        state.createroleError = null;
+      })
+      .addCase(createRole.fulfilled, (state) => {
+        state.createroleLoading = false;
+      })
+      .addCase(createRole.rejected, (state, action) => {
+        state.createroleLoading = false;
+        state.createroleError = action.payload as string;
+      })
   },
 });
 

@@ -12,7 +12,7 @@ import Success from '../../../features/modules/dashboard/success';
 import {Switch} from '@/components/ui/switch';
 import {useDispatch} from 'react-redux';
 import {AppDispatch} from '@/services/store';
-import {createHospital, fetchHospitals} from '@/services/thunks';
+import {createHospital} from '@/services/thunks';
 import toast from 'react-hot-toast';
 
 export default function AddHospital() {
@@ -393,7 +393,7 @@ export default function AddHospital() {
         open={openSuccess}
         setOpen={setOpenSuccess}
         text="You've successfully added a new Hospital"
-         onClose={() => dispatch(fetchHospitals())}
+         //onClose={() => dispatch(fetchHospitals())}
       />
     </Dialog>
   );

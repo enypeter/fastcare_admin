@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { HospitalState, Hospital } from "@/types";
-import { fetchHospitalById, fetchHospitals, updateHospital } from "../thunks";
+import { createHospital, fetchHospitalById, fetchHospitals, updateHospital } from "../thunks";
 import toast from "react-hot-toast";
 
 const initialState: HospitalState = {
@@ -8,6 +8,8 @@ const initialState: HospitalState = {
   selectedHospital: null,   // ✅ add this
   loading: false,
   error: null,
+    createLoading: false,
+  createError: null,
 };
 
 const hospitalSlice = createSlice({
@@ -33,6 +35,18 @@ const hospitalSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+
+       .addCase(createHospital.pending, (state) => {
+              state.createLoading = true;
+              state.createError = null;
+        })
+        .addCase(createHospital.fulfilled, (state) => {
+          state.createLoading = false;
+        })
+        .addCase(createHospital.rejected, (state, action) => {
+          state.createLoading = false;
+          state.createError = action.payload as string;
+        })
 
       // Fetch by ID
       .addCase(fetchHospitalById.fulfilled, (state, action) => {

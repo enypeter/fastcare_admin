@@ -79,6 +79,8 @@ export interface HospitalState {
   selectedHospital: Hospital | null; 
   loading: boolean;
   error: string | null;
+   createLoading: boolean;
+  createError: string | null;
 }
 
 
@@ -235,20 +237,25 @@ export interface AccountState {
   profile: ProfileType | null;
   loading: boolean;
   error: string | null;
-    roles: any | null;
+  roles: any | null;
   rolesLoading: boolean;
   rolesError: string | null;
-   createLoading: boolean;
+  createLoading: boolean;
   createError: string | null;
-    updateLoading: boolean;
+  updateLoading: boolean;
   updateSuccess: boolean;
+  createroleLoading: boolean;
+  createroleError: string | null;
 
 }
-
 
 
 export type CreateAdminPayload = {
   name: string;
   email: string;
+  role: string;
+};
+
+export type CreateRolePayload = {
   role: string;
 };
