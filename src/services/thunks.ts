@@ -7,7 +7,6 @@ export const loginUser = createAsyncThunk(
   async (payload: LoginT, { rejectWithValue }) => {
     try {
       const res = await apiClient.post("/Auth/login", payload);
-      console.log("Response:", res.data);
       const data = res.data;
 
       // Extract token and everything else as "user"
