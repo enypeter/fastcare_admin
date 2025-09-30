@@ -15,7 +15,7 @@ const AuthLayout = ({children}: IProps) => {
       </div>
     
 
-      <div className=" block overflow-auto bg-white mx-10 my-5 rounded-sm  w-full lg:w-[45%]">
+      <div className=" block overflow-auto bg-white mx-10 my-16 rounded-sm  w-full lg:w-[45%]">
         {children}
       </div>
     </div>

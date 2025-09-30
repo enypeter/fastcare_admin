@@ -197,7 +197,7 @@ const UsersWho = () => {
       <div className="p-4 flex items-center justify-end">
         <Pagination
           totalEntriesSize={users.length}
-          currentEntriesSize={paginatedProviders.length}
+          
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}

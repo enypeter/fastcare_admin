@@ -256,7 +256,7 @@ const Reporting = () => {
             <div className="p-4 flex items-center justify-end ">
             <Pagination
               totalEntriesSize={transactions.length}
-              currentEntriesSize={paginatedReporting.length}
+             
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}

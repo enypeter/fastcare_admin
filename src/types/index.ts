@@ -179,6 +179,17 @@ export interface DoctorsState {
   dashboard: DashboardData | null;
 }
 
+export interface AmbulanceProvider {
+  id: string;
+  registrationNumber: string;
+  address: string;
+  adminName: string;
+  email: string;
+  phoneNumber: string;
+  serviceCharge: number;
+}
+
+
 
 
 export interface FAQ {
@@ -258,4 +269,13 @@ export type CreateAdminPayload = {
 
 export type CreateRolePayload = {
   role: string;
+};
+
+export type CreateAmbulanceProvider = {
+  registrationNumber: string;
+  address: string;
+  email: string;
+  adminName: string;
+  phoneNumber: string;
+  serviceCharge: number;
 };

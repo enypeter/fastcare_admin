@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiClient from "@/services/axiosInstance";
-import { CreateAdminPayload, CreatePasswordT, CreateRolePayload, LoginT } from "@/types";
+import { AmbulanceProvider, CreateAdminPayload, CreateAmbulanceProvider, CreatePasswordT, CreateRolePayload, LoginT } from "@/types";
+
 
 export const loginUser = createAsyncThunk(
   "auth/login",
@@ -276,6 +277,61 @@ export const updateProfile = createAsyncThunk(
       return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data || "Error updating profile");
+    }
+  }
+);
+
+export const fetchAmbulanceProviders = createAsyncThunk<
+  AmbulanceProvider[], // type of returned data
+  { page: number; pageSize: number } // argument type
+>(
+  "providers/fetchAmbulanceProviders",
+  async ({ page, pageSize }, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get("/AmbulanceProviders", {
+        params: { Page: page, PageSize: pageSize },
+      });
+      return res.data.data.flat(); 
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Failed to fetch providers");
+    }
+  }
+);
+
+
+export const createAmbulanceProviders = createAsyncThunk(
+  "account/createAmbulanceProviders",
+  async (payload: CreateAmbulanceProvider, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.post("/AmbulanceProviders", payload);
+      return res.data; // newly created admin data
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+
+export const activateAmbulanceProvider = createAsyncThunk(
+  "providers/activateAmbulanceProvider",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.put(`/AmbulanceProviders/${id}/activate`);
+      return res.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const deactivateAmbulanceProvider = createAsyncThunk(
+  "providers/deactivateAmbulanceProvider",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.put(`/AmbulanceProviders/${id}/deactivate`);
+      return res.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || err.message);
     }
   }
 );
