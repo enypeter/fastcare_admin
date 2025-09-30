@@ -335,3 +335,40 @@ export const deactivateAmbulanceProvider = createAsyncThunk(
     }
   }
 );
+
+export const fetchArticles = createAsyncThunk(
+  "articles/fetchArticles",
+  async (
+    { page, pageSize }: { page: number; pageSize: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get("/Article", {
+        params: { Page: page, PageSize: pageSize },
+      });
+
+      // return structured payload
+      return {
+        articles: res.data.data,     // actual article list
+        metaData: res.data.metaData, // pagination info
+      };
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+
+export const createArticles = createAsyncThunk(
+  "articles/createArticle",
+  async (payload: FormData, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.post("/Article", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);

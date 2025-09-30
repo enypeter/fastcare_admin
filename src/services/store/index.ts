@@ -6,6 +6,7 @@ import doctorsReducer from "../slice/doctorsSlice"
 import faqsReducer from '../slice/faqsSlice'
 import accountReducer from '../slice/accountSlice'
 import ambulanceReducer from '../slice/ambulanceSlice'
+import articlesReducer from '../slice/articleSlice'
 
 
 export const store = configureStore({
@@ -17,6 +18,7 @@ export const store = configureStore({
     faqs: faqsReducer,
     account: accountReducer,
     ambulance: ambulanceReducer,
+    articles: articlesReducer
   },
 });
 

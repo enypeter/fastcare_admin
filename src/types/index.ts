@@ -279,3 +279,39 @@ export type CreateAmbulanceProvider = {
   phoneNumber: string;
   serviceCharge: number;
 };
+
+
+export type Article = {
+  id: number;
+  title: string;
+  body: string;
+  tag: string;
+  image: string;
+  creationDate: string;
+  creatorName: string;
+};
+
+export interface MetaData {
+  totalCount: number;
+  totalPages: number;
+  pageSize: number;
+  currentPage: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface ArticleState {
+  articles: Article[];
+  metaData: MetaData | null;
+  loading: boolean;
+  error: string | null;
+  createLoading: boolean;
+  createError: string | null;
+}
+
+export type CreateArticle = {
+  Title: string;
+  Body: string;
+  Tag: string;
+  Image?: string;
+};
