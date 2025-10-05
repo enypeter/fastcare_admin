@@ -75,32 +75,34 @@ const ReferralCodesPage = () => {
   })), [codes]);
 
   const handleExportList = (format: number) => {
-    dispatch(exportReferralCodes({ format, Code: codeFilter || undefined, StaffName: staffFilter || undefined })).then((action: any) => {
-      if (action.meta.requestStatus === 'fulfilled') {
-        const blob = action.payload.blob as Blob;
+    dispatch(exportReferralCodes({ format, Code: codeFilter || undefined, StaffName: staffFilter || undefined }))
+      .unwrap()
+      .then(payload => {
+        const blob = payload.blob as Blob;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `referral-codes.${format === 0 ? 'xlsx' : 'csv'}`;
         a.click();
         URL.revokeObjectURL(url);
-      }
-    });
+      })
+      .catch(() => {/* swallow - errors reflected in slice state */});
   };
 
   const handleExportUsers = (format: number) => {
     if (!selectedId) return;
-    dispatch(exportReferralCodeUsers({ id: selectedId, format })).then((action: any) => {
-      if (action.meta.requestStatus === 'fulfilled') {
-        const blob = action.payload.blob as Blob;
+    dispatch(exportReferralCodeUsers({ id: selectedId, format }))
+      .unwrap()
+      .then(payload => {
+        const blob = payload.blob as Blob;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `referral-code-${selectedId}-users.${format === 0 ? 'xlsx' : 'csv'}`;
         a.click();
         URL.revokeObjectURL(url);
-      }
-    });
+      })
+      .catch(() => {/* error handled in slice */});
   };
 
   return (
@@ -128,11 +130,11 @@ const ReferralCodesPage = () => {
         <div className="bg-white rounded-md p-5 flex flex-col md:flex-row gap-4 items-end">
           <div className="flex flex-col w-full md:w-1/3">
             <label className="text-sm font-medium mb-1">Code</label>
-            <Input value={codeFilter} onChange={e => { setPage(1); setCodeFilter(e.target.value); }} placeholder="Search by code" />
+            <Input id="referral-code-filter" label="Code" value={codeFilter} onChange={e => { setPage(1); setCodeFilter(e.target.value); }} placeholder="Search by code" />
           </div>
           <div className="flex flex-col w-full md:w-1/3">
             <label className="text-sm font-medium mb-1">Staff Name</label>
-            <Input value={staffFilter} onChange={e => { setPage(1); setStaffFilter(e.target.value); }} placeholder="Search by staff name" />
+            <Input id="referral-staff-filter" label="Staff Name" value={staffFilter} onChange={e => { setPage(1); setStaffFilter(e.target.value); }} placeholder="Search by staff name" />
           </div>
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => { setCodeFilter(''); setStaffFilter(''); setPage(1); }}>Reset</Button>

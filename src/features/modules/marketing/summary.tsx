@@ -1,125 +1,126 @@
-import {X} from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {useState} from 'react';
-import UsersWho from './users';
+import { X, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { exportReferralCodeUsers } from '@/services/thunks';
+import type { AppDispatch, RootState } from '@/services/store';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader } from '@/components/ui/loading';
+import type { ReferralCodeUser, ReferralCodeDetail } from '@/types';
 
-type Props = {
-  data?: any;
-};
+interface SummaryProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  base?: { id: string; referral_code: string; status?: string; date?: string } | null;
+  selected?: ReferralCodeDetail | null;
+  loadingDetail: boolean;
+}
 
-export default function Summary({data}: Props) {
-  const [open, setOpen] = useState(false);
+export default function Summary({ open, onOpenChange, base, selected, loadingDetail }: SummaryProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const { exportingUsers, exportUsersError } = useSelector((s: RootState) => s.referrals);
+
+  const users: ReferralCodeUser[] = useMemo(() => (selected?.referralCodeUsers || []), [selected?.referralCodeUsers]);
+
+  const handleExportUsers = (format: number) => {
+    if (!base?.id) return;
+    dispatch(exportReferralCodeUsers({ id: base.id, format }))
+      .unwrap()
+      .then(payload => {
+        const blob = payload.blob as Blob;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `referral-code-${base.id}-users.${format === 0 ? 'xlsx' : 'csv'}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => {});
+  };
 
   const getStatusColor = (status?: string) => {
-    if (!status) return 'text-gray-500';
-
+    if (!status) return 'text-gray-500 bg-gray-100';
     const s = status.toLowerCase();
-    if (s === 'successful' || s === 'approved' || s === 'active')
-      return 'text-green-600 bg-green-100';
-    if (s === 'pending') return 'text-yellow-600 bg-yellow-100';
-    if (s === 'failed' || s === 'disputed') return 'text-red-600 bg-red-100';
-
-    return 'text-gray-500';
+    if (['successful','approved','active'].includes(s)) return 'text-green-700 bg-green-100';
+    if (s === 'pending') return 'text-yellow-700 bg-yellow-100';
+    if (['failed','disputed'].includes(s)) return 'text-red-700 bg-red-100';
+    return 'text-gray-600 bg-gray-100';
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <div className="flex text-center justify-center cursor-pointer font-semibold items-center gap-2 bg-[#E4F1FC] p-2 rounded-md text-[#135E9B]">
-            View Details
-          </div>
-        </DialogTrigger>
-        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader className="flex w-full items-center justify-between">
-            <DialogTitle className="flex w-full items-center justify-between border-b">
-              <span className="text-gray-800 text-2xl font-semibold py-3">
-                Summary
-              </span>
-
-              <button
-                onClick={() => setOpen(false)}
-                type="button"
-                className="p-1 border border-gray-300 rounded-full hover:bg-gray-100"
-              >
-                <X className="w-5 h-5 text-primary" />
-              </button>
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* Doctor Details Section */}
-          {data ? (
-            <div className="">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <h1 className="text-primary  text-lg">
-                    Code No{' '}
-                    <span className="text-gray-600 ">
-                      {' '}
-                      {data?.referral_code}
-                    </span>{' '}
-                  </h1>
-
-                  <span
-                    className={`font-medium py-1 px-2 rounded-md  ${getStatusColor(
-                      data?.status,
-                    )}`}
-                  >
-                    {data?.status}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Button variant="ghost" className="py-2.5 w-36 rounded-md">
-                    Export
-                  </Button>
-                </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="z-[100] max-h-[80vh] max-w-5xl overflow-y-auto">
+        <DialogHeader className="flex w-full items-center justify-between">
+          <DialogTitle className="flex w-full items-center justify-between border-b">
+            <span className="py-3 text-2xl font-semibold text-gray-800">Summary</span>
+            <button onClick={() => onOpenChange(false)} aria-label="Close" type="button" className="rounded-full border border-gray-300 p-1 hover:bg-gray-100">
+              <X className="h-5 w-5 text-primary" />
+            </button>
+          </DialogTitle>
+        </DialogHeader>
+        {!base ? (
+          <p className="mt-4 text-gray-500">No details available.</p>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <h1 className="text-lg text-primary">Code <span className="text-gray-600">{selected?.code || base.referral_code}</span></h1>
+                <span className={`rounded-md px-2 py-1 font-medium ${getStatusColor(base.status)}`}>{base.status || '-'}</span>
               </div>
-              <div className="mt-6">
-                <h1 className="text-primary border-b text-lg">
-                  Referral Code Details
-                </h1>
-              </div>
-              <div className="grid grid-cols-4   mt-4 text-md">
-                <div className="flex flex-col gap-2 ">
-                  <span className=" text-gray-600">Code</span>
-                  <span className="text-gray-900">{data.referral_code}</span>
-                </div>
-                <div className="flex flex-col gap-2 ">
-                  <span className=" text-gray-600">Date Created</span>
-                  <span className="text-gray-900">{data.date}</span>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <span className=" text-gray-600">Expiry Date</span>
-                  <span className="text-gray-900">{data.date}</span>
-                </div>
-                <div className="flex flex-col gap-2 ">
-                  <span className=" text-gray-600">Status</span>
-                  <span className="text-gray-900">{data.status}</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <h1 className="text-primary text-lg">
-                  Users Who Used This Code
-                </h1>
-
-                <UsersWho />
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" disabled={exportingUsers || loadingDetail} onClick={() => handleExportUsers(0)} className="flex w-28 items-center gap-1 rounded-md py-2.5"><Download size={14}/> Excel</Button>
+                <Button variant="ghost" disabled={exportingUsers || loadingDetail} onClick={() => handleExportUsers(1)} className="flex w-28 items-center gap-1 rounded-md py-2.5"><Download size={14}/> CSV</Button>
               </div>
             </div>
-          ) : (
-            <p className="text-gray-500 mt-4">No details available.</p>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+            <div className="mt-6">
+              <h1 className="border-b text-lg text-primary">Referral Code Details</h1>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 text-md md:grid-cols-4">
+              <div className="flex flex-col gap-2"><span className="text-gray-600">Code</span><span className="text-gray-900">{selected?.code || base.referral_code}</span></div>
+              <div className="flex flex-col gap-2"><span className="text-gray-600">Date Created</span><span className="text-gray-900">{selected?.dateCreated || base.date || '-'}</span></div>
+              <div className="flex flex-col gap-2"><span className="text-gray-600">Users</span><span className="text-gray-900">{users.length}</span></div>
+              <div className="flex flex-col gap-2"><span className="text-gray-600">Status</span><span className="text-gray-900">{base.status || '-'}</span></div>
+            </div>
+            <div className="mt-6">
+              <h1 className="mb-2 text-lg text-primary">Users Who Used This Code</h1>
+              {loadingDetail ? (
+                <div className="py-6"><Loader height="h-10" /></div>
+              ) : (
+                <div className="max-h-72 overflow-auto rounded-md border">
+                  <Table className="min-w-[600px]">
+                    <TableHeader className="bg-gray-50">
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Date Registered</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="py-6 text-center text-sm text-gray-500">No users yet</TableCell>
+                        </TableRow>
+                      ) : (
+                        users.map(u => (
+                          <TableRow key={u.email || u.phoneNumber || u.name}>
+                            <TableCell className="font-medium">{u.name || '-'}</TableCell>
+                            <TableCell>{u.email || '-'}</TableCell>
+                            <TableCell>{u.phoneNumber || '-'}</TableCell>
+                            <TableCell>{u.registrationDate || '-'}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+              {exportUsersError && <p className="mt-2 text-xs text-red-600">{exportUsersError}</p>}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
