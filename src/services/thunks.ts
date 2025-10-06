@@ -3,17 +3,21 @@ import apiClient from "@/services/axiosInstance";
 import { AmbulanceProvider, CreateAdminPayload, CreateAmbulanceProvider, CreatePasswordT, CreateRolePayload, LoginT, Transaction, Refund } from "@/types";
 import type { AxiosError } from 'axios';
 
-// Utility to safely extract API error messages while avoiding eslint any violation
+// Utility to safely extract API error messages including plain text bodies
 const getErrorMessage = (error: unknown, fallback: string): string => {
   if (typeof error === 'string') return error;
   if (error && typeof error === 'object') {
-    const axiosErr = error as AxiosError<{ message?: string; error?: string }>;
-    return (
-      axiosErr.response?.data?.message ||
-      axiosErr.response?.data?.error ||
-      (axiosErr.message) ||
-      fallback
-    );
+  const axiosErr = error as AxiosError<unknown>;
+  const respData: unknown = axiosErr.response?.data;
+    // If backend returns plain text (string) like "Email address already exists"
+    if (typeof respData === 'string') return respData;
+    // If backend returns structured object
+    if (respData && typeof respData === 'object') {
+      const possible = respData as { message?: unknown; error?: unknown; data?: unknown };
+      const candidate = possible.message || possible.error || possible.data;
+      if (typeof candidate === 'string' && candidate.trim()) return candidate;
+    }
+    if (axiosErr.message) return axiosErr.message;
   }
   return fallback;
 };
@@ -268,7 +272,7 @@ export const createAdmin = createAsyncThunk(
     try {
       const res = await apiClient.post("/Account/create-admin", payload);
       return res.data; // newly created admin data
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(getErrorMessage(error, "Failed to create admin"));
     }
   }
@@ -607,6 +611,177 @@ export const generateReferralCodes = createAsyncThunk(
       return res.data; // assume returns generated codes or status
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, "Failed to generate referral codes"));
+    }
+  }
+);
+
+// -------------------------------------------------
+// Admin Users (Teammates) Thunks
+// -------------------------------------------------
+
+export const fetchAdminUsers = createAsyncThunk(
+  "adminUsers/fetchAll",
+  async (
+    params: { Page?: number; PageSize?: number } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get("/Account/get-admin-users", { params });
+      return { users: res.data.data || [], metaData: res.data.metaData || null };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch admin users"));
+    }
+  }
+);
+
+export const updateAdminUser = createAsyncThunk(
+  "adminUsers/update",
+  async (
+    payload: { id: string; name: string; email: string; role: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { id, ...body } = payload;
+      const res = await apiClient.put(`/Account/update-admin-user/${id}`, body);
+      return res.data; // assume returns updated user
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to update admin user"));
+    }
+  }
+);
+
+export const toggleAdminUserActive = createAsyncThunk(
+  "adminUsers/toggleActive",
+  async (
+    payload: { userId: string; activate: boolean },
+    { rejectWithValue }
+  ) => {
+    try {
+      // Use distinct endpoints per latest spec: activate => /Account/activate-account, deactivate => /Account/eaactivate-account
+      const endpoint = payload.activate
+        ? "/Account/activate-account"
+        : "/Account/deactivate-account"; // (Note: 'eaactivate' spelling per provided endpoint)
+      const res = await apiClient.put(endpoint, null, { params: { userId: payload.userId } });
+      return { userId: payload.userId, activate: payload.activate, raw: res.data };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to toggle user active state"));
+    }
+  }
+);
+
+// -------------------------------------------------
+// User Reports Thunks
+// -------------------------------------------------
+
+export const fetchUserReports = createAsyncThunk(
+  'userReports/fetchAll',
+  async (
+    params: { Page?: number; PageSize?: number } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get('/Account/get-users-report', { params });
+      const rawList: unknown = res.data.data || [];
+      const list = Array.isArray(rawList) ? rawList.map(item => {
+        const d = item as { date?: string; userCount?: number };
+        return {
+          date: d.date || '',
+          userCount: typeof d.userCount === 'number' ? d.userCount : 0,
+        };
+      }) : [];
+      return { list, metaData: res.data.metaData || null };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch user reports'));
+    }
+  }
+);
+
+export const fetchUserReportDetail = createAsyncThunk(
+  'userReports/fetchDetail',
+  async (
+    params: { Date: string; Page?: number; PageSize?: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { Date, ...rest } = params;
+      const res = await apiClient.get(`/Account/get-users-report-detail/${Date}`, { params: rest });
+      const rawDetail: unknown = res.data.data || [];
+      const detail = Array.isArray(rawDetail) ? rawDetail.map(item => {
+        const d = item as { date?: string; email?: string; fullName?: string; phoneNumber?: string };
+        return {
+          date: d.date || '',
+            email: d.email || '',
+            fullName: d.fullName || '',
+            phoneNumber: d.phoneNumber || '',
+        };
+      }) : [];
+      return { detail, detailMeta: res.data.metaData || null, selectedDate: Date };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch user report detail'));
+    }
+  }
+);
+
+// -------------------------------------------------
+// Appointment Reports Thunks
+// -------------------------------------------------
+
+export const fetchAppointmentReports = createAsyncThunk(
+  'appointmentReports/fetchAll',
+  async (
+    params: {
+      StartDate?: string;
+      EndDate?: string;
+      MinDuration?: { ticks: number };
+      DoctorName?: string;
+      HospitalId?: string;
+      ClinicId?: string;
+      Page?: number;
+      PageSize?: number;
+    } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get('/Appointment/filtered', { params });
+      const rawList: unknown = res.data.data || [];
+      const list = Array.isArray(rawList) ? rawList.map(item => {
+        const d = item as { patientName?: string; doctorName?: string | null; date?: string | null; duration?: string | null };
+        return {
+          patientName: d.patientName || '',
+          doctorName: d.doctorName ?? null,
+          date: d.date ?? null,
+          duration: d.duration ?? null,
+        };
+      }) : [];
+      return { list, metaData: res.data.metaData || null };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch appointment reports'));
+    }
+  }
+);
+
+export const exportAppointmentReports = createAsyncThunk(
+  'appointmentReports/export',
+  async (
+    params: {
+      format: number; // csv = 0, excel = 1
+      StartDate?: string;
+      EndDate?: string;
+      MinDuration?: { ticks: number };
+      DoctorName?: string;
+      HospitalId?: string;
+      ClinicId?: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get('/Appointment/export', {
+        params,
+        responseType: 'blob',
+      });
+      return { blob: res.data, params };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to export appointment reports'));
     }
   }
 );

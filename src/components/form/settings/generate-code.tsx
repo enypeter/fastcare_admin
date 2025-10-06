@@ -1,46 +1,52 @@
-import { X } from "lucide-react";
+import { X, Check, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import Success from "../../../features/modules/dashboard/success";
 import { useDispatch, useSelector } from "react-redux";
-import { generateReferralCodes, fetchReferralCodes, fetchReferralSummary } from "@/services/thunks";
+import { generateReferralCodes, fetchReferralCodes, fetchReferralSummary, fetchAdminUsers } from "@/services/thunks";
 import type { AppDispatch, RootState } from "@/services/store";
 
 export default function GenerateCode() {
   const dispatch = useDispatch<AppDispatch>();
   const { generating, generateError } = useSelector((s: RootState) => s.referrals);
+  const { users, loading: loadingUsers } = useSelector((s: RootState) => s.adminUsers);
 
   const [open, setOpen] = useState(false);
   const [openSuccess, setOpenSuccess] = useState(false);
-  const [emailInput, setEmailInput] = useState("");
   const [emails, setEmails] = useState<string[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [filter, setFilter] = useState("");
 
   const resetForm = () => {
-    setEmailInput("");
     setEmails([]);
+    setFilter("");
+    setDropdownOpen(false);
   };
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      // fetch users if list empty
+      if (users.length === 0) dispatch(fetchAdminUsers(undefined));
+    } else {
       resetForm();
     }
-  }, [open]);
+  }, [open, users.length, dispatch]);
 
-  const addEmail = () => {
-    const value = emailInput.trim();
-    if (!value) return;
-    // simple email pattern check
-    const emailPattern = /.+@.+\..+/;
-    if (!emailPattern.test(value)) return;
-    if (!emails.includes(value)) {
-      setEmails(prev => [...prev, value]);
-    }
-    setEmailInput("");
+  const toggleEmail = (email: string) => {
+    setEmails(prev => prev.includes(email) ? prev.filter(x => x !== email) : [...prev, email]);
   };
 
   const removeEmail = (e: string) => {
     setEmails(prev => prev.filter(x => x !== e));
+  };
+
+  const selectAll = () => {
+    if (emails.length === filteredUsers.length) {
+      setEmails([]);
+    } else {
+      setEmails(filteredUsers.map(u => u.email).filter(Boolean));
+    }
   };
 
   const handleSubmit = () => {
@@ -49,13 +55,17 @@ export default function GenerateCode() {
       .unwrap()
       .then(() => {
         setOpenSuccess(true);
-        // refresh summary & list so new codes appear
         dispatch(fetchReferralSummary());
-  dispatch(fetchReferralCodes({ Page: 1, PageSize: 20 }));
+        dispatch(fetchReferralCodes({ Page: 1, PageSize: 20 }));
         resetForm();
       })
-      .catch(() => {/* error handled via generateError */});
+      .catch(() => {});
   };
+
+  const filteredUsers = users.filter(u => (
+    u.email?.toLowerCase().includes(filter.toLowerCase()) ||
+    u.name?.toLowerCase().includes(filter.toLowerCase())
+  ));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -74,21 +84,61 @@ export default function GenerateCode() {
             </button>
           </DialogTitle>
         </DialogHeader>
-        <div className="mt-4 space-y-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-gray-800 text-sm font-medium">Add Email</label>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={emailInput}
-                onChange={e => setEmailInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addEmail(); } }}
-                placeholder="staff@example.com"
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 outline-none"
-              />
-              <Button type="button" variant="ghost" onClick={addEmail} disabled={!emailInput.trim()}>Add</Button>
+        <div className="mt-4 space-y-5">
+          <div className="flex flex-col gap-2 relative">
+            <label className="text-gray-800 text-sm font-medium">Select Teammates</label>
+            <div
+              className="flex items-center justify-between border border-gray-300 rounded-md px-3 py-2 cursor-pointer bg-white"
+              onClick={() => setDropdownOpen(o => !o)}
+            >
+              <span className="text-sm text-gray-600">
+                {emails.length === 0 ? 'Choose teammates' : `${emails.length} selected`}
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </div>
-            <p className="text-xs text-gray-500">Press Enter or click Add to include email. You can add multiple.</p>
+            {dropdownOpen && (
+              <div className="absolute z-50 top-full mt-1 w-full rounded-md border border-gray-200 bg-white shadow-md max-h-64 overflow-auto">
+                <div className="p-2 border-b bg-gray-50 sticky top-0">
+                  <input
+                    value={filter}
+                    onChange={e => setFilter(e.target.value)}
+                    placeholder="Search users..."
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none"
+                  />
+                  <div className="flex items-center justify-between mt-2">
+                    <button type="button" onClick={selectAll} className="text-xs text-primary font-medium">
+                      {emails.length === filteredUsers.length && filteredUsers.length > 0 ? 'Clear all' : 'Select all'}
+                    </button>
+                    <span className="text-[10px] text-gray-500">{filteredUsers.length} users</span>
+                  </div>
+                </div>
+                <ul className="divide-y divide-gray-100">
+                  {loadingUsers && (
+                    <li className="py-4 text-center text-xs text-gray-500">Loading users...</li>
+                  )}
+                  {!loadingUsers && filteredUsers.length === 0 && (
+                    <li className="py-4 text-center text-xs text-gray-500">No users found</li>
+                  )}
+                  {!loadingUsers && filteredUsers.map(u => {
+                    const selected = emails.includes(u.email);
+                    return (
+                      <li
+                        key={u.id}
+                        className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm"
+                        onClick={() => toggleEmail(u.email)}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-gray-800 font-medium">{u.name || '-'}</span>
+                          <span className="text-gray-500 text-xs">{u.email}</span>
+                        </div>
+                        {selected && <Check className="w-4 h-4 text-primary" />}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+            <p className="text-xs text-gray-500">Open and pick teammates; you can select multiple or all.</p>
           </div>
           {emails.length > 0 && (
             <div className="flex flex-wrap gap-2">

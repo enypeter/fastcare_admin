@@ -1,6 +1,8 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
 import {useEffect, useMemo, useState} from 'react';
 import {Button} from '@/components/ui/button';
+import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem} from '@/components/ui/dropdown-menu';
+import {Download} from 'lucide-react';
 //import {ArrowDownLeft, Edit2Icon, InfoIcon, MoreVertical} from 'lucide-react';
 
 import {
@@ -24,12 +26,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+// Removed duplicate dropdown import (consolidated at top)
 
 //import {Pagination} from '@/components/ui/pagination';
 
@@ -288,32 +285,49 @@ const Refunds = () => {
               </div>
               <div className="flex gap-4 items-center">
                 <InitiateARefund />
-                <Button
-                  variant="ghost"
-                  disabled={exporting}
-                  onClick={() => {
-                    // default export to excel (0)
-                    dispatch(exportRefunds({ format: 0, status: appliedFilters.status as number | undefined, PatientName: appliedFilters.patient as string | undefined, Date: appliedFilters.startDate as string | undefined }))
-                      .then((res) => {
-                        const action = res as { payload?: { blob: Blob; params: { format: number } }; error?: unknown };
-                        if (action.payload?.blob) {
-                          const blob = action.payload.blob;
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          const ext = action.payload.params.format === 0 ? 'xlsx' : 'csv';
-                          a.download = `refunds_export.${ext}`;
-                          document.body.appendChild(a);
-                          a.click();
-                          a.remove();
-                          window.URL.revokeObjectURL(url);
-                        }
-                      });
-                  }}
-                  className="py-2.5 w-44"
-                >
-                  {exporting ? 'Exporting...' : 'Export'}
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" disabled={exporting} className="py-2.5 w-44 flex items-center gap-2">
+                      <Download size={18}/> {exporting ? 'Exporting...' : 'Export'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => {
+                      dispatch(exportRefunds({ format: 0, status: appliedFilters.status as number | undefined, PatientName: appliedFilters.patient as string | undefined, Date: appliedFilters.startDate as string | undefined }))
+                        .then(res => {
+                          const action = res as { payload?: { blob: Blob; params: { format: number } } };
+                          if (action.payload?.blob) {
+                            const blob = action.payload.blob;
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'refunds_export.csv';
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            window.URL.revokeObjectURL(url);
+                          }
+                        });
+                    }}>CSV</DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => {
+                      dispatch(exportRefunds({ format: 1, status: appliedFilters.status as number | undefined, PatientName: appliedFilters.patient as string | undefined, Date: appliedFilters.startDate as string | undefined }))
+                        .then(res => {
+                          const action = res as { payload?: { blob: Blob; params: { format: number } } };
+                          if (action.payload?.blob) {
+                            const blob = action.payload.blob;
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'refunds_export.xlsx';
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            window.URL.revokeObjectURL(url);
+                          }
+                        });
+                    }}>Excel</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 

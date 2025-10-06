@@ -10,6 +10,7 @@ import {
   exportReferralCodeUsers,
 } from '@/services/thunks';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Loader } from '@/components/ui/loading';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination } from '@/components/ui/pagination';
@@ -82,7 +83,7 @@ const ReferralCodesPage = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `referral-codes.${format === 0 ? 'xlsx' : 'csv'}`;
+        a.download = `referral-codes.${format === 1 ? 'xlsx' : 'csv'}`;
         a.click();
         URL.revokeObjectURL(url);
       })
@@ -98,7 +99,7 @@ const ReferralCodesPage = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `referral-code-${selectedId}-users.${format === 0 ? 'xlsx' : 'csv'}`;
+        a.download = `referral-code-${selectedId}-users.${format === 1 ? 'xlsx' : 'csv'}`;
         a.click();
         URL.revokeObjectURL(url);
       })
@@ -141,12 +142,17 @@ const ReferralCodesPage = () => {
             <Button onClick={() => { /* triggers useEffect */ }}>Apply</Button>
           </div>
           <div className="ml-auto flex gap-2">
-            <Button disabled={exportingList} variant="ghost" onClick={() => handleExportList(0)} className="flex items-center gap-1">
-              <Download size={16} /> Excel
-            </Button>
-            <Button disabled={exportingList} variant="ghost" onClick={() => handleExportList(1)} className="flex items-center gap-1">
-              <Download size={16} /> CSV
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={exportingList} variant="ghost" className="flex items-center gap-2 w-36">
+                  <Download size={16}/> {exportingList ? 'Exporting...' : 'Export'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleExportList(0)}>CSV</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleExportList(1)}>Excel</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -225,8 +231,8 @@ const ReferralCodesPage = () => {
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold">Users Referred</h3>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="ghost" disabled={exportingUsers} onClick={() => handleExportUsers(0)} className="flex items-center gap-1"><Download size={14}/> Excel</Button>
-                  <Button size="sm" variant="ghost" disabled={exportingUsers} onClick={() => handleExportUsers(1)} className="flex items-center gap-1"><Download size={14}/> CSV</Button>
+                  <Button size="sm" variant="ghost" disabled={exportingUsers} onClick={() => handleExportUsers(0)} className="flex items-center gap-1"><Download size={14}/> CSV</Button>
+                  <Button size="sm" variant="ghost" disabled={exportingUsers} onClick={() => handleExportUsers(1)} className="flex items-center gap-1"><Download size={14}/> Excel</Button>
                 </div>
               </div>
               <div className="border rounded-md max-h-64 overflow-auto">
