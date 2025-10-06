@@ -50,7 +50,12 @@ const HospitalDetails = () => {
     if (!hospital) return;
 
     try {
-      await dispatch(updateHospital(hospital)).unwrap();
+      // Adapt hospital object to expected thunk payload type: Record<string, unknown> & { id: string | number }
+      const payload: Record<string, unknown> & { id: string | number } = {
+        ...hospital,
+        id: hospital.id as string | number,
+      };
+      await dispatch(updateHospital(payload)).unwrap();
 
       setIsEditing(false);
 
