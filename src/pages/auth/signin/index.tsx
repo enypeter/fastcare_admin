@@ -54,7 +54,12 @@ const SignIn = () => {
   // ✅ Handle success / error
   useEffect(() => {
     if (user && token) {
-      navigate('/hospitals/all-hospitals');
+      // Role-based landing
+      if (user.userRole === 'AmbulanceProviderAdmin') {
+        navigate('/ambulance/amenities', { replace: true });
+      } else {
+        navigate('/hospitals/all-hospitals', { replace: true });
+      }
     }
     if (error) {
       toast.error(error);
