@@ -1,4 +1,5 @@
 import { X, Download } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useMemo } from 'react';
@@ -32,7 +33,7 @@ export default function Summary({ open, onOpenChange, base, selected, loadingDet
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `referral-code-${base.id}-users.${format === 0 ? 'xlsx' : 'csv'}`;
+        a.download = `referral-code-${base.id}-users.${format === 1 ? 'xlsx' : 'csv'}`;
         a.click();
         URL.revokeObjectURL(url);
       })
@@ -69,8 +70,15 @@ export default function Summary({ open, onOpenChange, base, selected, loadingDet
                 <span className={`rounded-md px-2 py-1 font-medium ${getStatusColor(base.status)}`}>{base.status || '-'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" disabled={exportingUsers || loadingDetail} onClick={() => handleExportUsers(0)} className="flex w-28 items-center gap-1 rounded-md py-2.5"><Download size={14}/> Excel</Button>
-                <Button variant="ghost" disabled={exportingUsers || loadingDetail} onClick={() => handleExportUsers(1)} className="flex w-28 items-center gap-1 rounded-md py-2.5"><Download size={14}/> CSV</Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" disabled={exportingUsers || loadingDetail} className="flex w-32 items-center gap-2 rounded-md py-2.5"><Download size={14}/> {exportingUsers ? 'Exporting...' : 'Export'} </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleExportUsers(0)}>CSV</DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleExportUsers(1)}>Excel</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
             <div className="mt-6">

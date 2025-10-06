@@ -465,3 +465,69 @@ export interface AdminUsersState {
     PageSize?: number;
   };
 }
+
+// -----------------------------
+// User Reports Types
+// -----------------------------
+
+export interface UserReportItem {
+  date: string; // ISO date string (e.g. 2020-05-08T00:00:00 or 2020-05-08)
+  userCount: number;
+}
+
+export interface UserReportDetailItem {
+  date: string; // date without time per detail response
+  email: string;
+  fullName: string;
+  phoneNumber: string;
+}
+
+export interface UserReportsState {
+  list: UserReportItem[];
+  detail: UserReportDetailItem[];
+  metaData: MetaData | null; // for list
+  detailMeta: MetaData | null; // for detail pagination
+  loadingList: boolean;
+  loadingDetail: boolean;
+  errorList: string | null;
+  errorDetail: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+  };
+  detailFilters: {
+    Page?: number;
+    PageSize?: number;
+    Date?: string; // selected date
+  };
+}
+
+// -----------------------------
+// Appointment Reports Types
+// -----------------------------
+
+export interface AppointmentReportItem {
+  patientName: string;
+  doctorName: string | null;
+  date: string | null; // ISO or yyyy-mm-dd
+  duration: string | null; // e.g. "1 hour(s)"
+}
+
+export interface AppointmentReportsState {
+  list: AppointmentReportItem[];
+  metaData: MetaData | null;
+  loading: boolean;
+  error: string | null;
+  exporting: boolean;
+  exportError: string | null;
+  filters: {
+    StartDate?: string; // ISO date-time
+    EndDate?: string;   // ISO date-time
+    MinDuration?: { ticks: number }; // object shape per spec
+    DoctorName?: string;
+    HospitalId?: string;
+    ClinicId?: string;
+    Page?: number;
+    PageSize?: number;
+  };
+}

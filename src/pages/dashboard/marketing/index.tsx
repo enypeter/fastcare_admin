@@ -268,20 +268,8 @@ const MarketingCampaign = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem onClick={() => {
+                    // CSV (format 0)
                     dispatch(exportReferralCodes({ format: 0, Code: undefined, StaffName: searchTerm || undefined }))
-                      .unwrap()
-                      .then(p => {
-                        const blob = p.blob as Blob;
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'referral-codes.xlsx';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                      }).catch(()=>{});
-                  }} className="cursor-pointer flex items-center gap-2"><Download size={14}/> Excel</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    dispatch(exportReferralCodes({ format: 1, Code: undefined, StaffName: searchTerm || undefined }))
                       .unwrap()
                       .then(p => {
                         const blob = p.blob as Blob;
@@ -293,6 +281,20 @@ const MarketingCampaign = () => {
                         URL.revokeObjectURL(url);
                       }).catch(()=>{});
                   }} className="cursor-pointer flex items-center gap-2"><Download size={14}/> CSV</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    // Excel (format 1)
+                    dispatch(exportReferralCodes({ format: 1, Code: undefined, StaffName: searchTerm || undefined }))
+                      .unwrap()
+                      .then(p => {
+                        const blob = p.blob as Blob;
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'referral-codes.xlsx';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }).catch(()=>{});
+                  }} className="cursor-pointer flex items-center gap-2"><Download size={14}/> Excel</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

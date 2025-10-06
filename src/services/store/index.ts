@@ -11,6 +11,8 @@ import transactionsReducer from '../slice/transactionSlice'
 import refundsReducer from '../slice/refundSlice'
 import referralsReducer from '../slice/referralSlice'
 import adminUsersReducer from '../slice/adminUsersSlice'
+import userReportsReducer from '../slice/userReportsSlice'
+import appointmentReportsReducer from '../slice/appointmentReportsSlice'
 
 
 export const store = configureStore({
@@ -26,7 +28,9 @@ export const store = configureStore({
     transactions: transactionsReducer,
     refunds: refundsReducer,
     referrals: referralsReducer,
-    adminUsers: adminUsersReducer
+    adminUsers: adminUsersReducer,
+    userReports: userReportsReducer,
+    appointmentReports: appointmentReportsReducer
   },
 });
 

@@ -1,8 +1,8 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useMemo, useState} from 'react';
+import {useEffect} from 'react';
 import {Button} from '@/components/ui/button';
-//import {ArrowDownLeft, Edit2Icon, InfoIcon, MoreVertical} from 'lucide-react';
-
+import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem} from '@/components/ui/dropdown-menu';
+import {Download} from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -11,265 +11,251 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-
 import {
   ColumnDef,
-  SortingState,
-  VisibilityState,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-
-//import {Pagination} from '@/components/ui/pagination';
-
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from '@/components/ui/dropdown-menu';
-
 import {ReportingFilter} from '@/features/modules/report/reporting-filter';
-import { Pagination } from '@/components/ui/pagination';
+import {Pagination} from '@/components/ui/pagination';
+import {useDispatch, useSelector} from 'react-redux';
+import {AppDispatch, RootState} from '@/services/store';
+import {
+  fetchAppointmentReports,
+  exportAppointmentReports,
+} from '@/services/thunks';
+import {
+  setAppointmentFilters,
+  setAppointmentPage,
+  setAppointmentPageSize,
+} from '@/services/slice/appointmentReportsSlice';
 
-const transactions = [
-  {
-    id: '1',
-    doctor: 'Dr Thelma George',
-    hospital: 'FMC Asaba',
-    duration: '1 hour, 45 mins',
-    date: '24/07/2023',
-    action: '',
-  },
-  {
-    id: '2',
-    doctor: 'Dr Thelma George',
-    hospital: 'FMC Asaba',
-    duration: '45 mins',
-    date: '24/07/2023',
-    action: '',
-  },
-  {
-    id: '3',
-    doctor: 'Dr Thelma George',
-    hospital: 'FMC Asaba',
-    duration: '1 hour',
-    date: '24/07/2023',
-    action: '',
-  },
-];
+interface AppointmentRow {
+  patientName: string;
+  doctorName: string | null;
+  date: string | null;
+  duration: string | null;
+}
 
 const Reporting = () => {
-  //const [searchTerm, setSearchTerm] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
+  const {
+    list,
+    metaData,
+    loading,
+    error,
+    filters,
+    exporting,
+  } = useSelector((s: RootState) => s.appointmentReports);
+  const page = filters.Page || 1;
+  const pageSize = filters.PageSize || 20;
 
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-  const [columnFilters, setColumnFilters] = useState<any[]>([]);
+  useEffect(() => {
+    dispatch(fetchAppointmentReports({...filters}));
+  }, [dispatch, filters]);
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
-   
-    const totalPages = Math.ceil(transactions.length / pageSize);
-    const paginatedReporting = useMemo(() => {
-      const start = (page - 1) * pageSize;
-      return transactions.slice(start, start + pageSize);
-    }, [transactions, page]);
-
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<AppointmentRow>[] = [
     {
       accessorKey: 'date',
       header: 'Date',
-      filterFn: (row, id, filterValue) => {
-        const rowDate = new Date(row.getValue(id));
-        const start = filterValue?.start ? new Date(filterValue.start) : null;
-        const end = filterValue?.end ? new Date(filterValue.end) : null;
-
-        if (start && rowDate < start) return false;
-        if (end && rowDate > end) return false;
-        return true;
+      cell: ({getValue}) => {
+        const raw = getValue<string | null>();
+        if (!raw) return '-';
+        return raw.includes('T') ? raw.split('T')[0] : raw;
       },
     },
-
     {
-      accessorKey: 'doctor',
+      accessorKey: 'doctorName',
       header: 'Doctor in charge',
+      cell: ({getValue}) => getValue<string | null>() || '-',
     },
-
+    {
+      accessorKey: 'patientName',
+      header: 'Patient Name',
+      cell: ({getValue}) => getValue<string | null>() || '-',
+    },
     {
       accessorKey: 'duration',
       header: 'Session Duration',
+      cell: ({getValue}) => getValue<string | null>() || '-',
     },
   ];
 
   const table = useReactTable({
-    data: paginatedReporting,
+    data: list as AppointmentRow[],
     columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
   });
+  const totalPages = metaData?.totalPages || 1;
+  const empty = !loading && list.length === 0;
 
-  const handleApplyFilter = (filters: any) => {
-    const newFilters: any[] = [];
+  interface RawFilterFormValues {
+    startDate?: string;
+    endDate?: string;
+    doctor?: string;
+    hospital?: string;
+    clinic?: string;
+    duration?: string;
+    appointment?: string;
+  }
 
-    if (filters.clinic) {
-      newFilters.push({id: 'clinic', value: filters.clinic});
+  const handleApplyFilter = (f: RawFilterFormValues) => {
+    const payload: Partial<typeof filters> = {};
+    if (f.startDate) payload.StartDate = f.startDate; // assume already yyyy-mm-dd
+    if (f.endDate) payload.EndDate = f.endDate;
+    if (f.doctor) payload.DoctorName = f.doctor;
+    if (f.hospital) payload.HospitalId = f.hospital;
+    if (f.clinic) payload.ClinicId = f.clinic;
+    if (f.duration) {
+      // naive parse hours: if includes digit
+      const match = f.duration.match(/\d+/);
+      if (match) payload.MinDuration = {ticks: 0};
     }
-    if (filters.duration) {
-      newFilters.push({id: 'duration', value: filters.duration});
-    }
-    if (filters.appointment) {
-      newFilters.push({id: 'appointment', value: filters.appointment});
-    }
-    if (filters.doctor) {
-      newFilters.push({id: 'doctor', value: filters.doctor}); // accessorKey is "name"
-    }
-    if (filters.hospital) {
-      newFilters.push({id: 'hospital', value: filters.hospital});
-    }
-    if (filters.startDate || filters.endDate) {
-      newFilters.push({
-        id: 'date',
-        value: {start: filters.startDate, end: filters.endDate},
-      });
-    }
-
-    setColumnFilters(newFilters);
+    // appointment filter currently unused (not in API spec) so ignored
+    dispatch(setAppointmentFilters(payload));
   };
 
-  // Function to reset filters
   const handleResetFilter = () => {
-    setColumnFilters([]);
+    dispatch(
+      setAppointmentFilters({
+        StartDate: undefined,
+        EndDate: undefined,
+        DoctorName: undefined,
+        HospitalId: undefined,
+        ClinicId: undefined,
+        MinDuration: {ticks: 0},
+      }),
+    );
   };
 
-  const hasData = transactions.length > 0;
+  const handleExport = (format: number) => {
+    dispatch(
+      exportAppointmentReports({
+        format,
+        StartDate: filters.StartDate,
+        EndDate: filters.EndDate,
+        MinDuration: filters.MinDuration,
+        DoctorName: filters.DoctorName,
+        HospitalId: filters.HospitalId,
+        ClinicId: filters.ClinicId,
+      }),
+    )
+      .unwrap()
+      .then(res => {
+        const blob = res.blob as Blob;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download =
+          format === 1
+            ? 'appointment_reports.xlsx'
+            : 'appointment_reports.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => {});
+  };
 
   return (
     <DashboardLayout>
-      {!hasData ? (
-        <div className="flex flex-col items-center justify-center h-[70vh] ">
-          <p className="text-lg font-semibold text-gray-800">
-            You have report yet
-          </p>
-          <p className="text-gray-500 mt-2">All transactions appear here</p>
+      <div className="bg-gray-200 overflow-scroll h-full ">
+        <div className="bg-white p-6 rounded-md flex justify-between items-center mx-8 mt-10">
+          <ReportingFilter
+            onApply={handleApplyFilter}
+            onReset={handleResetFilter}
+          />
         </div>
-      ) : (
-        <div className="bg-gray-200 overflow-scroll h-full ">
-          <div className="bg-white p-6 rounded-md flex justify-between items-center mx-8 mt-10">
-            <ReportingFilter
-              onApply={handleApplyFilter}
-              onReset={handleResetFilter}
-            />
-          </div>
-
-          <div className="lg:mx-8 mt-10 bg-white mb-32 pb-10 rounded-md flex flex-col">
-            <div className="flex flex-wrap gap-4 justify-between items-center p-6">
-              <div className="flex items-center gap-8">
-                <h1 className="text-xl text-gray-800">Appointment</h1>
-              </div>
-              <div className="flex gap-4 items-center">
-                <Button variant="ghost" className="py-2.5 w-44">
-                  Export
-                </Button>
-              </div>
+        <div className="lg:mx-8 mt-10 bg-white mb-32 pb-10 rounded-md flex flex-col">
+          <div className="flex flex-wrap gap-4 justify-between items-center p-6">
+            <div className="flex items-center gap-8">
+              <h1 className="text-xl text-gray-800">Appointment</h1>
             </div>
-
-            <div className="flex-1 overflow-auto px-6 lg:px-0 mt-4">
+            <div className="flex gap-4 items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" disabled={exporting} className="py-2.5 w-44 flex items-center gap-2">
+                    <Download size={18}/> {exporting ? 'Exporting...' : 'Export'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={() => handleExport(0)} className="cursor-pointer">CSV</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport(1)} className="cursor-pointer">Excel</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto px-6 lg:px-0 mt-4">
+            {loading ? (
+              <div className="flex items-center justify-center h-64 text-sm text-gray-500">
+                Loading appointment reports...
+              </div>
+            ) : empty ? (
+              <div className="flex flex-col items-center justify-center h-64 text-gray-600">
+                <p className="font-medium">No appointment report data</p>
+                <p className="text-sm">Adjust filters or date range.</p>
+              </div>
+            ) : (
               <Table className="min-w-[600px]">
                 <TableHeader>
                   {table.getHeaderGroups().map(headerGroup => (
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map(header => (
                         <TableHead className="px-16" key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                         </TableHead>
                       ))}
                     </TableRow>
                   ))}
                 </TableHeader>
                 <TableBody>
-                  {table.getRowModel().rows.length ? (
-                    table.getRowModel().rows.map(row => (
-                      <TableRow
-                        key={row.id}
-                        className="cursor-pointer hover:bg-gray-100"
-                        data-state={row.getIsSelected() && 'selected'}
-                      >
-                        {row.getVisibleCells().map(cell => (
-                          <>
-                            <TableCell
-                              key={cell.id}
-                              className={
-                                cell.column.id === 'actions'
-                                  ? 'text-right px-16'
-                                  : 'px-16'
-                              }
-                            >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </TableCell>
-                          </>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-24 text-center"
-                      >
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">No data available</span>
-                        </div>
-                      </TableCell>
+                  {table.getRowModel().rows.map(row => (
+                    <TableRow
+                      key={row.id}
+                      className="cursor-pointer hover:bg-gray-100"
+                      data-state={row.getIsSelected() && 'selected'}
+                    >
+                      {row.getVisibleCells().map(cell => (
+                        <TableCell
+                          key={cell.id}
+                          className={
+                            cell.column.id === 'actions'
+                              ? 'text-right px-16'
+                              : 'px-16'
+                          }
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  )}
+                  ))}
                 </TableBody>
               </Table>
-            </div>
-
-            {/* Pagination stuck at bottom */}
-            <div className="p-4 flex items-center justify-end ">
+            )}
+            {error && (
+              <div className="p-4 text-sm text-red-600">{error}</div>
+            )}
+          </div>
+          <div className="p-4 flex items-center justify-end ">
             <Pagination
-              totalEntriesSize={transactions.length}
-             
+              totalEntriesSize={metaData?.totalCount || list.length}
               currentPage={page}
               totalPages={totalPages}
-              onPageChange={setPage}
+              onPageChange={p => dispatch(setAppointmentPage(p))}
               pageSize={pageSize}
-              onPageSizeChange={size => {
-                setPageSize(size);
-                setPage(1);
-              }}
+              onPageSizeChange={s => dispatch(setAppointmentPageSize(s))}
             />
           </div>
-          </div>
         </div>
-      )}
+      </div>
     </DashboardLayout>
   );
 };

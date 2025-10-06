@@ -668,3 +668,120 @@ export const toggleAdminUserActive = createAsyncThunk(
     }
   }
 );
+
+// -------------------------------------------------
+// User Reports Thunks
+// -------------------------------------------------
+
+export const fetchUserReports = createAsyncThunk(
+  'userReports/fetchAll',
+  async (
+    params: { Page?: number; PageSize?: number } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get('/Account/get-users-report', { params });
+      const rawList: unknown = res.data.data || [];
+      const list = Array.isArray(rawList) ? rawList.map(item => {
+        const d = item as { date?: string; userCount?: number };
+        return {
+          date: d.date || '',
+          userCount: typeof d.userCount === 'number' ? d.userCount : 0,
+        };
+      }) : [];
+      return { list, metaData: res.data.metaData || null };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch user reports'));
+    }
+  }
+);
+
+export const fetchUserReportDetail = createAsyncThunk(
+  'userReports/fetchDetail',
+  async (
+    params: { Date: string; Page?: number; PageSize?: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { Date, ...rest } = params;
+      const res = await apiClient.get(`/Account/get-users-report-detail/${Date}`, { params: rest });
+      const rawDetail: unknown = res.data.data || [];
+      const detail = Array.isArray(rawDetail) ? rawDetail.map(item => {
+        const d = item as { date?: string; email?: string; fullName?: string; phoneNumber?: string };
+        return {
+          date: d.date || '',
+            email: d.email || '',
+            fullName: d.fullName || '',
+            phoneNumber: d.phoneNumber || '',
+        };
+      }) : [];
+      return { detail, detailMeta: res.data.metaData || null, selectedDate: Date };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch user report detail'));
+    }
+  }
+);
+
+// -------------------------------------------------
+// Appointment Reports Thunks
+// -------------------------------------------------
+
+export const fetchAppointmentReports = createAsyncThunk(
+  'appointmentReports/fetchAll',
+  async (
+    params: {
+      StartDate?: string;
+      EndDate?: string;
+      MinDuration?: { ticks: number };
+      DoctorName?: string;
+      HospitalId?: string;
+      ClinicId?: string;
+      Page?: number;
+      PageSize?: number;
+    } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get('/Appointment/filtered', { params });
+      const rawList: unknown = res.data.data || [];
+      const list = Array.isArray(rawList) ? rawList.map(item => {
+        const d = item as { patientName?: string; doctorName?: string | null; date?: string | null; duration?: string | null };
+        return {
+          patientName: d.patientName || '',
+          doctorName: d.doctorName ?? null,
+          date: d.date ?? null,
+          duration: d.duration ?? null,
+        };
+      }) : [];
+      return { list, metaData: res.data.metaData || null };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch appointment reports'));
+    }
+  }
+);
+
+export const exportAppointmentReports = createAsyncThunk(
+  'appointmentReports/export',
+  async (
+    params: {
+      format: number; // csv = 0, excel = 1
+      StartDate?: string;
+      EndDate?: string;
+      MinDuration?: { ticks: number };
+      DoctorName?: string;
+      HospitalId?: string;
+      ClinicId?: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get('/Appointment/export', {
+        params,
+        responseType: 'blob',
+      });
+      return { blob: res.data, params };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to export appointment reports'));
+    }
+  }
+);
