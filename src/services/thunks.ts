@@ -1,6 +1,22 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiClient from "@/services/axiosInstance";
-import { AmbulanceProvider, CreateAdminPayload, CreateAmbulanceProvider, CreatePasswordT, CreateRolePayload, LoginT } from "@/types";
+import { AmbulanceProvider, CreateAdminPayload, CreateAmbulanceProvider, CreatePasswordT, CreateRolePayload, LoginT, Transaction, Refund } from "@/types";
+import type { AxiosError } from 'axios';
+
+// Utility to safely extract API error messages while avoiding eslint any violation
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const axiosErr = error as AxiosError<{ message?: string; error?: string }>;
+    return (
+      axiosErr.response?.data?.message ||
+      axiosErr.response?.data?.error ||
+      (axiosErr.message) ||
+      fallback
+    );
+  }
+  return fallback;
+};
 
 
 export const loginUser = createAsyncThunk(
@@ -17,8 +33,8 @@ export const loginUser = createAsyncThunk(
       localStorage.setItem("token", authToken);
 
       return { user, token: authToken };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || "Login failed");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Login failed"));
     }
   }
 );
@@ -34,8 +50,8 @@ export const createPasswordUser = createAsyncThunk(
       localStorage.setItem("token", token);
 
       return { user, token };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || "Password creation failed");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Password creation failed"));
     }
   }
 );
@@ -57,8 +73,8 @@ export const fetchHospitals = createAsyncThunk(
     try {
       const res = await apiClient.get("/Hospitals");
       return res.data; 
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || "Failed to fetch hospitals");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch hospitals"));
     }
   }
 );
@@ -71,21 +87,22 @@ export const fetchHospitalById = createAsyncThunk(
     try {
       const res = await apiClient.get(`/Hospitals/${id}`);
        return res.data; 
-    } catch (err: any) {
-      return rejectWithValue(err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch hospital"));
     }
   }
 );
 
 
+// Using generic record type for hospital update to avoid any
 export const updateHospital = createAsyncThunk(
   "hospitals/updateHospital",
-  async (hospital: any, { rejectWithValue }) => {
+  async (hospital: Record<string, unknown> & { id: string | number }, { rejectWithValue }) => {
     try {
       const response = await apiClient.put(`/Hospitals/${hospital.id}`, hospital);
       return response.data; // updated hospital
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || "Update failed");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Update failed"));
     }
   }
 );
@@ -141,8 +158,8 @@ export const fetchDoctorById = createAsyncThunk(
     try {
       const res = await apiClient.get(`/doctors/${id}`);
        return res.data.data; 
-    } catch (err: any) {
-      return rejectWithValue(err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch doctor"));
     }
   }
 );
@@ -154,8 +171,8 @@ export const approveDoctor = createAsyncThunk(
     try {
       const res = await apiClient.put(`/doctors/${doctorId}/approve`);
       return res.data; // return updated doctor info if needed
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || "Approval failed");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Approval failed"));
     }
   }
 );
@@ -167,8 +184,8 @@ export const fetchDoctorDashboardById = createAsyncThunk(
     try {
       const res = await apiClient.get(`/doctors/${id}/dashboard`);
        return res.data.data; 
-    } catch (err: any) {
-      return rejectWithValue(err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch doctor dashboard"));
     }
   }
 );
@@ -179,8 +196,8 @@ export const deleteDoctor = createAsyncThunk(
     try {
       const res = await apiClient.delete(`/doctors/${doctorId}`);
       return res.data; // { statusCode, data, metaData }
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || "Failed to delete doctor");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to delete doctor"));
     }
   }
 );
@@ -202,8 +219,8 @@ export const addFAQ = createAsyncThunk(
     try {
       const res = await apiClient.post("/FAQ", payload);
       return res.data; // return the new FAQ
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || "Failed to add FAQ");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to add FAQ"));
     }
   }
 );
@@ -227,8 +244,8 @@ export const fetchProfile = createAsyncThunk(
     try {
       const res = await apiClient.get("/Account/profile");
       return res.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data || "Failed to fetch profile");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch profile"));
     }
   }
 )
@@ -239,8 +256,8 @@ export const fetchRoles = createAsyncThunk(
     try {
       const res = await apiClient.get("/Account/get-roles");
       return res.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data || "Failed to fetch role");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch role"));
     }
   }
 )
@@ -251,8 +268,8 @@ export const createAdmin = createAsyncThunk(
     try {
       const res = await apiClient.post("/Account/create-admin", payload);
       return res.data; // newly created admin data
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to create admin"));
     }
   }
 );
@@ -263,20 +280,20 @@ export const createRole = createAsyncThunk(
     try {
       const res = await apiClient.post("/Account/add-role", payload);
       return res.data; // newly created admin data
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to create role"));
     }
   }
 );
 
 export const updateProfile = createAsyncThunk(
   "account/updateProfile",
-  async (payload: any, { rejectWithValue }) => {
+  async (payload: Record<string, unknown>, { rejectWithValue }) => {
     try {
       const res = await apiClient.post("/Account/update", payload);
       return res.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || "Error updating profile");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Error updating profile"));
     }
   }
 );
@@ -292,8 +309,8 @@ export const fetchAmbulanceProviders = createAsyncThunk<
         params: { Page: page, PageSize: pageSize },
       });
       return res.data.data.flat(); 
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data || "Failed to fetch providers");
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch providers"));
     }
   }
 );
@@ -305,8 +322,8 @@ export const createAmbulanceProviders = createAsyncThunk(
     try {
       const res = await apiClient.post("/AmbulanceProviders", payload);
       return res.data; // newly created admin data
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to create ambulance provider"));
     }
   }
 );
@@ -318,8 +335,8 @@ export const activateAmbulanceProvider = createAsyncThunk(
     try {
       const res = await apiClient.put(`/AmbulanceProviders/${id}/activate`);
       return res.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to activate provider"));
     }
   }
 );
@@ -330,8 +347,8 @@ export const deactivateAmbulanceProvider = createAsyncThunk(
     try {
       const res = await apiClient.put(`/AmbulanceProviders/${id}/deactivate`);
       return res.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to deactivate provider"));
     }
   }
 );
@@ -352,8 +369,8 @@ export const fetchArticles = createAsyncThunk(
         articles: res.data.data,     // actual article list
         metaData: res.data.metaData, // pagination info
       };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch articles"));
     }
   }
 );
@@ -367,8 +384,229 @@ export const createArticles = createAsyncThunk(
         headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || err.message);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to create article"));
+    }
+  }
+);
+
+// -------------------------------------------------
+// Transactions Thunks
+// -------------------------------------------------
+
+export const fetchTransactions = createAsyncThunk(
+  "transactions/fetchAll",
+  async (
+    params: {
+      Page?: number;
+      PageSize?: number;
+      Status?: string;
+      HospitalName?: string;
+      PatientName?: string;
+      Date?: string; // ISO date (backend seems to accept a single date filter)
+      ServiceType?: string;
+    } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get("/Payment/get-transactions", {
+        params: params,
+      });
+
+      const data: Transaction[] = res.data.data || [];
+      return {
+        transactions: data,
+        metaData: res.data.metaData || null,
+      };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch transactions"));
+    }
+  }
+);
+
+// -------------------------------------------------
+// Refunds Thunks
+// -------------------------------------------------
+
+export const fetchRefunds = createAsyncThunk(
+  "refunds/fetchAll",
+  async (
+    params: {
+      Page?: number;
+      PageSize?: number;
+      Status?: number; // success = 1, failed = 2 (per spec)
+      PatientName?: string;
+      Date?: string;
+    } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get("/Refund", { params });
+      const data: Refund[] = res.data.data || [];
+      return { refunds: data, metaData: res.data.metaData || null };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch refunds"));
+    }
+  }
+);
+
+export const fetchRefundById = createAsyncThunk(
+  "refunds/fetchById",
+  async (id: number, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get(`/Refund/${id}`);
+      return res.data as Refund;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch refund details"));
+    }
+  }
+);
+
+export const createRefund = createAsyncThunk(
+  "refunds/create",
+  async (
+    payload: {
+      TransactionId: string;
+      RefundAmount: number;
+      RefundReason: string;
+      PatientName: string;
+      Document?: File | null;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const formData = new FormData();
+      formData.append("TransactionId", payload.TransactionId);
+      formData.append("RefundAmount", String(payload.RefundAmount));
+      formData.append("RefundReason", payload.RefundReason);
+      formData.append("PatientName", payload.PatientName);
+      if (payload.Document) formData.append("Document", payload.Document);
+
+      const res = await apiClient.post("/Refund", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data; // Assume API returns the created refund or status
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to create refund"));
+    }
+  }
+);
+
+export const exportRefunds = createAsyncThunk(
+  "refunds/export",
+  async (
+    params: {
+      format: number; // excel = 0, csv = 1
+      status?: number; // success = 1, failed = 2
+      PatientName?: string;
+      Date?: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get("/Refund/export", {
+        params,
+        responseType: "blob", // to handle file download
+      });
+      return { blob: res.data, params };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to export refunds"));
+    }
+  }
+);
+
+// -------------------------------------------------
+// Referral Codes (Marketing) Thunks
+// -------------------------------------------------
+
+export const fetchReferralSummary = createAsyncThunk(
+  "referrals/fetchSummary",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get("/ReferralCode/get-summary");
+      return res.data; // { code, totalReferralCodeUsed, staffName }
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch referral summary"));
+    }
+  }
+);
+
+export const fetchReferralCodes = createAsyncThunk(
+  "referrals/fetchCodes",
+  async (
+    params: { Page?: number; PageSize?: number; Code?: string; StaffName?: string } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get("/ReferralCode", { params });
+      return { codes: res.data.data || [], metaData: res.data.metaData || null };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch referral codes"));
+    }
+  }
+);
+
+export const fetchReferralCodeById = createAsyncThunk(
+  "referrals/fetchById",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get(`/ReferralCode/${id}`);
+      return res.data; // { id, code, dateCreated, referralCodeUsers: [] }
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to fetch referral code detail"));
+    }
+  }
+);
+
+export const exportReferralCodes = createAsyncThunk(
+  "referrals/exportCodes",
+  async (
+    params: { format: number; Code?: string; StaffName?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get("/ReferralCode/export", {
+        params,
+        responseType: "blob",
+      });
+      return { blob: res.data, params };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to export referral codes"));
+    }
+  }
+);
+
+export const exportReferralCodeUsers = createAsyncThunk(
+  "referrals/exportUsers",
+  async (
+    payload: { id: string; format: number },
+    { rejectWithValue }
+  ) => {
+    const { id, format } = payload;
+    try {
+      const res = await apiClient.get(`/ReferralCode/${id}/export-users-referred`, {
+        params: { format },
+        responseType: "blob",
+      });
+      return { blob: res.data, id, format };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to export referral users"));
+    }
+  }
+);
+
+export const generateReferralCodes = createAsyncThunk(
+  "referrals/generateCodes",
+  async (payload: { UserEmails: string[] }, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      payload.UserEmails.forEach(e => formData.append("UserEmails", e));
+      const res = await apiClient.post("/ReferralCode", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data; // assume returns generated codes or status
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to generate referral codes"));
     }
   }
 );

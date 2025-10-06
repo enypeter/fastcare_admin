@@ -1,168 +1,115 @@
-import { ChevronRight, ChevronLeft, X } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Success from "../../../features/modules/dashboard/success";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useDispatch, useSelector } from "react-redux";
+import { generateReferralCodes, fetchReferralCodes, fetchReferralSummary } from "@/services/thunks";
+import type { AppDispatch, RootState } from "@/services/store";
 
 export default function GenerateCode() {
-  const [openSuccess, setOpenSuccess] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const { generating, generateError } = useSelector((s: RootState) => s.referrals);
+
   const [open, setOpen] = useState(false);
-  const [showTeammates, setShowTeammates] = useState(false);
+  const [openSuccess, setOpenSuccess] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [emails, setEmails] = useState<string[]>([]);
 
-  const teammates = [
-    { id: 1, name: "John Doe", email: "john@example.com" },
-    { id: 2, name: "Pascal", email: "pascal@example.com" },
-    { id: 3, name: "Ogechi", email: "ogechi@example.com" },
-  ];
-
-  const handleSubmit = () => {
-    setOpenSuccess(true);
+  const resetForm = () => {
+    setEmailInput("");
+    setEmails([]);
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
+  useEffect(() => {
+    if (!open) {
+      resetForm();
+    }
+  }, [open]);
+
+  const addEmail = () => {
+    const value = emailInput.trim();
+    if (!value) return;
+    // simple email pattern check
+    const emailPattern = /.+@.+\..+/;
+    if (!emailPattern.test(value)) return;
+    if (!emails.includes(value)) {
+      setEmails(prev => [...prev, value]);
+    }
+    setEmailInput("");
+  };
+
+  const removeEmail = (e: string) => {
+    setEmails(prev => prev.filter(x => x !== e));
+  };
+
+  const handleSubmit = () => {
+    if (emails.length === 0 || generating) return;
+    dispatch(generateReferralCodes({ UserEmails: emails }))
+      .unwrap()
+      .then(() => {
+        setOpenSuccess(true);
+        // refresh summary & list so new codes appear
+        dispatch(fetchReferralSummary());
+  dispatch(fetchReferralCodes({ Page: 1, PageSize: 20 }));
+        resetForm();
+      })
+      .catch(() => {/* error handled via generateError */});
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="py-3 w-36 rounded-md">Generate Code</Button>
+        <Button className="py-3 w-40 rounded-md">Generate Code</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader className="flex w-full items-center justify-between">
           <DialogTitle className="flex w-full items-center justify-between border-b py-2">
             <div>
-              <span className="text-gray-800 text-2xl font-normal">
-                Generate Code
-              </span>
-              <p className="text-gray-500 text-md font-normal">
-                Send code to teammate as single or a batch
-              </p>
+              <span className="text-gray-800 text-2xl font-normal">Generate Code</span>
+              <p className="text-gray-500 text-sm font-normal">Send referral codes to one or multiple staff emails</p>
             </div>
-
-            <button
-              onClick={() => setOpen(false)}
-              type="button"
-              className="p-1 border border-gray-300 rounded-full hover:bg-gray-100"
-            >
+            <button onClick={() => setOpen(false)} type="button" className="p-1 border border-gray-300 rounded-full hover:bg-gray-100">
               <X className="w-5 h-5 text-primary" />
             </button>
           </DialogTitle>
         </DialogHeader>
-
-        {/* If not showing teammates - show selection */}
-        {!showTeammates ? (
-          <div className="overflow-scroll">
-            <div className="grid grid-cols-1 gap-2 mt-2">
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-800">Send to email</label>
-                <Select>
-                  <SelectTrigger className="border border-gray-300 rounded-lg px-3 py-3 text-gray-800">
-                    <SelectValue placeholder="Add email or name" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teammates.map((tm) => (
-                      <SelectItem key={tm.id} value={tm.email}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback>
-                              {getInitials(tm.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{tm.name}</span>
-                          <span className="ml-2">
-                            {tm.email}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="mt-4 space-y-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-gray-800 text-sm font-medium">Add Email</label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={emailInput}
+                onChange={e => setEmailInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addEmail(); } }}
+                placeholder="staff@example.com"
+                className="flex-1 border border-gray-300 rounded-md px-3 py-2 outline-none"
+              />
+              <Button type="button" variant="ghost" onClick={addEmail} disabled={!emailInput.trim()}>Add</Button>
             </div>
-
-            <div className="flex justify-between items-center gap-4 mt-6">
-              <Button onClick={handleSubmit} className="py-3 w-48 rounded-md">
-                Send code
-              </Button>
-            </div>
-
-            <div className="mt-6">
-              <h1 className="text-gray-500 text-lg font-normal">
-                See all teammates
-              </h1>
-
-              <div
-                className="flex items-center justify-between text-gray-500 text-lg font-normal cursor-pointer"
-                onClick={() => setShowTeammates(true)}
-              >
-                <h1>
-                  {teammates.map((t) => t.name).join(", ")}
-                </h1>
-                <ChevronRight className="w-6 h-6 ml-2" />
-              </div>
-            </div>
+            <p className="text-xs text-gray-500">Press Enter or click Add to include email. You can add multiple.</p>
           </div>
-        ) : (
-          // If showing teammates
-          <div className="mt-1">
-            <div className="flex justify-between items-center">
-              <button
-                onClick={() => setShowTeammates(false)}
-                className="flex items-center text-gray-600"
-              >
-                <ChevronLeft className="w-5 h-5 mr-1" />
-                Back
-              </button>
-
-              <Button className="py-2 rounded-md" onClick={handleSubmit}>
-                Send All
-              </Button>
-            </div>
-
-            <div className="mt-2">
-              {teammates.map((tm) => (
-                <div
-                  key={tm.id}
-                  className="flex items-center gap-2  p-2 rounded-lg"
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getInitials(tm.name)}</AvatarFallback>
-                  </Avatar>
-                  
-                    <p className="text-gray-800 text-md">{tm.name}</p>
-                    <p className="text-gray-800 text-md ">{tm.email}</p>
-                  
-                </div>
+          {emails.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {emails.map(e => (
+                <span key={e} className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700 border border-blue-200">
+                  {e}
+                  <button type="button" onClick={() => removeEmail(e)} className="text-blue-500 hover:text-blue-800">&times;</button>
+                </span>
               ))}
             </div>
+          )}
+          {generateError && <p className="text-xs text-red-600">{generateError}</p>}
+          <div className="pt-2 flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => { resetForm(); setOpen(false); }}>Cancel</Button>
+            <Button type="button" onClick={handleSubmit} disabled={emails.length === 0 || generating} className="min-w-32">
+              {generating ? 'Generating...' : 'Generate'}
+            </Button>
           </div>
-        )}
+        </div>
       </DialogContent>
-
-      <Success
-        open={openSuccess}
-        setOpen={setOpenSuccess}
-        text="You've successfully added a new user."
-      />
+      <Success open={openSuccess} setOpen={setOpenSuccess} text="Referral codes generated successfully." />
     </Dialog>
   );
 }

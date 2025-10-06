@@ -315,3 +315,125 @@ export type CreateArticle = {
   Tag: string;
   Image?: string;
 };
+
+// -----------------------------
+// Transactions & Refunds Types
+// -----------------------------
+
+export interface Transaction {
+  hospitalName: string | null;
+  patientName: string;
+  amount: number;
+  date: string; // ISO date string
+  serviceType: string; // e.g. Consultation, Registration, Emergency
+  paymentStatus: string; // COMPLETED, PENDING, FAILED etc.
+  transactionId: string;
+}
+
+export interface TransactionsState {
+  transactions: Transaction[];
+  metaData: MetaData | null;
+  loading: boolean;
+  error: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+    Status?: string;
+    HospitalName?: string;
+    PatientName?: string;
+    Date?: string; // single date filter (API appears to accept one date parameter)
+    ServiceType?: string;
+  };
+}
+
+export interface Refund {
+  id: number;
+  refundReason: string;
+  refundAmount: number;
+  requestDate: string; // ISO date
+  disputeDate: string | null; // may be null
+  refundReference: string;
+  status: string; // PENDING | APPROVED | FAILED ...
+  transactionId: string;
+  walletNumber: string | null;
+  patientName: string;
+  patientId: string | null;
+  approver: string | null;
+  createdBy: string | null;
+  document: string | null; // URL or file name
+}
+
+export interface RefundsState {
+  refunds: Refund[];
+  metaData: MetaData | null;
+  loading: boolean;
+  error: string | null;
+  creating: boolean;
+  createError: string | null;
+  selectedRefund: Refund | null;
+  exporting: boolean;
+  exportError: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+    Status?: number; // success = 1, failed = 2
+    PatientName?: string;
+    Date?: string;
+  };
+}
+
+// -----------------------------
+// Referral Codes / Marketing Types
+// -----------------------------
+
+export interface ReferralCodeSummary {
+  code: string;
+  totalReferralCodeUsed: number;
+  staffName: string;
+}
+
+export interface ReferralCodeItem {
+  id: string;
+  code: string;
+  totalUsersRegistered: number;
+  staffName: string;
+}
+
+export interface ReferralCodeUser {
+  name: string;
+  email: string;
+  phoneNumber: string;
+  registrationDate: string; // ISO date
+}
+
+export interface ReferralCodeDetail {
+  id: string;
+  code: string;
+  dateCreated: string; // ISO date
+  referralCodeUsers: ReferralCodeUser[];
+}
+
+export interface ReferralCodesState {
+  summary: ReferralCodeSummary | null;
+  codes: ReferralCodeItem[];
+  selected: ReferralCodeDetail | null;
+  metaData: MetaData | null;
+  loadingSummary: boolean;
+  loadingList: boolean;
+  loadingDetail: boolean;
+  generating: boolean;
+  exportingList: boolean;
+  exportingUsers: boolean;
+  errorSummary: string | null;
+  errorList: string | null;
+  errorDetail: string | null;
+  generateError: string | null;
+  exportListError: string | null;
+  exportUsersError: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+    Code?: string;
+    StaffName?: string;
+  };
+}
