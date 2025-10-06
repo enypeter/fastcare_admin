@@ -7,7 +7,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import toast from 'react-hot-toast';
 import Success from "../../../features/modules/dashboard/success";
 import {
   Select,
@@ -19,14 +20,14 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/services/store";
 import { fetchRoles, createAdmin } from "@/services/thunks"; // make sure you have this thunk
-import { useEffect } from "react";
+// removed duplicate useEffect import consolidated above
 
 export default function AddUser() {
   const [openSuccess, setOpenSuccess] = useState(false);
   const [open, setOpen] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
-  const { roles, rolesLoading, rolesError } = useSelector(
+  const { roles, rolesLoading, rolesError, createLoading, createError } = useSelector(
     (state: RootState) => state.account
   );
 
@@ -39,19 +40,31 @@ export default function AddUser() {
   }, [dispatch]);
 
   const handleSubmit = async () => {
-    if (!name || !email || !role) return;
-
+    if (!name || !email || !role || createLoading) return;
     try {
       await dispatch(createAdmin({ name, email, role })).unwrap();
+      toast.success('User created successfully');
       setOpenSuccess(true);
       setOpen(false);
-      setName("");
-      setEmail("");
-      setRole("");
+      setName('');
+      setEmail('');
+      setRole('');
     } catch (error) {
-      console.error("Failed to create admin:", error);
+      // error already in slice, toast below effect; still log
+      console.error('Failed to create admin:', error);
     }
   };
+
+  useEffect(() => {
+    if (createError) {
+      // specific duplicate email message mapping
+      if (createError.toLowerCase().includes('already exists')) {
+        toast.error('Email address already exists');
+      } else {
+        toast.error(createError);
+      }
+    }
+  }, [createError]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -123,11 +136,11 @@ export default function AddUser() {
 
         <div className="flex justify-between items-center gap-4 mt-8">
           <Button
-            disabled={!name || !email || !role}
+            disabled={!name || !email || !role || createLoading}
             onClick={handleSubmit}
-            className="py-3 w-48 rounded-md"
+            className="py-3 w-48 rounded-md disabled:opacity-60"
           >
-            Add user
+            {createLoading ? 'Adding...' : 'Add user'}
           </Button>
         </div>
       </DialogContent>

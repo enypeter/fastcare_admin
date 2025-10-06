@@ -437,3 +437,31 @@ export interface ReferralCodesState {
     StaffName?: string;
   };
 }
+
+// -----------------------------
+// Admin Users (Teammates) Types
+// -----------------------------
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  roleAssigned: string[]; // list of roles assigned
+  lastLogin: string | null; // ISO date or null
+  isActive: boolean;
+}
+
+export interface AdminUsersState {
+  users: AdminUser[];
+  metaData: MetaData | null;
+  loading: boolean;
+  error: string | null;
+  updating: boolean;
+  updateError: string | null;
+  toggling: boolean;
+  toggleError: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+  };
+}

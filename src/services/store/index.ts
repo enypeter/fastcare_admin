@@ -10,6 +10,7 @@ import articlesReducer from '../slice/articleSlice'
 import transactionsReducer from '../slice/transactionSlice'
 import refundsReducer from '../slice/refundSlice'
 import referralsReducer from '../slice/referralSlice'
+import adminUsersReducer from '../slice/adminUsersSlice'
 
 
 export const store = configureStore({
@@ -24,7 +25,8 @@ export const store = configureStore({
     articles: articlesReducer,
     transactions: transactionsReducer,
     refunds: refundsReducer,
-    referrals: referralsReducer
+    referrals: referralsReducer,
+    adminUsers: adminUsersReducer
   },
 });
 
