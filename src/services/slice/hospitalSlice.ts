@@ -8,7 +8,7 @@ const initialState: HospitalState = {
   selectedHospital: null,   // ✅ add this
   loading: false,
   error: null,
-    createLoading: false,
+  createLoading: false,
   createError: null,
 };
 

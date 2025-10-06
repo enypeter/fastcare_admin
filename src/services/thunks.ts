@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiClient from "@/services/axiosInstance";
-import { CreateAdminPayload, CreatePasswordT, CreateRolePayload, LoginT } from "@/types";
+import { Amenity, CreateAdminPayload, CreatePasswordT, CreateRolePayload, LoginT } from "@/types";
 
 export const loginUser = createAsyncThunk(
   "auth/login",
@@ -277,6 +277,83 @@ export const updateProfile = createAsyncThunk(
       return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data || "Error updating profile");
+    }
+  }
+);
+
+// export const fetchAmenities = createAsyncThunk(
+//   "amenities/fetchAll",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       const res = await apiClient.get("/Amenities");
+//       return res.data; 
+//     } catch (err: any) {
+//       return rejectWithValue(err.response?.data?.message || "Failed to fetch amenities");
+//     }
+//   }
+// );
+
+export const fetchAmenities = createAsyncThunk(
+  "amenities/fetchAll",
+  async (providerId: string, { rejectWithValue }) => { // Add providerId parameter
+    try {
+      const res = await apiClient.get(`/Amenities?providerId=${providerId}`);
+      // OR if it's a path parameter:
+      // const res = await apiClient.get(`/providers/${providerId}/amenities`);
+      return res.data; 
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch amenities");
+    }
+  }
+);
+
+export const fetchAmenityById = createAsyncThunk(
+  "amenities/fetchById",
+  async (equipmentName: string, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get(`/amenities/${equipmentName}`);
+      return res.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch amenity");
+    }
+  }
+);
+
+export const createAmenity = createAsyncThunk(
+  "amenities/create",
+  async (amenityData: Omit<Amenity, 'equipmentName'>, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.post("/amenities", amenityData);
+      return res.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to create amenity");
+    }
+  }
+);
+
+export const updateAmenity = createAsyncThunk(
+  "amenities/update",
+  async ({ equipmentName, updateData }: { 
+    equipmentName: string; 
+    updateData: Partial<Amenity> 
+  }, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.patch(`/amenities/${equipmentName}`, updateData);
+      return res.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to update amenity");
+    }
+  }
+);
+
+export const fetchAmbulanceProviders = createAsyncThunk(
+  "ambulanceProviders/fetchAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get("/AmbulanceProviders");
+      return res.data.data; 
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch ambulance providers");
     }
   }
 );

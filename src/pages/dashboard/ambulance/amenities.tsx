@@ -1,5 +1,5 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
 
 import {
   Table,
@@ -26,27 +26,25 @@ import {Pagination} from '@/components/ui/pagination';
 import CreateAmenities from '@/components/form/ambulance/amenities/create-amenities';
 import EditAmenities from '@/components/form/ambulance/amenities/edit-amenities';
 import { Trash } from 'lucide-react';
+import {useDispatch, useSelector} from 'react-redux';
+import {AppDispatch, RootState} from '@/services/store';
+import { fetchAmenities } from '@/services/thunks';
+
 
 //import {ProviderFilter} from '@/features/modules/providers/filter';
 
-const amenities = [
-  {
-    id: '1',
-    name: 'Name',
-    type: 'Defibrillator',
-    serial: 'UYgh123456u8k',
-    date: '2023-01-01',
-    action: '',
-  },
-  {
-    id: '2',
-    name: 'Name',
-    type: 'Ventilator',
-    serial: 'UYgh123456u8k',
-    date: '2023-01-01',
-    action: '',
-  },
-];
+// const amenities = [
+//   {
+//     id: '1',
+//     name: 'Name',
+//     type: 'Defibrillator',
+//     serial: 'UYgh123456u8k',
+//     date: '2023-01-01',
+//     action: '',
+//   }
+ 
+ 
+// ];
 
 const Amenities = () => {
   //   const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +55,18 @@ const Amenities = () => {
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  
+  // Fixed: Properly typed Redux hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const { amenities, loading, error } = useSelector((state: RootState) => state.amenities);
+
+  const providerId = useSelector((state: RootState) => state.auth.user?.id); 
+
+  useEffect(() => {
+    if(!amenities.length && providerId){
+      dispatch(fetchAmenities(providerId));
+    }
+  }, [dispatch, amenities.length, providerId]);
 
   //   const filteredProviders = hospitals.filter(item =>
   //     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -66,31 +76,29 @@ const Amenities = () => {
   const paginatedProviders = useMemo(() => {
     const start = (page - 1) * pageSize;
     return amenities.slice(start, start + pageSize);
-  }, [amenities, page]);
+  }, [amenities, page, pageSize]); // Added pageSize to dependencies
 
+  // Fixed: Properly typed columns based on your amenities data structure
   const columns: ColumnDef<any>[] = [
-
     {
-      accessorKey: 'name',
-      header: 'Equipment name',
-    },
-
-    {
-      accessorKey: 'type',
-      header: 'Type/Category',
+      accessorKey: 'equipmentName', // Changed from 'name' to match your type
+      header: 'Equipment Name', // Fixed capitalization
     },
     {
-      accessorKey: 'serial',
-      header: 'Serial Number',
+      accessorKey: 'description',
+      header: 'Description',
     },
-
+    // {
+    //   accessorKey: 'serial',
+    //   header: 'Serial Number',
+    // },
     {
       id: 'action',
       header: 'Action',
       enableHiding: false,
       cell: ({row}) => {
-        // Check if row is empty
-        const isEmptyRow = !row.original.id && !row.original.name;
+        // Check if row is empty - updated to match your data structure
+        const isEmptyRow = !row.original.equipmentName && !row.original.description;
 
         if (isEmptyRow) {
           return null; // nothing rendered for empty row
@@ -145,6 +153,29 @@ const Amenities = () => {
   //     setColumnFilters([]);
   //   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          Loading amenities...
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="text-red-500 p-4 text-center">
+          Error: {error}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if(!providerId){
   return (
     <DashboardLayout>
       <div className="bg-gray-100 overflow-scroll h-full ">
@@ -192,19 +223,17 @@ const Amenities = () => {
                       data-state={row.getIsSelected() && 'selected'}
                     >
                       {row.getVisibleCells().map(cell => (
-                        <>
-                          <TableCell
-                            key={cell.id}
-                            className={
-                              cell.column.id === 'actions' ? 'text-right' : ''
-                            }
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        </>
+                        <TableCell
+                          key={cell.id} // Moved key here and removed fragment
+                          className={
+                            cell.column.id === 'actions' ? 'text-right' : ''
+                          }
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))
@@ -214,9 +243,9 @@ const Amenities = () => {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      <div className="flex flex-col items-start">
+                      <div className="flex flex-col items-center justify-center gap-2">
                         <span className="font-medium">
-                          No ambulance amenities  found
+                          No ambulance amenities found
                         </span>
                         <span className="font-medium">
                           All added amenities appear here
@@ -249,6 +278,8 @@ const Amenities = () => {
       </div>
     </DashboardLayout>
   );
+  }
+
 };
 
 export default Amenities;

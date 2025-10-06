@@ -259,3 +259,39 @@ export type CreateAdminPayload = {
 export type CreateRolePayload = {
   role: string;
 };
+
+export interface Amenity {
+  equipmentName: string;
+  description: string;
+  action: boolean;
+}
+
+export interface AmenitiesState {
+  amenities: Amenity[];
+  selectedAmenity: Amenity | null;
+  loading: boolean;
+  error: string | null;
+  createLoading: boolean;
+  createError: string | null;
+  updateLoading: boolean;
+  updateError: string | null;
+}
+
+export interface AmbulanceProvider {
+  id: string;
+  registrationNumber: string;
+  address: string;
+  email: string;
+  adminName: string;
+  phoneNumber: string;
+  serviceCharge: number;
+}
+
+export interface AmbulanceProviderState {
+  providers: AmbulanceProvider[];
+  selectedProvider: AmbulanceProvider | null;
+  loading: boolean;
+  error: string | null;
+  createLoading: boolean;
+  createError: string | null;
+}
