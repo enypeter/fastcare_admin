@@ -49,9 +49,9 @@ export interface Hospital {
   hospitalCode: string;
   userId: string;
   hospitalNumber: string;
-  virtualConsultationFee: number;
+  virtualConsultationCharge: number;
   registrationFee: number;
-  physicalConsultationFee: number;
+  physicalConsultationCharge: number;
   consultationFee: number;
   status: string;
   isActive: boolean;

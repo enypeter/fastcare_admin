@@ -69,7 +69,7 @@ const SignIn = () => {
   return (
     <AuthLayout>
       {/* White card */}
-      <div className="px-14 py-16 flex flex-col mt-10">
+      <div className="px-14 flex flex-col">
         {/* {user ? <p>Welcome {user.name}</p> : <p>Please log in</p>} */}
         <div className="mb-6">
           <h2 className="text-xl font-medium">Log in</h2>
