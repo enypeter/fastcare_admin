@@ -63,11 +63,15 @@ export const createPasswordUser = createAsyncThunk(
 
 export const createHospital = createAsyncThunk(
   "hospitals/createHospital",
-  async (formData: FormData) => {
-    const response = await apiClient.post("/Hospitals", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data;
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post("/Hospitals", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to create hospital"));
+    }
   }
 );
 
@@ -79,6 +83,25 @@ export const fetchHospitals = createAsyncThunk(
       return res.data; 
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, "Failed to fetch hospitals"));
+    }
+  }
+);
+
+// Export hospitals list (format: csv = 0, excel = 1)
+export const exportHospitals = createAsyncThunk(
+  "hospitals/export",
+  async (
+    params: { format: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get("/Hospitals/export", {
+        params,
+        responseType: 'blob',
+      });
+      return { blob: res.data, params };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to export hospitals'));
     }
   }
 );
@@ -114,42 +137,48 @@ export const updateHospital = createAsyncThunk(
 export const fetchDoctors = createAsyncThunk(
   'doctors/fetchDoctors',
   async (
-    params?: { page?: number; pageSize?: number } // ✅ optional param
+    params: { page?: number; pageSize?: number } | undefined,
+    { rejectWithValue }
   ) => {
-    const { page, pageSize } = params || {};
-
-    const res = await apiClient.get(
-      `/doctors?page=${page ?? ''}&pageSize=${pageSize ?? ''}`
-    );
-
-    const data = res.data.data.flat();
-
-    return {
-      doctors: data,
-      totalCount: res.data.metaData?.totalCount ?? data.length,
-      totalPages: res.data.metaData?.totalPages ?? 1,
-      currentPage: res.data.metaData?.currentPage ?? 1,
-      pageSize: res.data.metaData?.pageSize ?? pageSize ?? data.length,
-      hasNext: res.data.metaData?.hasNext ?? false,
-      hasPrevious: res.data.metaData?.hasPrevious ?? false,
-    };
+    try {
+      const { page, pageSize } = params || {};
+      const res = await apiClient.get(
+        `/doctors?page=${page ?? ''}&pageSize=${pageSize ?? ''}`
+      );
+      const data = res.data.data.flat();
+      return {
+        doctors: data,
+        totalCount: res.data.metaData?.totalCount ?? data.length,
+        totalPages: res.data.metaData?.totalPages ?? 1,
+        currentPage: res.data.metaData?.currentPage ?? 1,
+        pageSize: res.data.metaData?.pageSize ?? pageSize ?? data.length,
+        hasNext: res.data.metaData?.hasNext ?? false,
+        hasPrevious: res.data.metaData?.hasPrevious ?? false,
+      };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch doctors'));
+    }
   }
 );
 
 export const fetchPendingDoctors = createAsyncThunk(
  'doctors/fetchPendingDoctors',
-  async ({ page, pageSize }: { page: number; pageSize: number }) => {
-    const res = await apiClient.get(`/doctors/pending-approval?page=${page}&pageSize=${pageSize}`);
-    const data = res.data.data.flat(); 
-    return {
-      doctors: data,
-      totalCount: res.data.metaData?.totalCount ?? data.length,
-      totalPages: res.data.metaData?.totalPages ?? 1,
-      currentPage: res.data.metaData?.currentPage ?? 1,
-      pageSize: res.data.metaData?.pageSize ?? pageSize,
-      hasNext: res.data.metaData?.hasNext ?? false,
-      hasPrevious: res.data.metaData?.hasPrevious ?? false,
-    };
+  async ({ page, pageSize }: { page: number; pageSize: number }, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get(`/doctors/pending-approval?page=${page}&pageSize=${pageSize}`);
+      const data = res.data.data.flat(); 
+      return {
+        doctors: data,
+        totalCount: res.data.metaData?.totalCount ?? data.length,
+        totalPages: res.data.metaData?.totalPages ?? 1,
+        currentPage: res.data.metaData?.currentPage ?? 1,
+        pageSize: res.data.metaData?.pageSize ?? pageSize,
+        hasNext: res.data.metaData?.hasNext ?? false,
+        hasPrevious: res.data.metaData?.hasPrevious ?? false,
+      };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch pending doctors'));
+    }
   }
 );
 
@@ -208,9 +237,13 @@ export const deleteDoctor = createAsyncThunk(
 
 export const fetchFAQs = createAsyncThunk(
   "faq/fetchFAQs",
-  async () => {
-    const res = await apiClient.get("/FAQ");  
-    return res.data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get("/FAQ");  
+      return res.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch FAQs'));
+    }
   }
 );
 
@@ -237,7 +270,7 @@ export const deleteFAQ = createAsyncThunk<number, number>(
       await apiClient.put(`/FAQ/delete/${faqId}`);
       return faqId; // returns a number
     } catch (err) {
-      return rejectWithValue(err);
+      return rejectWithValue(getErrorMessage(err, 'Failed to delete FAQ'));
     }
   }
 );
