@@ -1,5 +1,5 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {Button} from '@/components/ui/button';
 //import {ArrowDownLeft, Edit2Icon, InfoIcon, MoreVertical} from 'lucide-react';
 
@@ -45,56 +45,26 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const transactions = [
-  {
-    id: '1',
-    transaction_id: 'JgD5XB160755',
-    name: 'Thelma George',
-    reason: 'No show appointment',
-    hospital: 'FMC Asaba',
-    amount: '#50,000.00',
-    account: '12345678901',
-    status: 'Pending',
-    date: '24/07/2023',
-    action: '',
-  },
-  {
-    id: '2',
-    transaction_id: 'JgD5XB160755',
-    name: 'Thelma George',
-    reason: 'No show appointment',
-    hospital: 'FMC Asaba',
-    account: '12345678901',
-    amount: '#50,000.00',
-    status: 'Pending',
-    date: '24/07/2023',
-    action: '',
-  },
-  {
-    id: '3',
-    transaction_id: 'JgD5XB160755',
-    name: 'Thelma George',
-    reason: 'No show appointment',
-    hospital: 'FMC Asaba',
-    account: '12345678901',
-    amount: '#50,000.00',
-    status: 'Approved',
-    date: '24/07/2023',
-    action: '',
-  },
-  {
-    id: '4',
-    transaction_id: 'JgD5XB160755',
-    name: 'Thelma George',
-    reason: 'No show appointment',
-    account: '12345678901',
-    hospital: 'FMC Asaba',
-    amount: '#50,000.00',
-    status: 'Approved',
-    date: '24/07/2023',
-    action: '',
-  },
-];
+// Using live refunds from API instead of static transactions
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/services/store';
+import { fetchRefunds } from '@/services/thunks';
+import { Refund } from '@/types';
+
+interface CheckerFilters {
+  status?: string;
+  account?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+// Pagination & filtering notes:
+// - Backend expects query keys: Status (number), Page, PageSize, PatientName, Date (single date)
+// - We always fetch only pending refunds (Status=1) for this checker view
+// - Applying any filter resets pageNumber to 1 and re-dispatches fetchRefunds with Page/PageSize
+// - Date range UI currently sends only startDate as Date param (backend supports single date)
+// - To extend: support multiple statuses or true date range if API adds start/end params
+// - metaData from API is used for controls & Showing X-Y of Z summary
 
 const Checkers = () => {
   //const [searchTerm, setSearchTerm] = useState('');
@@ -102,12 +72,23 @@ const Checkers = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [columnFilters, setColumnFilters] = useState<any[]>([]);
+  const [columnFilters, setColumnFilters] = useState<import('@tanstack/react-table').ColumnFiltersState>([]);
 
   const [open, setOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<any | null>(
-    null,
-  );
+  const [selectedTransaction, setSelectedTransaction] = useState<Refund | null>(null);
+
+  const dispatch = useDispatch<AppDispatch>();
+  const { refunds, loading, error } = useSelector((s: RootState) => s.refunds);
+  const metaData = useSelector((s: RootState) => s.refunds.metaData);
+
+  // pagination local state (1-based page indexing)
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  // initial fetch: only pending refunds (Status=1)
+  useEffect(() => {
+    dispatch(fetchRefunds({ Status: 1, Page: pageNumber, PageSize: pageSize }));
+  }, [dispatch, pageNumber, pageSize]);
 
   //const [page, setPage] = useState(1);
   //const [pageSize, setPageSize] = useState(10);
@@ -124,9 +105,9 @@ const Checkers = () => {
   //     return filteredClaims.slice(start, start + pageSize);
   //   }, [filteredClaims, page]);
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<Refund>[] = [
     {
-      accessorKey: 'date',
+      accessorKey: 'requestDate',
       header: 'Request Date',
       filterFn: (row, id, filterValue) => {
         const rowDate = new Date(row.getValue(id));
@@ -140,25 +121,23 @@ const Checkers = () => {
     },
 
     {
-      accessorKey: 'transaction_id',
+      accessorKey: 'refundReference',
       header: 'Refund Reference',
     },
-
     {
-      accessorKey: 'amount',
+      accessorKey: 'refundAmount',
       header: 'Refund Amount',
     },
-    
     {
-      accessorKey: 'account',
+      accessorKey: 'walletNumber',
       header: 'Wallet ID',
     },
     {
-      accessorKey: 'reason',
+      accessorKey: 'refundReason',
       header: 'Refund Reason',
     },
-     {
-      accessorKey: 'date',
+    {
+      accessorKey: 'disputeDate',
       header: 'Dispute Date',
     },
 
@@ -166,7 +145,7 @@ const Checkers = () => {
       accessorKey: 'status',
       header: 'Status',
       cell: ({getValue}) => {
-        const value = getValue() as string; // ✅ cast from unknown to string
+  const value = getValue() as string; // status text
         const status = (value || '').toLowerCase();
 
         let statusClasses = ' py-1  text-md font-semibold w-fit';
@@ -191,7 +170,8 @@ const Checkers = () => {
               cell: ({ row }) => {
     
                   // Check if row is empty
-                  const isEmptyRow = !row.original.id && !row.original.name;
+                  const refund = row.original as Refund;
+                  const isEmptyRow = !refund.id && !refund.refundReference;
     
                   if (isEmptyRow) {
                       return null; // nothing rendered for empty row
@@ -224,8 +204,10 @@ const Checkers = () => {
     },
   ];
 
-  const table = useReactTable({
-    data: transactions,
+  const pendingTransactions: Refund[] = (refunds || []).filter((r: Refund) => (r.status || '').toLowerCase() === 'pending');
+
+  const table = useReactTable<Refund>({
+    data: pendingTransactions,
     columns,
     state: {
       sorting,
@@ -236,15 +218,15 @@ const Checkers = () => {
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    onColumnFiltersChange: setColumnFilters,
+  onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const handleApplyFilter = (filters: any) => {
-    const newFilters: any[] = [];
+  const handleApplyFilter = (filters: CheckerFilters) => {
+    const newFilters: { id: string; value: unknown }[] = [];
 
     if (filters.status) {
       newFilters.push({id: 'status', value: filters.status});
@@ -252,24 +234,34 @@ const Checkers = () => {
    
    
     if (filters.account) {
-      newFilters.push({id: 'account', value: filters.account});
+      newFilters.push({id: 'walletNumber', value: filters.account});
     }
     if (filters.startDate || filters.endDate) {
       newFilters.push({
-        id: 'date',
+        id: 'requestDate',
         value: {start: filters.startDate, end: filters.endDate},
       });
     }
 
     setColumnFilters(newFilters);
+
+    // Build API params (backend currently supports single Date + PatientName)
+    // reset to first page when filters change
+    setPageNumber(1);
+    const params: { Status: number; PatientName?: string; Date?: string; Page: number; PageSize: number } = { Status: 1, Page: 1, PageSize: pageSize };
+    if (filters.account) params.PatientName = filters.account; // adjust if API expects WalletNumber
+    if (filters.startDate) params.Date = filters.startDate; // using start date as representative
+    dispatch(fetchRefunds(params));
   };
 
   // Function to reset filters
   const handleResetFilter = () => {
     setColumnFilters([]);
+    setPageNumber(1);
+    dispatch(fetchRefunds({ Status: 1, Page: 1, PageSize: pageSize }));
   };
 
-  const hasData = transactions.length > 0;
+  const hasData = pendingTransactions.length > 0;
 
   return (
     <DashboardLayout>
@@ -293,7 +285,10 @@ const Checkers = () => {
           <div className="lg:mx-8 mt-10 bg-white mb-32 pb-10 rounded-md flex flex-col">
             <div className="flex flex-wrap gap-4 justify-between items-center p-6">
               <div className="flex items-center gap-8">
-                <h1 className="text-xl text-gray-800">All refund request</h1>
+                <h1 className="text-xl text-gray-800">Pending Refund Requests</h1>
+                {metaData && (
+                  <span className="text-sm text-gray-500">Showing {(metaData.currentPage - 1) * metaData.pageSize + 1} - {Math.min(metaData.currentPage * metaData.pageSize, metaData.totalCount)} of {metaData.totalCount}</span>
+                )}
               </div>
               <div className="flex gap-4 items-center">
                 
@@ -302,8 +297,43 @@ const Checkers = () => {
                 </Button>
               </div>
             </div>
+            {metaData && (
+              <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between px-6 pb-2 mt-2">
+                <div className="flex items-center gap-3 text-sm">
+                  <button
+                    disabled={!metaData.hasPrevious || loading}
+                    onClick={() => metaData.hasPrevious && setPageNumber(p => Math.max(1, p - 1))}
+                    className="px-3 py-1.5 rounded border text-xs disabled:opacity-40"
+                  >Prev</button>
+                  <span className="text-gray-600">Page {metaData.currentPage} of {metaData.totalPages}</span>
+                  <button
+                    disabled={!metaData.hasNext || loading}
+                    onClick={() => metaData.hasNext && setPageNumber(p => p + 1)}
+                    className="px-3 py-1.5 rounded border text-xs disabled:opacity-40"
+                  >Next</button>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <label htmlFor="pageSize" className="text-gray-600">Rows per page:</label>
+                  <select
+                    id="pageSize"
+                    value={pageSize}
+                    onChange={(e) => { setPageSize(Number(e.target.value)); setPageNumber(1); }}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    {[10,20,30,50].map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
 
             <div className="flex-1 overflow-auto px-6 lg:px-0 mt-4">
+              {loading && (
+                <div className="p-6 text-sm text-gray-500">Loading refunds...</div>
+              )}
+              {error && !loading && (
+                <div className="p-6 text-sm text-red-600">{error}</div>
+              )}
+              {!loading && !error && (
               <Table className="min-w-[600px]">
                 <TableHeader>
                   {table.getHeaderGroups().map(headerGroup => (
@@ -364,6 +394,7 @@ const Checkers = () => {
                   )}
                 </TableBody>
               </Table>
+              )}
             </div>
 
             {/* Pagination stuck at bottom */}
