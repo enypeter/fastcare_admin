@@ -27,22 +27,23 @@ import AddResponder from '@/components/form/ambulance/responder/add-responder';
 import { AppDispatch, RootState } from '@/services/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchRespondents } from '@/services/thunks';
-// Adjust import path
+import { Loader } from '@/components/ui/loading';
+
 
 const Responders = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { respondents, loading, error } = useSelector((state: RootState) => state.respondents);
 
-  // Fetch respondents when component mounts
+
   useEffect(() => {
-    // You need to pass ambulanceProviderId - adjust this based on your auth/user context
-    const ambulanceProviderId = 'c4ac7df8-1873-42db-97ba-8b240abc99df'; // Get this from your auth context or props
+    const ambulanceProviderId = 'c4ac7df8-1873-42db-97ba-8b240abc99df'; 
     dispatch(fetchRespondents(ambulanceProviderId));
   }, [dispatch]);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -51,14 +52,14 @@ const Responders = () => {
   const tableData = useMemo(() => {
     return respondents.map(respondent => ({
       id: respondent.id,
-      res_id: respondent.id, // Using actual ID or you can generate a custom one
+      res_id: respondent.id, 
       name: respondent.name,
       license: respondent.certificationStatus,
       prog_license: respondent.professionalLicense,
       phone: respondent.phoneNumber,
       email: respondent.email,
       address: respondent.address,
-      date: '2023-01-01', // You might want to add this field to your interface
+      date: '2023-01-01', 
       action: '',
     }));
   }, [respondents]);
@@ -70,6 +71,7 @@ const Responders = () => {
     return tableData.slice(start, start + pageSize);
   }, [tableData, page, pageSize]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: 'res_id',
@@ -131,7 +133,7 @@ const Responders = () => {
   ];
 
   const table = useReactTable({
-    data: paginatedData, // Use the actual data from Redux
+    data: paginatedData, 
     columns,
     state: {
       sorting,
@@ -154,7 +156,7 @@ const Responders = () => {
     return (
       <DashboardLayout>
         <div className="flex justify-center items-center h-64">
-          <div className="text-lg">Loading respondents...</div>
+         <Loader/>
         </div>
       </DashboardLayout>
     );

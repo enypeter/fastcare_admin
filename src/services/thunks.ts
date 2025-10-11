@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiClient from "@/services/axiosInstance";
-import { AddDriverData, Ambulance, Amenity, CreateAdminPayload, CreateAmbulanceData, CreatePasswordT, CreateRolePayload, Driver, LoginT, Respondents, UpdateAmbulanceData } from "@/types";
+import { AddDriverData, Amenity, CreateAdminPayload, CreatePasswordT, CreateRolePayload, Driver, LoginT, Respondent } from "@/types";
 
 export const loginUser = createAsyncThunk(
   "auth/login",
@@ -411,7 +412,7 @@ export const fetchRespondents = createAsyncThunk(
   async (ambulanceProviderId: string, { rejectWithValue }) => {
     try {
       const res = await apiClient.get(`/AmbulanceRespondents?ambulanceProviderId=${ambulanceProviderId}`);
-      return res.data as Respondents[];
+      return res.data as Respondent[];
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch respondents');
     }
@@ -424,9 +425,21 @@ export const fetchRespondentsById = createAsyncThunk(
   async (responderId: string, { rejectWithValue }) => {
     try {
       const res = await apiClient.get(`/Responders/${responderId}`);
-      return res.data.data as Respondents;
+      return res.data.data as Respondent;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch respondents');
+    }
+  }
+);
+// ------ Responders Note -----------
+export const fetchRespondersNote = createAsyncThunk(
+  'respondents/fetchAll',
+  async (ambulanceProviderId: string, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get(`/AmbulanceRespondents?ambulanceProviderId=${ambulanceProviderId}`);
+      return res.data as Respondent[];
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch responders note');
     }
   }
 );
