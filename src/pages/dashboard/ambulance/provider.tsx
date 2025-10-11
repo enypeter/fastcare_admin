@@ -1,8 +1,6 @@
 import { DashboardLayout } from '@/layout/dashboard-layout';
 import { useState, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-// import { RootState, AppDispatch } from '@/store'; // Adjust import path as needed
-// import { fetchAmbulanceProviders } from '@/store/thunks/ambulanceThunks'; // Adjust import path
 
 import {
   Table,
@@ -31,6 +29,7 @@ import { EyeIcon, Trash } from 'lucide-react';
 import AddProviders from '@/components/form/ambulance/providers/add-provider';
 import { AppDispatch, RootState } from '@/services/store';
 import { fetchAmbulanceProviders } from '@/services/thunks';
+import { Loader } from '@/components/ui/loading';
 
 const Providers = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -43,21 +42,21 @@ const Providers = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Fetch data on component mount
+
   useEffect(() => {
     dispatch(fetchAmbulanceProviders());
   }, [dispatch]);
 
-  // Transform the API data to match your table structure
+
   const transformedProviders = useMemo(() => {
     return providers.map(provider => ({
       id: provider.id,
-      provider_id: provider.registrationNumber, // Map registrationNumber to provider_id
-      name: provider.adminName, // Map adminName to name
-      cac: provider.registrationNumber, // Using registrationNumber as CAC, adjust if needed
+      provider_id: provider.registrationNumber, 
+      name: provider.adminName, 
+      cac: provider.registrationNumber, 
       email: provider.email,
       phone: provider.phoneNumber,
-      date: '2023-01-01', // You might want to add this field to your API or calculate it
+      date: '2023-01-01', 
       action: '',
       // Include original data if needed
       originalData: provider,
@@ -72,6 +71,10 @@ const Providers = () => {
   }, [transformedProviders, page, pageSize]);
 
   const columns: ColumnDef<any>[] = [
+        {
+      accessorKey: 'name',
+      header: 'Contact Person',
+    },
     {
       accessorKey: 'provider_id',
       header: 'Provider ID',
@@ -84,10 +87,7 @@ const Providers = () => {
       accessorKey: 'email',
       header: 'Company Email',
     },
-    {
-      accessorKey: 'name',
-      header: 'Contact Person',
-    },
+
     {
       accessorKey: 'phone',
       header: 'Phone Number',
@@ -141,7 +141,9 @@ const Providers = () => {
       <DashboardLayout>
         <div className="bg-gray-100 overflow-scroll h-full">
           <div className="lg:mx-8 mt-10 bg-white rounded-md flex items-center justify-center h-64">
-            <div className="text-lg">Loading ambulance providers...</div>
+             <div className="flex items-center justify-center h-screen">
+                            <Loader/>
+                          </div>
           </div>
         </div>
       </DashboardLayout>

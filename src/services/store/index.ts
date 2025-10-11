@@ -7,6 +7,10 @@ import faqsReducer from '../slice/faqsSlice'
 import accountReducer from '../slice/accountSlice'
 import amenitiesReducer from "../slice/amenitiesSlice"
 import ambulanceProviderReducer from "../slice/ambulanceProviderSlice"
+import ambulanceRequestsReducer from "../slice/ambulanceRequestSlice"
+import ambulanceReducer from "../slice/ambulanceSlice"
+import driverReducer from "../slice/driverSlice"
+import respondentsReducer from "../slice/respondentsSlice"
 
 
 export const store = configureStore({
@@ -19,6 +23,10 @@ export const store = configureStore({
     account: accountReducer,
     amenities: amenitiesReducer,
     ambulanceProviders: ambulanceProviderReducer,
+    ambulanceRequests: ambulanceRequestsReducer,
+    allAmbulances: ambulanceReducer,
+    drivers: driverReducer,
+    respondents: respondentsReducer
   },
 });
 

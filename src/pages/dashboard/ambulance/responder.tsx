@@ -1,6 +1,5 @@
-import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useState, useMemo} from 'react';
-
+import { DashboardLayout } from '@/layout/dashboard-layout';
+import { useState, useMemo, useEffect } from 'react'; // Added useEffect
 import {
   Table,
   TableBody,
@@ -9,7 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-
 import {
   ColumnDef,
   SortingState,
@@ -21,44 +19,26 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-
-import {Pagination} from '@/components/ui/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { Trash } from 'lucide-react';
 import ResponderDetails from '@/features/modules/ambulance/responder-details';
 import EditResponder from '@/components/form/ambulance/responder/edit-responder';
 import AddResponder from '@/components/form/ambulance/responder/add-responder';
-
-//import {ProviderFilter} from '@/features/modules/providers/filter';
-
-const drivers = [
-  {
-    id: '1',
-    res_id: 'RES-001',
-    name: 'John Doe',
-    license: 'Valid',
-    prog_license: 'Paramedic',
-    phone: '123 444 555',
-    email: 'username@gmail.com',
-    address: '158, Undercover Boulev',
-    date: '2023-01-01',
-    action: '',
-  },
-  {
-    id: '2',
-    res_id: 'RES-002',
-    name: 'John Doe',
-    license: 'Valid',
-    prog_license: 'Nurse',
-    phone: '123 444 555',
-    email: 'username@gmail.com',
-    address: '158, Undercover Boulev',
-    date: '2023-01-01',
-    action: '',
-  },
-];
+import { AppDispatch, RootState } from '@/services/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchRespondents } from '@/services/thunks';
+// Adjust import path
 
 const Responders = () => {
-  //   const [searchTerm, setSearchTerm] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
+  const { respondents, loading, error } = useSelector((state: RootState) => state.respondents);
+
+  // Fetch respondents when component mounts
+  useEffect(() => {
+    // You need to pass ambulanceProviderId - adjust this based on your auth/user context
+    const ambulanceProviderId = 'c4ac7df8-1873-42db-97ba-8b240abc99df'; // Get this from your auth context or props
+    dispatch(fetchRespondents(ambulanceProviderId));
+  }, [dispatch]);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -67,22 +47,34 @@ const Responders = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  //   const filteredProviders = hospitals.filter(item =>
-  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  //   );
+  // Transform respondents data to match your table structure
+  const tableData = useMemo(() => {
+    return respondents.map(respondent => ({
+      id: respondent.id,
+      res_id: respondent.id, // Using actual ID or you can generate a custom one
+      name: respondent.name,
+      license: respondent.certificationStatus,
+      prog_license: respondent.professionalLicense,
+      phone: respondent.phoneNumber,
+      email: respondent.email,
+      address: respondent.address,
+      date: '2023-01-01', // You might want to add this field to your interface
+      action: '',
+    }));
+  }, [respondents]);
 
-  const totalPages = Math.ceil(drivers.length / pageSize);
-  const paginatedProviders = useMemo(() => {
+  const totalPages = Math.ceil(tableData.length / pageSize);
+  
+  const paginatedData = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return drivers.slice(start, start + pageSize);
-  }, [drivers, page]);
+    return tableData.slice(start, start + pageSize);
+  }, [tableData, page, pageSize]);
 
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: 'res_id',
       header: 'Responder ID',
     },
-
     {
       accessorKey: 'name',
       header: 'Full Name',
@@ -103,37 +95,32 @@ const Responders = () => {
       accessorKey: 'email',
       header: 'Email',
     },
-   
     {
       accessorKey: 'address',
       header: 'Address',
-      cell: ({row}) => (
+      cell: ({ row }) => (
         <span className="font-semibold text-gray-900 whitespace-nowrap">
           {row.original.address}
         </span>
       ),
     },
-
     {
       id: 'action',
       header: 'Action',
       enableHiding: false,
-      cell: ({row}) => {
-        // Check if row is empty
+      cell: ({ row }) => {
         const isEmptyRow = !row.original.id && !row.original.name;
-
         if (isEmptyRow) {
-          return null; // nothing rendered for empty row
+          return null;
         }
         return (
           <div className="flex items-center gap-4">
             <div>
-             <ResponderDetails data={row.original} />
+              <ResponderDetails data={row.original} />
             </div>
             <div>
               <EditResponder data={row.original} />
             </div>
-
             <div>
               <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
             </div>
@@ -144,7 +131,7 @@ const Responders = () => {
   ];
 
   const table = useReactTable({
-    data: paginatedProviders,
+    data: paginatedData, // Use the actual data from Redux
     columns,
     state: {
       sorting,
@@ -162,37 +149,35 @@ const Responders = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  // Function to apply filters from FilterDialog
-  //   const handleApplyFilter = (filters: any) => {
-  //     const newFilters: any[] = [];
-  //     if (filters.status) newFilters.push({id: 'status', value: filters.status});
-  //     if (filters.location)
-  //       newFilters.push({id: 'location', value: filters.location});
-  //     if (filters.ranking)
-  //       newFilters.push({id: 'ranking', value: filters.ranking});
-  //     if (filters.date) newFilters.push({id: 'date', value: filters.date}); // make sure your data has a 'date' field
-  //     setColumnFilters(newFilters);
-  //   };
-  // Function to reset filters
-  //   const handleResetFilter = () => {
-  //     setColumnFilters([]);
-  //   };
+  // Show loading state
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading respondents...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg text-red-500">Error: {error}</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
-      <div className="bg-gray-100 overflow-scroll h-full ">
-        <div className="lg:mx-8 mt-10 bg-white  rounded-md flex flex-col h-[500px] mb-36">
+      <div className="bg-gray-100 overflow-scroll h-full">
+        <div className="lg:mx-8 mt-10 bg-white rounded-md flex flex-col h-[500px] mb-36">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
               <h1 className="text-xl text-gray-800">Created Responders</h1>
-
-              {/* <input
-                type="text"
-                placeholder="Search hospital"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
-              /> */}
             </div>
             <div className="flex gap-4 items-center">
               <AddResponder />
@@ -225,19 +210,17 @@ const Responders = () => {
                       data-state={row.getIsSelected() && 'selected'}
                     >
                       {row.getVisibleCells().map(cell => (
-                        <>
-                          <TableCell
-                            key={cell.id}
-                            className={
-                              cell.column.id === 'actions' ? 'text-right' : ''
-                            }
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        </>
+                        <TableCell
+                          key={cell.id}
+                          className={
+                            cell.column.id === 'actions' ? 'text-right' : ''
+                          }
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))
@@ -247,12 +230,12 @@ const Responders = () => {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      <div className="flex flex-col items-start">
+                      <div className="flex flex-col items-center">
                         <span className="font-medium">
-                          No ambulance amenities found
+                          No respondents found
                         </span>
                         <span className="font-medium">
-                          All added amenities appear here
+                          All added respondents will appear here
                         </span>
                         <AddResponder />
                       </div>
@@ -263,11 +246,11 @@ const Responders = () => {
             </Table>
           </div>
 
-          {/* Pagination stuck at bottom */}
+          {/* Pagination */}
           <div className="p-4 flex items-center justify-end">
             <Pagination
-              totalEntriesSize={drivers.length}
-              currentEntriesSize={paginatedProviders.length}
+              totalEntriesSize={tableData.length}
+              currentEntriesSize={paginatedData.length}
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}

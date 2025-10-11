@@ -29,26 +29,10 @@ import { Trash } from 'lucide-react';
 import {useDispatch, useSelector} from 'react-redux';
 import {AppDispatch, RootState} from '@/services/store';
 import { fetchAmenities } from '@/services/thunks';
+import { Loader } from '@/components/ui/loading';
 
-
-//import {ProviderFilter} from '@/features/modules/providers/filter';
-
-// const amenities = [
-//   {
-//     id: '1',
-//     name: 'Name',
-//     type: 'Defibrillator',
-//     serial: 'UYgh123456u8k',
-//     date: '2023-01-01',
-//     action: '',
-//   }
- 
- 
-// ];
 
 const Amenities = () => {
-  //   const [searchTerm, setSearchTerm] = useState('');
-
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
@@ -56,59 +40,40 @@ const Amenities = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   
-  // Fixed: Properly typed Redux hooks
   const dispatch = useDispatch<AppDispatch>();
   const { amenities, loading, error } = useSelector((state: RootState) => state.amenities);
-
-  const providerId = useSelector((state: RootState) => state.auth.user?.id); 
+  const ambulanceProviderId = useSelector((state: RootState) => state.ambulanceProviders.selectedProvider?.id); 
 
   useEffect(() => {
-    if(!amenities.length && providerId){
-      dispatch(fetchAmenities(providerId));
+    if(!amenities.length && ambulanceProviderId){
+      dispatch(fetchAmenities(ambulanceProviderId));
     }
-  }, [dispatch, amenities.length, providerId]);
+  }, [dispatch, amenities.length, ambulanceProviderId]);
 
-  //   const filteredProviders = hospitals.filter(item =>
-  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  //   );
-
-  const totalPages = Math.ceil(amenities.length / pageSize);
-  const paginatedProviders = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return amenities.slice(start, start + pageSize);
-  }, [amenities, page, pageSize]); // Added pageSize to dependencies
-
-  // Fixed: Properly typed columns based on your amenities data structure
+  // Define columns and table data regardless of loading state
   const columns: ColumnDef<any>[] = [
     {
-      accessorKey: 'equipmentName', // Changed from 'name' to match your type
-      header: 'Equipment Name', // Fixed capitalization
+      accessorKey: 'equipmentName', 
+      header: 'Equipment Name', 
     },
     {
       accessorKey: 'description',
       header: 'Description',
     },
-    // {
-    //   accessorKey: 'serial',
-    //   header: 'Serial Number',
-    // },
     {
       id: 'action',
       header: 'Action',
       enableHiding: false,
       cell: ({row}) => {
-        // Check if row is empty - updated to match your data structure
         const isEmptyRow = !row.original.equipmentName && !row.original.description;
-
         if (isEmptyRow) {
-          return null; // nothing rendered for empty row
+          return null; 
         }
         return (
           <div className="flex items-center gap-4">
             <div>
               <EditAmenities data={row.original} />
             </div>
-
             <div>
               <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
             </div>
@@ -118,8 +83,15 @@ const Amenities = () => {
     },
   ];
 
+  const totalPages = Math.ceil(amenities.length / pageSize);
+  const paginatedProviders = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return amenities.slice(start, start + pageSize);
+  }, [amenities, page, pageSize]);
+
+  // Call useReactTable unconditionally - use empty data when not available
   const table = useReactTable({
-    data: paginatedProviders,
+    data: paginatedProviders || [],
     columns,
     state: {
       sorting,
@@ -137,28 +109,12 @@ const Amenities = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  // Function to apply filters from FilterDialog
-  //   const handleApplyFilter = (filters: any) => {
-  //     const newFilters: any[] = [];
-  //     if (filters.status) newFilters.push({id: 'status', value: filters.status});
-  //     if (filters.location)
-  //       newFilters.push({id: 'location', value: filters.location});
-  //     if (filters.ranking)
-  //       newFilters.push({id: 'ranking', value: filters.ranking});
-  //     if (filters.date) newFilters.push({id: 'date', value: filters.date}); // make sure your data has a 'date' field
-  //     setColumnFilters(newFilters);
-  //   };
-  // Function to reset filters
-  //   const handleResetFilter = () => {
-  //     setColumnFilters([]);
-  //   };
-
   // Show loading state
   if (loading) {
     return (
       <DashboardLayout>
         <div className="flex justify-center items-center h-64">
-          Loading amenities...
+          <Loader/>
         </div>
       </DashboardLayout>
     );
@@ -175,7 +131,19 @@ const Amenities = () => {
     );
   }
 
-  if(!providerId){
+  // Show no provider selected state
+  if (!ambulanceProviderId) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg text-gray-500">
+            Please select an ambulance provider first
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="bg-gray-100 overflow-scroll h-full ">
@@ -183,14 +151,6 @@ const Amenities = () => {
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
               <h1 className="text-xl text-gray-800">All Amenities</h1>
-
-              {/* <input
-                type="text"
-                placeholder="Search hospital"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
-              /> */}
             </div>
             <div className="flex gap-4 items-center">
               <CreateAmenities />
@@ -224,7 +184,7 @@ const Amenities = () => {
                     >
                       {row.getVisibleCells().map(cell => (
                         <TableCell
-                          key={cell.id} // Moved key here and removed fragment
+                          key={cell.id} 
                           className={
                             cell.column.id === 'actions' ? 'text-right' : ''
                           }
@@ -259,7 +219,6 @@ const Amenities = () => {
             </Table>
           </div>
 
-          {/* Pagination stuck at bottom */}
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={amenities.length}
@@ -278,8 +237,6 @@ const Amenities = () => {
       </div>
     </DashboardLayout>
   );
-  }
-
 };
 
 export default Amenities;
