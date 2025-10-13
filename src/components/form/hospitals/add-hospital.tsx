@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Success from '../../../features/modules/dashboard/success';
 import { Switch } from '@/components/ui/switch';
 import { useDispatch } from 'react-redux';
@@ -16,8 +16,8 @@ import { createHospital, fetchHospitals } from '@/services/thunks';
 import toast from 'react-hot-toast';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { hospitalSchema } from '@/helpers/hospital-schema';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { BankSelect } from '@/components/ui/bank-select';
 
@@ -41,89 +41,6 @@ type HospitalFormValues = {
   invoiceBankCode: string;
 };
 
-// Schema with new stricter requirements
-const hospitalSchema = z.object({
-  hospitalCode: z
-    .string({ required_error: 'Hospital code is required' })
-    .trim()
-    .min(1, 'Hospital code is required')
-    .max(30, 'Max 30 characters')
-    .transform(v => v.toUpperCase()),
-  hospitalName: z
-    .string({ required_error: 'Hospital name is required' })
-    .trim()
-    .min(2, 'Min 2 characters')
-    .max(50, 'Max 50 characters')
-    .refine(v => /^[A-Za-z ]+$/.test(v), { message: 'Only alphabets and spaces allowed' }),
-  physicalConsultationFee: z
-    .string({ required_error: 'Physical consultation fee is required' })
-    .trim()
-    .min(1, 'Required')
-    .max(6, 'Max 6 digits')
-    .refine(v => /^\d+$/.test(v), { message: 'Digits only' }),
-  virtualConsultationFee: z
-    .string({ required_error: 'Virtual consultation fee is required' })
-    .trim()
-    .min(1, 'Required')
-    .max(6, 'Max 6 digits')
-    .refine(v => /^\d+$/.test(v), { message: 'Digits only' }),
-  registrationFee: z
-    .string()
-    .trim()
-    .max(6, 'Max 6 digits')
-    .refine(v => !v || /^\d+$/.test(v), { message: 'Digits only' })
-    .optional(), // enforced manually when toggle enabled
-  hospitalAddresses: z
-    .string({ required_error: 'Hospital address is required' })
-    .trim()
-    .min(10, 'Min 10 characters')
-    .max(100, 'Max 100 characters'),
-  address: z
-    .string({ required_error: 'Address is required' })
-    .trim()
-    .min(5, 'Min 5 characters')
-    .max(100, 'Max 100 characters'),
-  hospitalNumber: z
-    .string()
-    .trim()
-    .max(15, 'Max 15 digits')
-    .refine(v => !v || /^\d+$/.test(v), { message: 'Digits only' })
-    .optional(),
-  website: z
-    .string()
-    .trim()
-    .optional(), // only optional field per requirements
-  phoneNumber: z
-    .string({ required_error: 'Phone number is required' })
-    .trim()
-    .min(7, 'Min 7 digits')
-    .max(15, 'Max 15 digits')
-    .refine(v => /^\d+$/.test(v), { message: 'Digits only' }),
-  countryCode: z.string().optional(),
-  email: z
-    .string({ required_error: 'Email is required' })
-    .trim()
-    .email('Invalid email')
-    .max(50, 'Max 50 characters'),
-  accountNumber: z
-    .string({ required_error: 'Account number is required' })
-    .trim()
-    .length(10, 'Must be 10 digits')
-    .refine(v => /^\d{10}$/.test(v), { message: 'Must be 10 digits' }),
-  invoiceAccountNumber: z
-    .string({ required_error: 'Invoice account number is required' })
-    .trim()
-    .length(10, 'Must be 10 digits')
-    .refine(v => /^\d{10}$/.test(v), { message: 'Must be 10 digits' }),
-  bankCode: z
-    .string({ required_error: 'Bank code is required' })
-    .trim()
-    .min(1, 'Required'),
-  invoiceBankCode: z
-    .string({ required_error: 'Invoice bank code is required' })
-    .trim()
-    .min(1, 'Required'),
-});
 
 export default function AddHospital() {
   const [openSuccess, setOpenSuccess] = useState(false);
@@ -168,6 +85,50 @@ export default function AddHospital() {
 
   // Ensure fees & numeric fields respect max length constraints on change
   const clampDigits = (val: string, maxLen: number) => val.replace(/\D/g, '').slice(0, maxLen);
+
+  // Derive if form is "complete enough" to enable submit button.
+  const isFormComplete = useMemo(() => {
+    const values = watch();
+    // Required base fields (excluding website & hospitalNumber & registrationFee when toggle off)
+    const requiredKeys: Array<keyof HospitalFormValues> = [
+      'hospitalCode',
+      'hospitalName',
+      'physicalConsultationFee',
+      'virtualConsultationFee',
+      'hospitalAddresses',
+      'address',
+      'phoneNumber',
+      'email',
+      'accountNumber',
+      'invoiceAccountNumber',
+      'bankCode',
+      'invoiceBankCode',
+    ];
+
+    // If registration fee toggle active, include it as required
+    if (showRegInput) {
+      requiredKeys.push('registrationFee');
+    }
+
+    // All required keys must be non-empty strings
+    const allFilled = requiredKeys.every(k => {
+      const v = values[k];
+      return typeof v === 'string' && v.trim().length > 0;
+    });
+
+    if (!allFilled) return false;
+
+    // If any current error among required fields, disable
+    const hasErrors = requiredKeys.some(k => (errors as Record<string, unknown>)[k]);
+    if (hasErrors) return false;
+
+    // Extra numeric length guards
+    if (values.accountNumber?.length !== 10) return false;
+    if (values.invoiceAccountNumber?.length !== 10) return false;
+    if (showRegInput && values.registrationFee && !/^\d+$/.test(values.registrationFee)) return false;
+
+    return true;
+  }, [watch, errors, showRegInput]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -499,8 +460,8 @@ export default function AddHospital() {
           <div className="flex justify-between items-center gap-4 mt-8">
             <Button
               type="submit"
-              disabled={isLoading}
-              className="py-2 w-48 rounded-md flex items-center justify-center gap-2"
+              disabled={isLoading || !isFormComplete}
+              className="py-2 w-48 rounded-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading && (
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>

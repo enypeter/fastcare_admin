@@ -552,6 +552,23 @@ export const exportRefunds = createAsyncThunk(
   }
 );
 
+// Update refund status (Pending=1, Approved=2, Rejected=3)
+export const updateRefundStatus = createAsyncThunk(
+  'refunds/updateStatus',
+  async (
+    payload: { id: number; status: 1 | 2 | 3 },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { id, status } = payload;
+      const res = await apiClient.put(`/Refund/${id}/status/${status}`);
+      return res.data; // assume API returns updated refund or status meta
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to update refund status'));
+    }
+  }
+);
+
 // -------------------------------------------------
 // Referral Codes (Marketing) Thunks
 // -------------------------------------------------

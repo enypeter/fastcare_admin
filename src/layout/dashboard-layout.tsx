@@ -20,6 +20,7 @@ import {
   PieChart,
   Settings,
   Share2Icon,
+  ShieldCheck,
   // ShieldCheck,
   User2,
   X,
@@ -149,7 +150,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
           ],
         },
 
-        // {name: 'Checker', icon: <ShieldCheck className='w-5 h-6' />, url: '/checkers'},
+        {name: 'Checker', icon: <ShieldCheck className='w-5 h-6' />, url: '/checkers'},
 
         {name: 'Settings', icon: <Settings className='w-5 h-6' />, url: '/settings'},
 

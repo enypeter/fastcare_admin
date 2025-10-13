@@ -5,12 +5,13 @@ import {useEffect, useState} from 'react';
 import HospitalDetail from '@/features/modules/hospital/hospital-detail';
 import Deactivate from '@/features/modules/hospital/deactivate';
 import Clinics from '@/features/modules/hospital/clinics';
-import {useParams, useSearchParams} from 'react-router-dom';
+import {useParams, useSearchParams, useNavigate} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import {AppDispatch, RootState} from '@/services/store';
 import {fetchHospitalById, updateHospital} from '@/services/thunks';
+import { ROUTES } from '@/router/routes';
+import { ArrowLeft } from 'lucide-react';
 import {Hospital} from '@/types';
-import {setSelectedHospital} from '@/services/slice/hospitalSlice';
 
 const Loader = () => (
   <div className="flex items-center justify-center h-64">
@@ -26,6 +27,7 @@ const HospitalDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   const {id} = useParams<{id: string}>();
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const {selectedHospital, loading, error} = useSelector(
     (state: RootState) => state.hospitals,
@@ -46,21 +48,17 @@ const HospitalDetails = () => {
     setSearchParams({tab: activeTab});
   }, [activeTab, setSearchParams]);
 
-  const handleSave = async (hospital: Hospital | null) => {
-    if (!hospital) return;
-
+  const handleSubmitEdit = async (partial: Partial<Hospital>) => {
+    if (!selectedHospital) return;
     try {
-      // Adapt hospital object to expected thunk payload type: Record<string, unknown> & { id: string | number }
-      const payload: Record<string, unknown> & { id: string | number } = {
-        ...hospital,
-        id: hospital.id as string | number,
+      const merged: Record<string, unknown> & { id: string | number } = {
+        ...selectedHospital,
+        ...partial,
+        id: selectedHospital.id,
       };
-      await dispatch(updateHospital(payload)).unwrap();
-
+      await dispatch(updateHospital(merged)).unwrap();
       setIsEditing(false);
-
-      // ✅ Refetch hospital list in background
-      dispatch(fetchHospitalById(String(hospital.id)));
+      dispatch(fetchHospitalById(String(selectedHospital.id)));
     } catch (err) {
       console.error('Update failed:', err);
     }
@@ -78,48 +76,48 @@ const HospitalDetails = () => {
       ) : (
         <div className="bg-gray-100 overflow-scroll flex flex-col h-full">
           <div className="flex flex-wrap items-center justify-between gap-6 mx-4 lg:mx-10 mt-16">
-            <div className="flex items-center gap-4">
-              <Avatar className="w-12 h-12 rounded-lg">
-                <AvatarImage
-                  src={selectedHospital?.hospitalLogo || '/images/user.png'}
-                  alt={selectedHospital?.hospitalName || 'Hospital logo'}
-                />
-                <AvatarFallback className="uppercase bg-primary text-white font-bold">
-                  {selectedHospital?.hospitalName?.slice(0, 3) || 'HSP'}
-                </AvatarFallback>
-              </Avatar>
-
-              <h1 className="text-lg font-medium text-gray-700">
-                {selectedHospital?.hospitalName}
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {isEditing ? (
+            <div className="flex items-center gap-4 w-full justify-between">
+              <div className="flex items-center gap-4">
                 <Button
-                  onClick={() =>
-                    selectedHospital && handleSave(selectedHospital)
-                  }
-                  className="py-3 lg:w-44 rounded-md"
+                  variant="ghost"
+                  onClick={() => navigate(ROUTES.hospitals.all)}
+                  className="flex items-center gap-2 px-2 text-gray-600 hover:text-primary"
                 >
-                  Save changes
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="text-sm font-medium">Back</span>
                 </Button>
-              ) : (
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  className="py-3 lg:w-44 rounded-md"
-                >
-                  Edit details
-                </Button>
-              )}
+                <Avatar className="w-12 h-12 rounded-lg">
+                  <AvatarImage
+                    src={selectedHospital?.hospitalLogo || '/images/user.png'}
+                    alt={selectedHospital?.hospitalName || 'Hospital logo'}
+                  />
+                  <AvatarFallback className="uppercase bg-primary text-white font-bold">
+                    {selectedHospital?.hospitalName?.slice(0, 3) || 'HSP'}
+                  </AvatarFallback>
+                </Avatar>
+                <h1 className="text-lg font-medium text-gray-700">
+                  {selectedHospital?.hospitalName}
+                </h1>
+              </div>
 
-              <Button
-                onClick={() => setOpen(true)}
-                variant="destructive"
-                className="py-3 rounded-md"
-              >
-                Deactivate Account
-              </Button>
+              <div className="flex items-center gap-4">
+                {isEditing ? null : (
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    className="py-3 lg:w-44 rounded-md"
+                  >
+                    Edit details
+                  </Button>
+                )}
+
+                <Button
+                  onClick={() => setOpen(true)}
+                  variant="destructive"
+                  className="py-3 rounded-md"
+                >
+                  Deactivate Account
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -146,10 +144,11 @@ const HospitalDetails = () => {
                 <HospitalDetail
                   data={selectedHospital}
                   isEditing={isEditing}
-                  onChange={updated => dispatch(setSelectedHospital(updated))}
+                  onSubmitEdit={handleSubmitEdit}
+                  onCancel={() => setIsEditing(false)}
                 />
               )}
-              {activeTab === 'clinics' && <Clinics />}
+              {activeTab === 'clinics' && <Clinics hospitalId={id} />}
             </div>
           </div>
         </div>
