@@ -94,41 +94,54 @@ export interface LicenseFile {
 
 export interface Doctor {
   id: string;
+  /** Optional legacy id */
+  oldId?: string | null;
   firstName: string;
   lastName: string;
-  otherNames: string;
+  otherNames: string | null;
   dateOfBirth?: string;
-  residentialAddress ?: string;
+  residentialAddress ?: string | null;
   licenseExpirationDate?: string;
   email: string;
   phoneNumber: string;
-  bio: string;
+  bio: string | null;
   licenseNumber: string;
   consultancyFee: number;
   agreeToTerms: boolean;
   specialization: string;
-  isActive: boolean;
+  isActive: boolean | null;
   isDoctorAvailable: boolean;
   feePercentage: number;
   bankCode: string;
   accountNumber: string;
   name: string;
-  photo: string;
-  password: string;
+  photo: string | null;
+  password: string | null;
   yearsOfExperience: number;
   role: string;
-  deviceToken: string;
-  licenseFile: LicenseFile;
+  deviceToken: string | null;
+  /** Raw license file object or null when not uploaded */
+  licenseFile: LicenseFile | null;
+  licenseName?: string | null;
+  licenseType?: string | null;
+  licenseContent?: string | null;
   languages: string[];
   qualifications: string[];
-  hospital: string;
-  profileImage: string;
+  hospital: string | null;
+  profileImage: string | null;
   averageRating: number;
   totalPatientsServed: number;
-  isApproved: boolean;
+  /**
+   * Approval status: true = approved, false = rejected, null = pending.
+   * Backend returns null for pending requests, so we model that explicitly.
+   */
+  isApproved: boolean | null;
   totalReviews: number;
-  status: number;
+  /** Online status e.g. 'Available' | 'Offline' */
+  status: string;
   userId?: string
+  /** Optional creation date returned for pending approval listings */
+  createdAt?: string;
 }
 export interface CallsStatistics {
   totalEarned: number;
@@ -344,6 +357,8 @@ export interface TransactionsState {
     Date?: string; // single date filter (API appears to accept one date parameter)
     ServiceType?: string;
   };
+  exporting?: boolean;
+  exportError?: string | null;
 }
 
 export interface Refund {
@@ -373,6 +388,9 @@ export interface RefundsState {
   selectedRefund: Refund | null;
   exporting: boolean;
   exportError: string | null;
+  // Flags for exporting a single refund detail
+  exportingDetail?: boolean;
+  exportDetailError?: string | null;
   filters: {
     Page?: number;
     PageSize?: number;
@@ -491,6 +509,8 @@ export interface UserReportsState {
   loadingDetail: boolean;
   errorList: string | null;
   errorDetail: string | null;
+  exportingDetail?: boolean;
+  exportDetailError?: string | null;
   filters: {
     Page?: number;
     PageSize?: number;

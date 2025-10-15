@@ -2,7 +2,7 @@ import { X, Download } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { exportReferralCodeUsers } from '@/services/thunks';
 import type { AppDispatch, RootState } from '@/services/store';
@@ -21,24 +21,45 @@ interface SummaryProps {
 export default function Summary({ open, onOpenChange, base, selected, loadingDetail }: SummaryProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { exportingUsers, exportUsersError } = useSelector((s: RootState) => s.referrals);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const users: ReferralCodeUser[] = useMemo(() => (selected?.referralCodeUsers || []), [selected?.referralCodeUsers]);
 
-  const handleExportUsers = (format: number) => {
-    if (!base?.id) return;
-    dispatch(exportReferralCodeUsers({ id: base.id, format }))
-      .unwrap()
-      .then(payload => {
-        const blob = payload.blob as Blob;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `referral-code-${base.id}-users.${format === 1 ? 'xlsx' : 'csv'}`;
-        a.click();
-        URL.revokeObjectURL(url);
-      })
-      .catch(() => {});
+  const sanitize = (v?: string) => (v || '')
+    .normalize('NFKD')
+    .replace(/[^a-zA-Z0-9-_.\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '_') || 'referral';
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
+
+  const handleExportUsers = useCallback(async (format: number) => {
+    if (!base?.id || exportingUsers) return;
+    setExportError(null);
+    try {
+      const payload = await dispatch(exportReferralCodeUsers({ id: base.id, format })).unwrap();
+      const blob = payload.blob as Blob;
+      if (!blob) {
+        setExportError('No file received');
+        return;
+      }
+      const filename = `referral-code-${sanitize(base.id)}-users.${format === 1 ? 'xlsx' : 'csv'}`;
+      downloadBlob(blob, filename);
+      setMenuOpen(false);
+    } catch {
+      setExportError('Export failed');
+    }
+  }, [base?.id, dispatch, exportingUsers]);
 
   const getStatusColor = (status?: string) => {
     if (!status) return 'text-gray-500 bg-gray-100';
@@ -70,13 +91,29 @@ export default function Summary({ open, onOpenChange, base, selected, loadingDet
                 <span className={`rounded-md px-2 py-1 font-medium ${getStatusColor(base.status)}`}>{base.status || '-'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <DropdownMenu>
+                <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" disabled={exportingUsers || loadingDetail} className="flex w-32 items-center gap-2 rounded-md py-2.5"><Download size={14}/> {exportingUsers ? 'Exporting...' : 'Export'} </Button>
+                    <Button
+                      variant="ghost"
+                      aria-haspopup="menu"
+                      aria-expanded={menuOpen}
+                      disabled={!base?.id || exportingUsers}
+                      className="flex w-32 items-center gap-2 rounded-md py-2.5"
+                    >
+                      <Download size={14}/> {exportingUsers ? 'Exporting...' : 'Export'}
+                    </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleExportUsers(0)}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleExportUsers(1)}>Excel</DropdownMenuItem>
+                  <DropdownMenuContent align="end" className="w-40 z-[1200]">
+                    <DropdownMenuItem
+                      disabled={exportingUsers}
+                      className="cursor-pointer"
+                      onClick={() => handleExportUsers(0)}
+                    >CSV</DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={exportingUsers}
+                      className="cursor-pointer"
+                      onClick={() => handleExportUsers(1)}
+                    >Excel</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -124,7 +161,9 @@ export default function Summary({ open, onOpenChange, base, selected, loadingDet
                   </Table>
                 </div>
               )}
-              {exportUsersError && <p className="mt-2 text-xs text-red-600">{exportUsersError}</p>}
+              {(exportUsersError || exportError) && (
+                <p className="mt-2 text-xs text-red-600" role="alert">{exportUsersError || exportError}</p>
+              )}
             </div>
           </div>
         )}

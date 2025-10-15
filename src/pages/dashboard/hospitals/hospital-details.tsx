@@ -3,15 +3,14 @@ import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Button} from '@/components/ui/button';
 import {useEffect, useState} from 'react';
 import HospitalDetail from '@/features/modules/hospital/hospital-detail';
-import Deactivate from '@/features/modules/hospital/deactivate';
 import Clinics from '@/features/modules/hospital/clinics';
 import {useParams, useSearchParams, useNavigate} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import {AppDispatch, RootState} from '@/services/store';
-import {fetchHospitalById, updateHospital} from '@/services/thunks';
+import {fetchHospitalById} from '@/services/thunks';
+import ToggleHospitalStatus from '@/features/modules/hospital/deactivate';
 import { ROUTES } from '@/router/routes';
 import { ArrowLeft } from 'lucide-react';
-import {Hospital} from '@/types';
 
 const Loader = () => (
   <div className="flex items-center justify-center h-64">
@@ -20,11 +19,11 @@ const Loader = () => (
 );
 
 const HospitalDetails = () => {
-  const [open, setOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'details';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isEditing, setIsEditing] = useState(false);
+  const [showToggle, setShowToggle] = useState(false);
 
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
@@ -48,21 +47,6 @@ const HospitalDetails = () => {
     setSearchParams({tab: activeTab});
   }, [activeTab, setSearchParams]);
 
-  const handleSubmitEdit = async (partial: Partial<Hospital>) => {
-    if (!selectedHospital) return;
-    try {
-      const merged: Record<string, unknown> & { id: string | number } = {
-        ...selectedHospital,
-        ...partial,
-        id: selectedHospital.id,
-      };
-      await dispatch(updateHospital(merged)).unwrap();
-      setIsEditing(false);
-      dispatch(fetchHospitalById(String(selectedHospital.id)));
-    } catch (err) {
-      console.error('Update failed:', err);
-    }
-  };
   return (
     <DashboardLayout>
       {loading ? (
@@ -101,22 +85,25 @@ const HospitalDetails = () => {
               </div>
 
               <div className="flex items-center gap-4">
-                {isEditing ? null : (
-                  <Button
-                    onClick={() => setIsEditing(true)}
-                    className="py-3 lg:w-44 rounded-md"
-                  >
-                    Edit details
-                  </Button>
+                {!isEditing && (
+                  <>
+                    <Button
+                      onClick={() => setIsEditing(true)}
+                      className="py-3 lg:w-44 rounded-md"
+                    >
+                      Edit details
+                    </Button>
+                    {selectedHospital && (
+                      <Button
+                        variant={selectedHospital.isActive ? 'destructive' : 'default'}
+                        onClick={() => setShowToggle(true)}
+                        className="py-3 lg:w-44 rounded-md"
+                      >
+                        {selectedHospital.isActive ? 'Deactivate Hospital' : 'Activate Hospital'}
+                      </Button>
+                    )}
+                  </>
                 )}
-
-                <Button
-                  onClick={() => setOpen(true)}
-                  variant="destructive"
-                  className="py-3 rounded-md"
-                >
-                  Deactivate Account
-                </Button>
               </div>
             </div>
           </div>
@@ -144,17 +131,23 @@ const HospitalDetails = () => {
                 <HospitalDetail
                   data={selectedHospital}
                   isEditing={isEditing}
-                  onSubmitEdit={handleSubmitEdit}
                   onCancel={() => setIsEditing(false)}
+                  onUpdated={() => setIsEditing(false)}
                 />
               )}
               {activeTab === 'clinics' && <Clinics hospitalId={id} />}
             </div>
           </div>
+        {selectedHospital && (
+          <ToggleHospitalStatus
+            open={showToggle}
+            setOpen={setShowToggle}
+            hospitalId={selectedHospital.id}
+            isActive={selectedHospital.isActive}
+          />
+        )}
         </div>
       )}
-
-      <Deactivate open={open} setOpen={setOpen} />
     </DashboardLayout>
   );
 };
