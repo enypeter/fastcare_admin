@@ -419,3 +419,32 @@ export interface RespondentsState {
   error: string | null;
 }
 // -------- Respondents ------------
+
+//  ---- Dispatch History --------
+export interface Location {
+  latitude: number;
+  longitude: number;
+}
+
+export interface DispatchHistory {
+  id: string;
+  assignedByUser: string | null;
+  driverName: string | null;
+  respondantName: string | null;
+  ambulanceNumber: string;
+  amountPaid: number;
+  ambulanceType: string;
+  distance: number;
+  pickupLocation: Location;
+  destinationLocation: Location;
+  dateAssigned: string | null;
+  amenities: string;
+  creationDate: string;
+}
+
+export interface DispatchHistoryState {
+  dispatchHistory: DispatchHistory[];
+  loading: boolean;
+  error: string | null;
+}
+//  ---- Dispatch History --------
