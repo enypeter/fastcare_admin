@@ -11,6 +11,7 @@ import ambulanceRequestsReducer from "../slice/ambulanceRequestSlice"
 import ambulanceReducer from "../slice/ambulanceSlice"
 import driverReducer from "../slice/driverSlice"
 import respondentsReducer from "../slice/respondentsSlice"
+import dispatchHistoryReducer from "../slice/dispatchHistorySlice"
 
 
 export const store = configureStore({
@@ -26,7 +27,8 @@ export const store = configureStore({
     ambulanceRequests: ambulanceRequestsReducer,
     allAmbulances: ambulanceReducer,
     drivers: driverReducer,
-    respondents: respondentsReducer
+    respondents: respondentsReducer,
+    dispatchHistory: dispatchHistoryReducer
   },
 });
 

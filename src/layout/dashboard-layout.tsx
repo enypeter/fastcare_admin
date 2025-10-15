@@ -114,6 +114,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
           icon: <Ambulance className='w-5 h-6' />,
           url: '/ambulance',
           children: [
+            {name: 'Select Provider', url: '/ambulance/select-provider'},
             {name: 'Amenities', url: '/ambulance/amenities'},
             {name: 'All Ambulance', url: '/ambulance/all'},
             {name: 'Ambulance providers', url: '/ambulance/providers'},

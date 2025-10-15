@@ -1,6 +1,5 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
 import {useState, useMemo, useEffect} from 'react';
-import {Button} from '@/components/ui/button';
 
 import {
   Table,
@@ -24,14 +23,16 @@ import {
 } from '@tanstack/react-table';
 
 import {Pagination} from '@/components/ui/pagination';
-import {HistoryFilter} from '@/features/modules/ambulance/history-filter';
-import { AppDispatch, RootState } from '@/services/store';
-import { useSelector } from 'react-redux';
-import { useDispatch } from 'react-redux';
-import { fetchDispatchHistory } from '@/services/thunks';
+import CreateAmenities from '@/components/form/ambulance/amenities/create-amenities';
+import EditAmenities from '@/components/form/ambulance/amenities/edit-amenities';
+import { Trash } from 'lucide-react';
+import {useDispatch, useSelector} from 'react-redux';
+import {AppDispatch, RootState} from '@/services/store';
+import { fetchAmenities } from '@/services/thunks';
 import { Loader } from '@/components/ui/loading';
 
-const DispatchHistory = () => {
+
+const SelectProvider = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
@@ -40,73 +41,57 @@ const DispatchHistory = () => {
   const [pageSize, setPageSize] = useState(10);
   
   const dispatch = useDispatch<AppDispatch>();
-  const { dispatchHistory: dispatchHistory, loading, error } = useSelector((state: RootState) => state.dispatchHistory);
+  const { amenities, loading, error } = useSelector((state: RootState) => state.amenities);
+  const ambulanceProviderId = useSelector((state: RootState) => state.ambulanceProviders.selectedProvider?.id); 
 
   useEffect(() => {
-    dispatch(fetchDispatchHistory());
-  }, [dispatch]);
+    if(!amenities.length && ambulanceProviderId){
+      dispatch(fetchAmenities(ambulanceProviderId));
+    }
+  }, [dispatch, amenities.length, ambulanceProviderId]);
 
-  // Transform the API data to match your table structure
-  const tableData = useMemo(() => {
-    return dispatchHistory.map(item => ({
-      id: item.id,
-      amb_id: item.ambulanceNumber,
-      assigned_by: item.assignedByUser || 'Auto',
-      type: item.ambulanceType,
-      amenities: item.amenities,
-      distance: (item.distance / 1000).toFixed(1), // Convert meters to km
-      location: `${item.pickupLocation.latitude.toFixed(2)}, ${item.pickupLocation.longitude.toFixed(2)}`,
-      drop: `${item.destinationLocation.latitude.toFixed(2)}, ${item.destinationLocation.longitude.toFixed(2)}`,
-      date: item.creationDate,
-      amountPaid: item.amountPaid,
-      driverName: item.driverName,
-      respondantName: item.respondantName,
-    }));
-  }, [dispatchHistory]);
-
-  const totalPages = Math.ceil(tableData.length / pageSize);
-  const paginatedData = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return tableData.slice(start, start + pageSize);
-  }, [tableData, page, pageSize]);
-
+  // Define columns and table data regardless of loading state
   const columns: ColumnDef<any>[] = [
     {
-      accessorKey: 'amb_id',
-      header: 'Ambulance ID',
+      accessorKey: 'equipmentName', 
+      header: 'Equipment Name', 
     },
     {
-      accessorKey: 'assigned_by',
-      header: 'Assigned By',
+      accessorKey: 'description',
+      header: 'Description',
     },
     {
-      accessorKey: 'type',
-      header: 'Request Type',
-    },
-    {
-      accessorKey: 'distance',
-      header: 'Distance (Km)',
-    },
-    {
-      accessorKey: 'amenities',
-      header: 'Amenities',
-    },
-    {
-      accessorKey: 'location',
-      header: 'Pickup Location',
-    },
-    {
-      accessorKey: 'drop',
-      header: 'Drop-off location',
-    },
-    {
-      accessorKey: 'date',
-      header: 'Dispatch Time',
+      id: 'action',
+      header: 'Action',
+      enableHiding: false,
+      cell: ({row}) => {
+        const isEmptyRow = !row.original.equipmentName && !row.original.description;
+        if (isEmptyRow) {
+          return null; 
+        }
+        return (
+          <div className="flex items-center gap-4">
+            <div>
+              <EditAmenities data={row.original} />
+            </div>
+            <div>
+              <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
+            </div>
+          </div>
+        );
+      },
     },
   ];
 
+  const totalPages = Math.ceil(amenities.length / pageSize);
+  const paginatedProviders = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return amenities.slice(start, start + pageSize);
+  }, [amenities, page, pageSize]);
+
+  // Call useReactTable unconditionally - use empty data when not available
   const table = useReactTable({
-    data: paginatedData,
+    data: paginatedProviders || [],
     columns,
     state: {
       sorting,
@@ -124,26 +109,12 @@ const DispatchHistory = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  //Function to apply filters from FilterDialog
-  const handleApplyFilter = (filters: any) => {
-    const newFilters: any[] = [];
-    if (filters.status) newFilters.push({id: 'status', value: filters.status});
-    if (filters.name) newFilters.push({id: 'name', value: filters.name});
-    if (filters.date) newFilters.push({id: 'date', value: filters.date});
-    setColumnFilters(newFilters);
-  };
-
-  //Function to reset filters
-  const handleResetFilter = () => {
-    setColumnFilters([]);
-  };
-
   // Show loading state
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <Loader />
+        <div className="flex justify-center items-center h-64">
+          <Loader/>
         </div>
       </DashboardLayout>
     );
@@ -153,12 +124,20 @@ const DispatchHistory = () => {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <p className="text-red-500 mb-4">Error: {error}</p>
-            <Button onClick={() => dispatch(fetchDispatchHistory())}>
-              Retry
-            </Button>
+        <div className="text-red-500 p-4 text-center">
+          Error: {error}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show no provider selected state
+  if (!ambulanceProviderId) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg text-gray-500">
+            Please select an ambulance provider first
           </div>
         </div>
       </DashboardLayout>
@@ -168,25 +147,19 @@ const DispatchHistory = () => {
   return (
     <DashboardLayout>
       <div className="bg-gray-100 overflow-scroll h-full ">
-        <div className="lg:mx-8 mt-10 bg-white rounded-md flex flex-col h-[600px] mb-36">
+        <div className="lg:mx-8 mt-10 bg-white  rounded-md flex flex-col h-[500px] mb-36">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
-              <h1 className="text-lg text-gray-800">All Dispatch History</h1>
+              <h1 className="text-xl text-gray-800">All Amenities</h1>
             </div>
             <div className="flex gap-4 items-center">
-              <HistoryFilter
-                onApply={handleApplyFilter}
-                onReset={handleResetFilter}
-              />
-              <Button variant="ghost" className="py-2.5 w-36 rounded-md">
-                Export
-              </Button>
+              <CreateAmenities />
             </div>
           </div>
 
           <div className="flex-1 overflow-auto lg:px-0 lg:mt-4">
             <Table className="min-w-[600px]">
-              <TableHeader className="border-y border-[#CDE5F9]">
+              <TableHeader className="border border-[#CDE5F9]">
                 {table.getHeaderGroups().map(headerGroup => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map(header => (
@@ -207,14 +180,13 @@ const DispatchHistory = () => {
                   table.getRowModel().rows.map(row => (
                     <TableRow
                       key={row.id}
-                      className="cursor-pointer hover:bg-gray-100"
                       data-state={row.getIsSelected() && 'selected'}
                     >
                       {row.getVisibleCells().map(cell => (
                         <TableCell
-                          key={cell.id}
+                          key={cell.id} 
                           className={
-                            cell.column.id === 'action' ? 'text-right' : ''
+                            cell.column.id === 'actions' ? 'text-right' : ''
                           }
                         >
                           {flexRender(
@@ -231,10 +203,14 @@ const DispatchHistory = () => {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      <div className="flex flex-col items-start">
+                      <div className="flex flex-col items-center justify-center gap-2">
                         <span className="font-medium">
-                          No dispatch history found
+                          No ambulance amenities found
                         </span>
+                        <span className="font-medium">
+                          All added amenities appear here
+                        </span>
+                        <CreateAmenities />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -243,11 +219,10 @@ const DispatchHistory = () => {
             </Table>
           </div>
 
-          {/* Pagination stuck at bottom */}
           <div className="p-4 flex items-center justify-end">
             <Pagination
-              totalEntriesSize={tableData.length}
-              currentEntriesSize={paginatedData.length}
+              totalEntriesSize={amenities.length}
+              currentEntriesSize={paginatedProviders.length}
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}
@@ -264,4 +239,4 @@ const DispatchHistory = () => {
   );
 };
 
-export default DispatchHistory;
+export default SelectProvider;
