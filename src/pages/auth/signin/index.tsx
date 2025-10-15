@@ -54,7 +54,12 @@ const SignIn = () => {
   // ✅ Handle success / error
   useEffect(() => {
     if (user && token) {
-      navigate('/hospitals/all-hospitals');
+      // Role-based landing
+      if (user.userRole === 'AmbulanceProviderAdmin') {
+        navigate('/ambulance/amenities', { replace: true });
+      } else {
+        navigate('/hospitals/all-hospitals', { replace: true });
+      }
     }
     if (error) {
       toast.error(error);
@@ -64,7 +69,7 @@ const SignIn = () => {
   return (
     <AuthLayout>
       {/* White card */}
-      <div className="  px-14 py-16 flex flex-col mt-10">
+      <div className="px-14 flex flex-col">
         {/* {user ? <p>Welcome {user.name}</p> : <p>Please log in</p>} */}
         <div className="mb-6">
           <h2 className="text-xl font-medium">Log in</h2>

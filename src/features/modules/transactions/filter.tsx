@@ -9,21 +9,24 @@ import {
 } from '@/components/ui/select';
 import { useState } from 'react';
 
-export const TransactionFilter = ({ onApply, onReset }: any) => {
-  const [startDate, setStartDate] = useState<string | null>(null);
-  const [endDate, setEndDate] = useState<string | null>(null);
+interface TransactionFilterProps {
+  onApply: (filters: { date: string | null; status: string | null; type: string | null; patient: string; hospital: string }) => void;
+  onReset: () => void;
+}
+
+export const TransactionFilter = ({ onApply, onReset }: TransactionFilterProps) => {
+  const [date, setDate] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
   const [patient, setPatient] = useState<string>('');
   const [hospital, setHospital] = useState<string>('');
 
   const handleApply = () => {
-    onApply({ startDate, endDate, status, type, patient, hospital });
+    onApply({ date, status, type, patient, hospital });
   };
 
   const handleReset = () => {
-    setStartDate(null);
-    setEndDate(null);
+  setDate(null);
     setStatus(null);
     setType(null);
     setPatient('');
@@ -45,24 +48,15 @@ export const TransactionFilter = ({ onApply, onReset }: any) => {
 
       {/* Grid Form */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Date range */}
-        <div className="col-span-1">
+        {/* Single Date */}
+        <div className="flex flex-col gap-2">
           <Label>Date</Label>
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-36 outline-none"
-              value={startDate ?? ''}
-              onChange={e => setStartDate(e.target.value || null)}
-            />
-            <p className="text-md font-semibold">To</p>
-            <input
-              type="date"
-              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-36 outline-none"
-              value={endDate ?? ''}
-              onChange={e => setEndDate(e.target.value || null)}
-            />
-          </div>
+          <input
+            type="date"
+            className="border border-gray-300 rounded-md py-2 px-3 outline-none"
+            value={date ?? ''}
+            onChange={e => setDate(e.target.value || null)}
+          />
         </div>
 
         {/* Patient */}

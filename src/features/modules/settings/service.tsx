@@ -25,9 +25,7 @@ import {
 //import {Pagination} from '@/components/ui/pagination';
 
 
-import { EyeOffIcon} from 'lucide-react';
 import UpdateService from '@/components/form/settings/update-service';
-import Deactivate from '../hospital/deactivate';
 
 //import {ProviderFilter} from '@/features/modules/providers/filter';
 
@@ -59,11 +57,10 @@ const Services = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [columnFilters, setColumnFilters] = useState<any[]>([]);
+  const [columnFilters, setColumnFilters] = useState<import('@tanstack/react-table').ColumnFiltersState>([]);
   //const [page, setPage] = useState(1);
   //const [pageSize, setPageSize] = useState(10);
 
-  const [open, setOpen] = useState(false);
  
 
 
@@ -73,7 +70,8 @@ const Services = () => {
   //     return users.slice(start, start + pageSize);
   //   }, [users, page]);
 
-  const columns: ColumnDef<any>[] = [
+  interface ServiceRow { id: string; name: string; fee: string; date: string; action: string }
+  const columns: ColumnDef<ServiceRow>[] = [
     {
       accessorKey: 'name',
       header: 'Service name',
@@ -101,13 +99,7 @@ const Services = () => {
             data={row.original}
              />
 
-            <div
-               onClick={() => setOpen(true)}
-              className="flex text-center w-36  justify-center cursor-pointer font-semibold items-center gap-2 bg-red-100 p-2 rounded-md text-red-600"
-            >
-              <EyeOffIcon className="w-4 h-4" />
-              Deactivate
-            </div>
+            {/* Deactivate action removed pending real service activation feature */}
           </div>
         );
       },
@@ -254,7 +246,6 @@ const Services = () => {
             </div> */}
           </div>
 
-            <Deactivate open={open} setOpen={setOpen} />
         </div>
       )}
     </div>

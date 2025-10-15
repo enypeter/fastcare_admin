@@ -1,18 +1,31 @@
 import {useEffect} from 'react';
-import {Outlet, useNavigate} from 'react-router-dom';
+import {Outlet, useLocation, useNavigate} from 'react-router-dom';
 import {ROUTES} from '@/router/routes';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/services/store';
 
 const ProtectedRoutes = () => {
   const savedToken: string | null = localStorage.getItem('token');
   const token: string | null = savedToken ? savedToken : null;
+  const user = useSelector((s: RootState) => s.auth.user);
+  const location = useLocation();
 
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!token) {
       navigate(ROUTES.signin);
+      return;
     }
-  }, [token, navigate]);
+    if (user?.userRole.toLowerCase() === 'ambulanceprovideradmin') {
+      const allowedPrefixes = ['/ambulance', '/help-desk', '/settings'];
+      const path = location.pathname;
+      const allowed = allowedPrefixes.some(p => path.startsWith(p));
+      if (!allowed) {
+        navigate('/ambulance/amenities', { replace: true });
+      }
+    }
+  }, [token, user?.userRole, location.pathname, navigate]);
 
   return <Outlet />;
 };

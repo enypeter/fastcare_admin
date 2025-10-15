@@ -16,7 +16,6 @@ import {
 } from '@tanstack/react-table';
 import {Pagination} from '@/components/ui/pagination';
 import {useNavigate} from 'react-router-dom';
-import {AllDoctorFilter} from '@/features/modules/doctor/all-doctor-filter';
 import {useDispatch, useSelector} from 'react-redux';
 import {AppDispatch, RootState} from '@/services/store';
 import {fetchDoctors} from '@/services/thunks';
@@ -27,7 +26,6 @@ const AllDoctors = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [filterStatus, setFilterStatus] = useState<string | undefined>();
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -51,15 +49,9 @@ const AllDoctors = () => {
         ? fullName.includes(searchTerm.toLowerCase())
         : true;
 
-      const matchesStatus = filterStatus
-        ? filterStatus === 'online'
-          ? d.isDoctorAvailable
-          : !d.isDoctorAvailable
-        : true;
-
-      return matchesName && matchesStatus;
+      return matchesName;
     });
-  }, [doctors, searchTerm, filterStatus]);
+  }, [doctors, searchTerm]);
 
   const columns: ColumnDef<Doctor>[] = [
     {
@@ -97,25 +89,25 @@ const AllDoctors = () => {
       },
     },
 
-    {
-      accessorKey: 'date',
-      header: 'Upcoming Appt',
-      cell: ({getValue}) => {
-        const value = getValue() as string;
-        const isPast = value?.toLowerCase().includes('ago');
-        return (
-          <span
-            className={
-              isPast
-                ? 'text-red-600 font-semibold'
-                : 'text-gray-700 font-semibold'
-            }
-          >
-            {value || '-'}
-          </span>
-        );
-      },
-    },
+    // {
+    //   accessorKey: 'date',
+    //   header: 'Upcoming Appt',
+    //   cell: ({getValue}) => {
+    //     const value = getValue() as string;
+    //     const isPast = value?.toLowerCase().includes('ago');
+    //     return (
+    //       <span
+    //         className={
+    //           isPast
+    //             ? 'text-red-600 font-semibold'
+    //             : 'text-gray-700 font-semibold'
+    //         }
+    //       >
+    //         {value || '-'}
+    //       </span>
+    //     );
+    //   },
+    // },
     {
       id: 'action',
       header: 'Action',
@@ -138,17 +130,17 @@ const AllDoctors = () => {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const handleApplyFilter = (filters: any) => {
-    setSearchTerm(filters.name || '');
-    setFilterStatus(filters.status);
-    setPage(1);
-  };
+  // const handleApplyFilter = (filters: any) => {
+  //   setSearchTerm(filters.name || '');
+  //   setFilterStatus(filters.status);
+  //   setPage(1);
+  // };
 
-  const handleResetFilter = () => {
-    setSearchTerm('');
-    setFilterStatus(undefined);
-    setPage(1);
-  };
+  // const handleResetFilter = () => {
+  //   setSearchTerm('');
+  //   setFilterStatus(undefined);
+  //   setPage(1);
+  // };
 
   return (
     <DashboardLayout>
@@ -163,15 +155,15 @@ const AllDoctors = () => {
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
+                className="border rounded-lg px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
               />
             </div>
-            <div className="flex gap-4 items-center mr-24">
+            {/* <div className="flex gap-4 items-center mr-24">
               <AllDoctorFilter
                 onApply={handleApplyFilter}
                 onReset={handleResetFilter}
               />
-            </div>
+            </div> */}
           </div>
 
           {/* Table */}

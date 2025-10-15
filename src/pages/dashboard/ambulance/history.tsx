@@ -246,7 +246,7 @@ const DispatchHistory = () => {
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={notes.length}
-              currentEntriesSize={paginatedProviders.length}
+              
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}

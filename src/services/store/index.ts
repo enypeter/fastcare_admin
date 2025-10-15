@@ -5,12 +5,14 @@ import hospitalsReducer from "../slice/hospitalSlice"
 import doctorsReducer from "../slice/doctorsSlice"
 import faqsReducer from '../slice/faqsSlice'
 import accountReducer from '../slice/accountSlice'
-import amenitiesReducer from "../slice/amenitiesSlice"
-import ambulanceProviderReducer from "../slice/ambulanceProviderSlice"
-import ambulanceRequestsReducer from "../slice/ambulanceRequestSlice"
-import ambulanceReducer from "../slice/ambulanceSlice"
-import driverReducer from "../slice/driverSlice"
-import respondentsReducer from "../slice/respondentsSlice"
+import ambulanceReducer from '../slice/ambulanceSlice'
+import articlesReducer from '../slice/articleSlice'
+import transactionsReducer from '../slice/transactionSlice'
+import refundsReducer from '../slice/refundSlice'
+import referralsReducer from '../slice/referralSlice'
+import adminUsersReducer from '../slice/adminUsersSlice'
+import userReportsReducer from '../slice/userReportsSlice'
+import appointmentReportsReducer from '../slice/appointmentReportsSlice'
 
 
 export const store = configureStore({
@@ -21,12 +23,14 @@ export const store = configureStore({
     doctors: doctorsReducer,
     faqs: faqsReducer,
     account: accountReducer,
-    amenities: amenitiesReducer,
-    ambulanceProviders: ambulanceProviderReducer,
-    ambulanceRequests: ambulanceRequestsReducer,
-    allAmbulances: ambulanceReducer,
-    drivers: driverReducer,
-    respondents: respondentsReducer
+    ambulance: ambulanceReducer,
+    articles: articlesReducer,
+    transactions: transactionsReducer,
+    refunds: refundsReducer,
+    referrals: referralsReducer,
+    adminUsers: adminUsersReducer,
+    userReports: userReportsReducer,
+    appointmentReports: appointmentReportsReducer
   },
 });
 

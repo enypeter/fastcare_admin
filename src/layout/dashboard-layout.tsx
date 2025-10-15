@@ -21,6 +21,7 @@ import {
   Settings,
   Share2Icon,
   ShieldCheck,
+  // ShieldCheck,
   User2,
   X,
 } from 'lucide-react';
@@ -28,6 +29,8 @@ import {User} from '@/features/user';
 import {cn} from '@/lib/utils';
 import {FaMoneyBill} from 'react-icons/fa';
 import React from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/services/store';
 
 type Props = {
   children: React.ReactNode;
@@ -63,7 +66,10 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
       }
     }
   };
-  const menus = [
+  const authUser = useSelector((s: RootState) => s.auth.user);
+  const isAmbulanceProviderAdmin = authUser?.userRole === 'AmbulanceProviderAdmin';
+
+  const fullMenus = React.useMemo(() => ([
     {
       name: 'DASHBOARD',
       children: [
@@ -174,7 +180,36 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
         // {name: 'Settings', icon: <Settings />, url: '/settings'},
       ],
     },
-  ];
+  ]), []);
+
+  const menus = React.useMemo(() => {
+    // Start from full set
+    let working = fullMenus;
+
+    if (isAmbulanceProviderAdmin) {
+      // Restrict top-level sections (previous requirement)
+      working = working.map(section => ({
+        ...section,
+        children: section.children.filter(c => ['Ambulance','Help desk','Settings'].includes(c.name))
+      }));
+    }
+
+    // Adjust Ambulance submenu entries based on role
+    working = working.map(section => ({
+      ...section,
+      children: section.children.map(child => {
+        if (child.name !== 'Ambulance') return child;
+        if (!child.children) return child;
+        // Filter child.children according to role rules
+        const filteredChildren = isAmbulanceProviderAdmin
+          ? child.children.filter(sc => sc.name !== 'Ambulance providers') // hide providers for ambulance admin
+          : child.children.filter(sc => sc.name === 'Ambulance providers'); // show only providers for others
+        return { ...child, children: filteredChildren };
+      })
+    }));
+
+    return working;
+  }, [isAmbulanceProviderAdmin, fullMenus]);
 
   React.useEffect(() => {
     menus.forEach(menu => {
@@ -187,7 +222,7 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
         }
       });
     });
-  }, [location.pathname]);
+  }, [location.pathname, menus]);
 
   return (
     <div className="flex h-screen">
