@@ -1,15 +1,9 @@
-import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useEffect, useState} from 'react';
-import {Button} from '@/components/ui/button';
-//import {ArrowDownLeft, Edit2Icon, InfoIcon, MoreVertical} from 'lucide-react';
+import { DashboardLayout } from '@/layout/dashboard-layout';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 
 import {
@@ -24,28 +18,17 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
-//import {Pagination} from '@/components/ui/pagination';
-
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from '@/components/ui/dropdown-menu';
-
-
 import { CheckerFilter } from '@/features/modules/checker/checker-filter';
 import CheckerDetails from '@/features/modules/checker/checker-details';
 import { InfoIcon, MoreVertical } from 'lucide-react';
 
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Using live refunds from API instead of static transactions
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/services/store';
 import { fetchRefunds } from '@/services/thunks';
@@ -58,156 +41,147 @@ interface CheckerFilters {
   endDate?: string;
 }
 
-// Pagination & filtering notes:
-// - Backend expects query keys: Status (number), Page, PageSize, PatientName, Date (single date)
-// - We always fetch only pending refunds (Status=1) for this checker view
-// - Applying any filter resets pageNumber to 1 and re-dispatches fetchRefunds with Page/PageSize
-// - Date range UI currently sends only startDate as Date param (backend supports single date)
-// - To extend: support multiple statuses or true date range if API adds start/end params
-// - metaData from API is used for controls & Showing X-Y of Z summary
-
 const Checkers = () => {
-  //const [searchTerm, setSearchTerm] = useState('');
-
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [columnFilters, setColumnFilters] = useState<import('@tanstack/react-table').ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] =
+    useState<import('@tanstack/react-table').ColumnFiltersState>([]);
 
   const [open, setOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Refund | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
-  const { refunds, loading, error } = useSelector((s: RootState) => s.refunds);
-  const metaData = useSelector((s: RootState) => s.refunds.metaData);
+  const { refunds, loading, error, metaData } = useSelector((s: RootState) => s.refunds);
 
-  // pagination local state (1-based page indexing)
+  // pagination (1-based)
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  // initial fetch: only pending refunds (Status=1)
+  // persist API-level filters so paging reuses them
+  const [apiFilters, setApiFilters] = useState<{ Status: number; PatientName?: string; Date?: string }>({
+    Status: 1, // Pending for checker view
+  });
+
+  // Fetch whenever page/pageSize/apiFilters change
   useEffect(() => {
-    dispatch(fetchRefunds({ Status: 1, Page: pageNumber, PageSize: pageSize }));
-  }, [dispatch, pageNumber, pageSize]);
+    dispatch(fetchRefunds({ ...apiFilters, Page: pageNumber, PageSize: pageSize }));
+  }, [dispatch, apiFilters, pageNumber, pageSize]);
 
-  //const [page, setPage] = useState(1);
-  //const [pageSize, setPageSize] = useState(10);
-
-  //   const filteredClaims = transactions.filter(
-  //     item =>
-  //       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //       item.claim_id.toLowerCase().includes(searchTerm.toLowerCase()),
-  //   );
-
-  //   const totalPages = Math.ceil(filteredClaims.length / pageSize);
-  //   const paginatedProviders = useMemo(() => {
-  //     const start = (page - 1) * pageSize;
-  //     return filteredClaims.slice(start, start + pageSize);
-  //   }, [filteredClaims, page]);
+  // Show only pending in the table (server already returns Status=1, but it’s safe)
+  const data: Refund[] = useMemo(
+    () => (refunds || []).filter((r) => (r.status || '').toLowerCase() === 'pending'),
+    [refunds]
+  );
 
   const columns: ColumnDef<Refund>[] = [
     {
       accessorKey: 'requestDate',
       header: 'Request Date',
       filterFn: (row, id, filterValue) => {
-        const rowDate = new Date(row.getValue(id));
+        const raw = row.getValue(id) as string | Date | undefined;
+        const rowDate = raw ? new Date(raw) : null;
         const start = filterValue?.start ? new Date(filterValue.start) : null;
         const end = filterValue?.end ? new Date(filterValue.end) : null;
-
+        if (!rowDate || isNaN(rowDate.getTime())) return false;
         if (start && rowDate < start) return false;
         if (end && rowDate > end) return false;
         return true;
       },
+      cell: ({ getValue }) => {
+        const raw = getValue() as string | Date | undefined;
+        if (!raw) return '-';
+        const d = new Date(raw);
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString();
+      },
     },
-
-    {
-      accessorKey: 'refundReference',
-      header: 'Refund Reference',
-    },
-    {
-      accessorKey: 'refundAmount',
-      header: 'Refund Amount',
-    },
-    {
-      accessorKey: 'walletNumber',
-      header: 'Wallet ID',
-    },
-    {
-      accessorKey: 'refundReason',
-      header: 'Refund Reason',
-    },
+    { accessorKey: 'refundReference', header: 'Refund Reference' },
+    { accessorKey: 'refundAmount', header: 'Refund Amount' },
+    { accessorKey: 'walletNumber', header: 'Wallet ID' },
+    { accessorKey: 'refundReason', header: 'Refund Reason' },
     {
       accessorKey: 'disputeDate',
       header: 'Dispute Date',
+      cell: ({ getValue }) => {
+        const raw = getValue() as string | Date | undefined;
+        if (!raw) return '-';
+        const d = new Date(raw);
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString();
+      },
     },
-
     {
       accessorKey: 'status',
       header: 'Status',
-      cell: ({getValue}) => {
-  const value = getValue() as string; // status text
-        const status = (value || '').toLowerCase();
-
-        let statusClasses = ' py-1  text-md font-semibold w-fit';
-
-        if (status === 'successful' || status === 'approved') {
-          statusClasses += '  text-green-700';
-        } else if (status === 'pending') {
-          statusClasses += '  text-yellow-600';
-        } else if (status === 'disputed' || status === 'failed') {
-          statusClasses += '  text-red-800';
-        } else {
-          statusClasses += '  text-gray-500';
-        }
-
-        return <span className={statusClasses}>{value || '-'}</span>;
+      cell: ({ getValue }) => {
+        const value = (getValue() as string) || '-';
+        const s = value.toLowerCase();
+        let cls = 'py-1 text-md font-semibold w-fit';
+        if (s === 'successful' || s === 'approved') cls += ' text-green-700';
+        else if (s === 'pending') cls += ' text-yellow-600';
+        else if (s === 'disputed' || s === 'failed') cls += ' text-red-800';
+        else cls += ' text-gray-500';
+        return <span className={cls}>{value}</span>;
       },
     },
-      {
-              id: 'action',
-              header: 'Action',
-              enableHiding: false,
-              cell: ({ row }) => {
-    
-                  // Check if row is empty
-                  const refund = row.original as Refund;
-                  const isEmptyRow = !refund.id && !refund.refundReference;
-    
-                  if (isEmptyRow) {
-                      return null; // nothing rendered for empty row
-                  }
-                  return (
-                      <div className="flex text-center justify-start items-center gap-2">
-                          <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <MoreVertical className="text-neutral-400 cursor-pointer" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-[200px]">
-                                  <DropdownMenuItem
-                                      onClick={() => {
-                                    setSelectedTransaction(row.original); // save row data
-                                    setOpen(true);
-                                  }}
-                                  >
-                                      <InfoIcon className="text-neutral-600" />
-                                      View details
-                                  </DropdownMenuItem>
-    
-                                
-    
-                              </DropdownMenuContent>
-                          </DropdownMenu>
-    
-                      </div>
-                  );
-              },
+    {
+      id: 'action', // <-- keep this 'action' (not 'actions')
+      header: 'Action',
+      enableHiding: false,
+      cell: ({ row }) => {
+        const refund = row.original;
+        const openDetails = () => {
+          const mapped = {
+            id: refund.id,
+            status: refund.status,
+            amount: refund.refundAmount,
+            transaction_id: refund.transactionId,
+            name: refund.patientName,
+            patient_id: refund.patientId || undefined,
+            account: refund.walletNumber || undefined,
+            date: refund.requestDate,
+          } as unknown as Refund;
+          setSelectedTransaction(mapped);
+          setOpen(true);
+        };
+
+        return (
+          <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded p-1 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  aria-label="Row actions"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4 text-neutral-500" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-[180px]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDetails();
+                  }}
+                  className="cursor-pointer gap-2"
+                >
+                  <InfoIcon className="h-4 w-4 text-neutral-600" />
+                  <span>View details</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
     },
   ];
 
-  const pendingTransactions: Refund[] = (refunds || []).filter((r: Refund) => (r.status || '').toLowerCase() === 'pending');
-
   const table = useReactTable<Refund>({
-    data: pendingTransactions,
+    data,
     columns,
     state: {
       sorting,
@@ -218,205 +192,245 @@ const Checkers = () => {
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-  onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
 
+  /** Build CSV for current page rows */
+  const exportCurrentPageCSV = useCallback(() => {
+    const headers = [
+      'Request Date',
+      'Refund Reference',
+      'Refund Amount',
+      'Wallet ID',
+      'Refund Reason',
+      'Dispute Date',
+      'Status',
+    ];
+
+    const rows = table.getRowModel().rows.map((r) => {
+      const x = r.original;
+      const d1 = x.requestDate ? new Date(x.requestDate) : null;
+      const d2 = x.disputeDate ? new Date(x.disputeDate) : null;
+      return [
+        d1 && !isNaN(d1.getTime()) ? d1.toLocaleDateString() : '',
+        x.refundReference ?? '',
+        x.refundAmount ?? '',
+        x.walletNumber ?? '',
+        (x.refundReason ?? '').toString().replace(/\r?\n/g, ' '),
+        d2 && !isNaN(d2.getTime()) ? d2.toLocaleDateString() : '',
+        x.status ?? '',
+      ];
+    });
+
+    const csv =
+      [headers, ...rows]
+        .map((row) =>
+          row
+            .map((cell) => {
+              const s = String(cell ?? '');
+              // Wrap in quotes if contains comma/quote/newline
+              if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+              return s;
+            })
+            .join(',')
+        )
+        .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pending-refunds-page-${pageNumber}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [table, pageNumber]);
+
   const handleApplyFilter = (filters: CheckerFilters) => {
+    // Table (client) filters for instant UI
     const newFilters: { id: string; value: unknown }[] = [];
-
-    if (filters.status) {
-      newFilters.push({id: 'status', value: filters.status});
-    }
-   
-   
-    if (filters.account) {
-      newFilters.push({id: 'walletNumber', value: filters.account});
-    }
+    if (filters.status) newFilters.push({ id: 'status', value: filters.status });
+    if (filters.account) newFilters.push({ id: 'walletNumber', value: filters.account });
     if (filters.startDate || filters.endDate) {
-      newFilters.push({
-        id: 'requestDate',
-        value: {start: filters.startDate, end: filters.endDate},
-      });
+      newFilters.push({ id: 'requestDate', value: { start: filters.startDate, end: filters.endDate } });
     }
-
     setColumnFilters(newFilters);
 
-    // Build API params (backend currently supports single Date + PatientName)
-    // reset to first page when filters change
+    // API filters to persist through paging
+    const api: { Status: number; PatientName?: string; Date?: string } = { Status: 1 };
+    if (filters.account) api.PatientName = filters.account; // adjust if backend expects WalletNumber instead
+    if (filters.startDate) api.Date = filters.startDate; // backend supports single Date
+    setApiFilters(api);
+
     setPageNumber(1);
-    const params: { Status: number; PatientName?: string; Date?: string; Page: number; PageSize: number } = { Status: 1, Page: 1, PageSize: pageSize };
-    if (filters.account) params.PatientName = filters.account; // adjust if API expects WalletNumber
-    if (filters.startDate) params.Date = filters.startDate; // using start date as representative
-    dispatch(fetchRefunds(params));
   };
 
-  // Function to reset filters
   const handleResetFilter = () => {
     setColumnFilters([]);
+    setApiFilters({ Status: 1 });
     setPageNumber(1);
-    dispatch(fetchRefunds({ Status: 1, Page: 1, PageSize: pageSize }));
   };
 
-  const hasData = pendingTransactions.length > 0;
+  const hasData = data.length > 0;
 
   return (
     <DashboardLayout>
-      {!hasData ? (
-        <div className="flex flex-col items-center justify-center h-[70vh] ">
+      {!hasData && !loading && !error ? (
+        <div className="flex h-[70vh] flex-col items-center justify-center">
           <p className="text-lg font-semibold text-gray-800">
             You have no initiated a refund yet
           </p>
-          <p className="text-gray-500 mt-2 mb-6">All refund appears here</p>
-          
+          <p className="mt-2 mb-6 text-gray-500">All refund appears here</p>
         </div>
       ) : (
-        <div className="bg-gray-200 overflow-scroll h-full ">
-          <div className="bg-white p-6 rounded-md flex justify-between items-center mx-8 mt-10">
-            <CheckerFilter
-              onApply={handleApplyFilter}
-              onReset={handleResetFilter}
-            />
+        <div className="h-full overflow-auto bg-gray-200">
+          <div className="mx-8 mt-10 rounded-md bg-white p-6">
+            <CheckerFilter onApply={handleApplyFilter} onReset={handleResetFilter} />
           </div>
 
-          <div className="lg:mx-8 mt-10 bg-white mb-32 pb-10 rounded-md flex flex-col">
-            <div className="flex flex-wrap gap-4 justify-between items-center p-6">
+          <div className="mx-0 lg:mx-8 mt-10 mb-32 flex flex-col rounded-md bg-white pb-10">
+            <div className="flex flex-wrap items-center justify-between gap-4 p-6">
               <div className="flex items-center gap-8">
                 <h1 className="text-xl text-gray-800">Pending Refund Requests</h1>
                 {metaData && (
-                  <span className="text-sm text-gray-500">Showing {(metaData.currentPage - 1) * metaData.pageSize + 1} - {Math.min(metaData.currentPage * metaData.pageSize, metaData.totalCount)} of {metaData.totalCount}</span>
+                  <span className="text-sm text-gray-500">
+                    Showing {(metaData.currentPage - 1) * metaData.pageSize + 1} -{' '}
+                    {Math.min(metaData.currentPage * metaData.pageSize, metaData.totalCount)} of{' '}
+                    {metaData.totalCount}
+                  </span>
                 )}
               </div>
-              <div className="flex gap-4 items-center">
-                
-                <Button variant="ghost" className="py-2.5 w-44">
-                  Export
-                </Button>
+
+              <div className="flex items-center gap-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="w-44 py-2.5">
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {/* Radix uses onSelect for menu items */}
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onSelect={exportCurrentPageCSV}
+                      disabled={!data.length}
+                    >
+                      Current page (CSV)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
+
+            <div className="mt-4 flex-1 overflow-auto px-6 lg:px-0">
+              {loading && <div className="p-6 text-sm text-gray-500">Loading refunds...</div>}
+              {error && !loading && <div className="p-6 text-sm text-red-600">{error}</div>}
+
+              {!loading && !error && (
+                <Table className="min-w-[600px]">
+                  <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead key={header.id}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(header.column.columnDef.header, header.getContext())}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableHeader>
+
+                  <TableBody>
+                    {table.getRowModel().rows.length ? (
+                      table.getRowModel().rows.map((row) => (
+                        <TableRow
+                          key={row.id}
+                          className="cursor-pointer hover:bg-gray-100"
+                          onClick={() => {
+                            setSelectedTransaction(row.original);
+                            setOpen(true);
+                          }}
+                          data-state={row.getIsSelected() && 'selected'}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell
+                              key={cell.id}
+                              className={cell.column.id === 'action' ? 'text-right' : ''}
+                            >
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={columns.length} className="h-24 text-center">
+                          <div className="flex flex-col items-center">
+                            <span className="font-medium">No data available</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+
             {metaData && (
-              <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between px-6 pb-2 mt-2">
+              <div className="mt-6 flex flex-col items-start justify-between gap-4 border-t px-6 pb-4 pt-6 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-3 text-sm">
                   <button
                     disabled={!metaData.hasPrevious || loading}
-                    onClick={() => metaData.hasPrevious && setPageNumber(p => Math.max(1, p - 1))}
-                    className="px-3 py-1.5 rounded border text-xs disabled:opacity-40"
-                  >Prev</button>
-                  <span className="text-gray-600">Page {metaData.currentPage} of {metaData.totalPages}</span>
+                    onClick={() => metaData.hasPrevious && setPageNumber((p) => Math.max(1, p - 1))}
+                    className="rounded border px-3 py-1.5 text-xs disabled:opacity-40"
+                  >
+                    Prev
+                  </button>
+                  <span className="text-gray-600">
+                    Page {metaData.currentPage} of {metaData.totalPages}
+                  </span>
                   <button
                     disabled={!metaData.hasNext || loading}
-                    onClick={() => metaData.hasNext && setPageNumber(p => p + 1)}
-                    className="px-3 py-1.5 rounded border text-xs disabled:opacity-40"
-                  >Next</button>
+                    onClick={() => metaData.hasNext && setPageNumber((p) => p + 1)}
+                    className="rounded border px-3 py-1.5 text-xs disabled:opacity-40"
+                  >
+                    Next
+                  </button>
                 </div>
+
                 <div className="flex items-center gap-2 text-sm">
-                  <label htmlFor="pageSize" className="text-gray-600">Rows per page:</label>
+                  <label htmlFor="pageSize" className="text-gray-600">
+                    Rows per page:
+                  </label>
                   <select
                     id="pageSize"
                     value={pageSize}
-                    onChange={(e) => { setPageSize(Number(e.target.value)); setPageNumber(1); }}
-                    className="border rounded px-2 py-1 text-sm"
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setPageNumber(1);
+                    }}
+                    className="rounded border px-2 py-1 text-sm"
                   >
-                    {[10,20,30,50].map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                    {[10, 20, 30, 50].map((sz) => (
+                      <option key={sz} value={sz}>
+                        {sz}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
             )}
-
-            <div className="flex-1 overflow-auto px-6 lg:px-0 mt-4">
-              {loading && (
-                <div className="p-6 text-sm text-gray-500">Loading refunds...</div>
-              )}
-              {error && !loading && (
-                <div className="p-6 text-sm text-red-600">{error}</div>
-              )}
-              {!loading && !error && (
-              <Table className="min-w-[600px]">
-                <TableHeader>
-                  {table.getHeaderGroups().map(headerGroup => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map(header => (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows.length ? (
-                    table.getRowModel().rows.map(row => (
-                      <TableRow
-                        key={row.id}
-                        className="cursor-pointer hover:bg-gray-100"
-                        onClick={() => {
-                          setSelectedTransaction(row.original); // save row data
-                          setOpen(true);
-                        }}
-                        data-state={row.getIsSelected() && 'selected'}
-                      >
-                        {row.getVisibleCells().map(cell => (
-                          <>
-                            <TableCell
-                              key={cell.id}
-                              className={
-                                cell.column.id === 'actions' ? 'text-right' : ''
-                              }
-                            >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </TableCell>
-                          </>
-                        ))}
-                      </TableRow>
-                    )) 
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-24 text-center"
-                      >
-                        <div className="flex flex-col items-center">
-                          <span className="font-medium">No data available</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-              )}
-            </div>
-
-            {/* Pagination stuck at bottom */}
-            {/* <div className="p-4 flex items-center justify-end ">
-            <Pagination
-              totalEntriesSize={filteredClaims.length}
-              currentEntriesSize={paginatedProviders.length}
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              pageSize={pageSize}
-              onPageSizeChange={size => {
-                setPageSize(size);
-                setPage(1);
-              }}
-            />
-          </div> */}
           </div>
         </div>
       )}
 
-      {/* transaction details modal */}
       <CheckerDetails open={open} setOpen={setOpen} data={selectedTransaction} />
     </DashboardLayout>
   );

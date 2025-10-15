@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { UserReportsState } from '@/types';
-import { fetchUserReports, fetchUserReportDetail } from '@/services/thunks';
+import { fetchUserReports, fetchUserReportDetail, exportUserReportDetail } from '@/services/thunks';
 
 const initialState: UserReportsState = {
   list: [],
@@ -13,6 +13,8 @@ const initialState: UserReportsState = {
   errorDetail: null,
   filters: { Page: 1, PageSize: 20 },
   detailFilters: { Page: 1, PageSize: 20, Date: '' },
+  exportingDetail: false,
+  exportDetailError: null,
 };
 
 const userReportsSlice = createSlice({
@@ -72,6 +74,18 @@ const userReportsSlice = createSlice({
       .addCase(fetchUserReportDetail.rejected, (state, action) => {
         state.loadingDetail = false;
         state.errorDetail = action.payload as string;
+      })
+      // Export detail
+      .addCase(exportUserReportDetail.pending, state => {
+        state.exportingDetail = true;
+        state.exportDetailError = null;
+      })
+      .addCase(exportUserReportDetail.fulfilled, (state) => {
+        state.exportingDetail = false;
+      })
+      .addCase(exportUserReportDetail.rejected, (state, action) => {
+        state.exportingDetail = false;
+        state.exportDetailError = action.payload as string;
       });
   },
 });

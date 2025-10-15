@@ -78,7 +78,7 @@ const Refunds = () => {
   const [columnFilters, setColumnFilters] = useState<{ id: string; value: unknown }[]>([]);
 
   const [open, setOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<RefundRow | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<RefundRow | undefined>(undefined);
 
   //const [page, setPage] = useState(1);
   //const [pageSize, setPageSize] = useState(10);
@@ -100,6 +100,9 @@ const Refunds = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>({});
+  const hasAppliedFilters = useMemo(() => {
+    return Object.values(appliedFilters).some(v => v !== undefined && v !== null && v !== '');
+  }, [appliedFilters]);
 
   useEffect(() => {
     dispatch(fetchRefunds({
@@ -262,12 +265,25 @@ const Refunds = () => {
   return (
     <DashboardLayout>
       {!hasData ? (
-        <div className="flex flex-col items-center justify-center h-[70vh] ">
-          <p className="text-lg font-semibold text-gray-800">
-            You have no initiated a refund yet 
-          </p>
-          <p className="text-gray-500 mt-2 mb-6">All refund appears here</p>
-           <InitiateARefund />
+        <div className="flex flex-col items-center justify-center h-[70vh] text-center px-4">
+          {loading ? (
+            <Loader height="h-40" />
+          ) : hasAppliedFilters ? (
+            <>
+              <p className="text-lg font-semibold text-gray-800">No refunds match your filters</p>
+              <p className="text-gray-500 mt-2 mb-6">Try adjusting your criteria or reset to see all refunds.</p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Button variant="outline" onClick={() => { setAppliedFilters({}); handleResetFilter(); setPage(1); }}>Reset Filters</Button>
+                <InitiateARefund />
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-semibold text-gray-800">You have not initiated any refunds yet</p>
+              <p className="text-gray-500 mt-2 mb-6">All refunds will appear here once created.</p>
+              <InitiateARefund />
+            </>
+          )}
         </div>
       ) : (
         <div className="bg-gray-200 overflow-scroll h-full ">
