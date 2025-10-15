@@ -1,5 +1,5 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
 
 import {
   Table,
@@ -26,81 +26,54 @@ import {Pagination} from '@/components/ui/pagination';
 import CreateAmenities from '@/components/form/ambulance/amenities/create-amenities';
 import EditAmenities from '@/components/form/ambulance/amenities/edit-amenities';
 import { Trash } from 'lucide-react';
+import {useDispatch, useSelector} from 'react-redux';
+import {AppDispatch, RootState} from '@/services/store';
+import { fetchAmenities } from '@/services/thunks';
+import { Loader } from '@/components/ui/loading';
 
-//import {ProviderFilter} from '@/features/modules/providers/filter';
-
-const amenities = [
-  {
-    id: '1',
-    name: 'Name',
-    type: 'Defibrillator',
-    serial: 'UYgh123456u8k',
-    date: '2023-01-01',
-    action: '',
-  },
-  {
-    id: '2',
-    name: 'Name',
-    type: 'Ventilator',
-    serial: 'UYgh123456u8k',
-    date: '2023-01-01',
-    action: '',
-  },
-];
 
 const Amenities = () => {
-  //   const [searchTerm, setSearchTerm] = useState('');
-
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  
+  const dispatch = useDispatch<AppDispatch>();
+  const { amenities, loading, error } = useSelector((state: RootState) => state.amenities);
+  const ambulanceProviderId = useSelector((state: RootState) => state.ambulanceProviders.selectedProvider?.id); 
 
-  //   const filteredProviders = hospitals.filter(item =>
-  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  //   );
+  useEffect(() => {
+    if(!amenities.length && ambulanceProviderId){
+      dispatch(fetchAmenities(ambulanceProviderId));
+    }
+  }, [dispatch, amenities.length, ambulanceProviderId]);
 
-  const totalPages = Math.ceil(amenities.length / pageSize);
-  const paginatedProviders = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return amenities.slice(start, start + pageSize);
-  }, [amenities, page]);
-
+  // Define columns and table data regardless of loading state
   const columns: ColumnDef<any>[] = [
-
     {
-      accessorKey: 'name',
-      header: 'Equipment name',
-    },
-
-    {
-      accessorKey: 'type',
-      header: 'Type/Category',
+      accessorKey: 'equipmentName', 
+      header: 'Equipment Name', 
     },
     {
-      accessorKey: 'serial',
-      header: 'Serial Number',
+      accessorKey: 'description',
+      header: 'Description',
     },
-
     {
       id: 'action',
       header: 'Action',
       enableHiding: false,
       cell: ({row}) => {
-        // Check if row is empty
-        const isEmptyRow = !row.original.id && !row.original.name;
-
+        const isEmptyRow = !row.original.equipmentName && !row.original.description;
         if (isEmptyRow) {
-          return null; // nothing rendered for empty row
+          return null; 
         }
         return (
           <div className="flex items-center gap-4">
             <div>
               <EditAmenities data={row.original} />
             </div>
-
             <div>
               <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
             </div>
@@ -110,8 +83,15 @@ const Amenities = () => {
     },
   ];
 
+  const totalPages = Math.ceil(amenities.length / pageSize);
+  const paginatedProviders = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return amenities.slice(start, start + pageSize);
+  }, [amenities, page, pageSize]);
+
+  // Call useReactTable unconditionally - use empty data when not available
   const table = useReactTable({
-    data: paginatedProviders,
+    data: paginatedProviders || [],
     columns,
     state: {
       sorting,
@@ -129,21 +109,40 @@ const Amenities = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  // Function to apply filters from FilterDialog
-  //   const handleApplyFilter = (filters: any) => {
-  //     const newFilters: any[] = [];
-  //     if (filters.status) newFilters.push({id: 'status', value: filters.status});
-  //     if (filters.location)
-  //       newFilters.push({id: 'location', value: filters.location});
-  //     if (filters.ranking)
-  //       newFilters.push({id: 'ranking', value: filters.ranking});
-  //     if (filters.date) newFilters.push({id: 'date', value: filters.date}); // make sure your data has a 'date' field
-  //     setColumnFilters(newFilters);
-  //   };
-  // Function to reset filters
-  //   const handleResetFilter = () => {
-  //     setColumnFilters([]);
-  //   };
+  // Show loading state
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader/>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="text-red-500 p-4 text-center">
+          Error: {error}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show no provider selected state
+  if (!ambulanceProviderId) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg text-gray-500">
+            Please select an ambulance provider first
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -152,14 +151,6 @@ const Amenities = () => {
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
               <h1 className="text-xl text-gray-800">All Amenities</h1>
-
-              {/* <input
-                type="text"
-                placeholder="Search hospital"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
-              /> */}
             </div>
             <div className="flex gap-4 items-center">
               <CreateAmenities />
@@ -192,19 +183,17 @@ const Amenities = () => {
                       data-state={row.getIsSelected() && 'selected'}
                     >
                       {row.getVisibleCells().map(cell => (
-                        <>
-                          <TableCell
-                            key={cell.id}
-                            className={
-                              cell.column.id === 'actions' ? 'text-right' : ''
-                            }
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        </>
+                        <TableCell
+                          key={cell.id} 
+                          className={
+                            cell.column.id === 'actions' ? 'text-right' : ''
+                          }
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))
@@ -214,9 +203,9 @@ const Amenities = () => {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      <div className="flex flex-col items-start">
+                      <div className="flex flex-col items-center justify-center gap-2">
                         <span className="font-medium">
-                          No ambulance amenities  found
+                          No ambulance amenities found
                         </span>
                         <span className="font-medium">
                           All added amenities appear here
@@ -230,7 +219,6 @@ const Amenities = () => {
             </Table>
           </div>
 
-          {/* Pagination stuck at bottom */}
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={amenities.length}

@@ -1,5 +1,7 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
 import {useState, useMemo, useEffect} from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/services/store';
 
 import {
   Table,
@@ -23,80 +25,137 @@ import {
 } from '@tanstack/react-table';
 
 import {Pagination} from '@/components/ui/pagination';
-import AddDriver from '@/components/form/ambulance/drivers/add-drivers';
+
 import EditDriver from '@/components/form/ambulance/drivers/edit-driver';
 import DriverDetails from '@/features/modules/ambulance/driver-details';
 import { Trash } from 'lucide-react';
-import { AppDispatch, RootState } from '@/services/store';
-import { useSelector } from 'react-redux';
-import { useDispatch } from 'react-redux';
-import { fetchDrivers } from '@/services/thunks';
+import AddAmbulance from '@/components/form/ambulance/ambulances/add-ambulance';
+import { fetchAmbulances } from '@/services/thunks';
 import { Loader } from '@/components/ui/loading';
 
-const Drivers = () => {
+
+const formatLocation = (location: { latitude: number; longitude: number } | null) => {
+  if (!location) return 'N/A';
+  return `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`;
+};
+
+// Helper function to format price
+const formatPrice = (price: number | null) => {
+  if (price === null || price === undefined) return 'N/A';
+  return `$${price.toFixed(2)}`;
+};
+
+const AllAmbulances = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { ambulances, loading, error } = useSelector((state: RootState) => state.allAmbulances);
+
+  // const ambulanceProviderId = useSelector((state: RootState) => state.ambulanceProviders.selectedProvider?.id); 
+  const ambulanceProviderId = "c4ac7df8-1873-42db-97ba-8b240abc99df"
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const dispatch = useDispatch<AppDispatch>();
-  const { drivers, loading, error } = useSelector((state: RootState) => state.drivers);
-  const ambulanceProviderId = "c4ac7df8-1873-42db-97ba-8b240abc99df";
+     useEffect(() => {
+        if(!ambulances.length && ambulanceProviderId){
+          dispatch(fetchAmbulances(ambulanceProviderId));
+        }
+      }, [dispatch, ambulances.length, ambulanceProviderId]);
 
-  useEffect(() => {
-    dispatch(fetchDrivers(ambulanceProviderId));
-  }, [dispatch, ambulanceProviderId]);
+  // useEffect(() => {
+  //   dispatch(fetchAmbulances());
+  // }, [dispatch]);
 
-  // Safe data transformation - handle undefined/empty drivers
-  const transformedDrivers = useMemo(() => {
-    if (!drivers || !Array.isArray(drivers)) return [];
-    
-    return drivers.map(driver => ({
-      id: driver.id,
-      driver_id: driver.id?.slice(-8)?.toUpperCase() || 'N/A',
-      name: driver.name,
-      license: driver.certificationStatus,
-      license_no: driver.licenseNumber,
-      phone: driver.phoneNumber,
-      email: driver.email,
-      address: driver.address,
-      date: '2023-01-01', 
-      rawData: driver, // Keep original data for details
+  // Transform API data to match table structure
+  const transformedAmbulances = useMemo(() => {
+    return ambulances.map(ambulance => ({
+      id: ambulance.id,
+      ambulance_id: ambulance.id.slice(-8).toUpperCase(), // Use last 8 chars as ID
+      price_per_kilometer: formatPrice(ambulance.pricePerKm),
+      Type: ambulance.amenities || 'General', // Using amenities as type for now
+      plate_number: ambulance.plateNumber,
+      location: formatLocation(ambulance.location),
+      email: 'N/A', // Not in API, you might need to add this field
+      address: ambulance.address || 'Address not specified',
+      status: ambulance.status,
+      base_rate_fee: formatPrice(ambulance.baseRateFee),
+      rawData: ambulance, // Keep original data for actions
     }));
-  }, [drivers]);
+  }, [ambulances]);
 
-  const totalPages = Math.ceil(transformedDrivers.length / pageSize);
-  const paginatedDrivers = useMemo(() => {
+  // Filter ambulances based on search term
+  const filteredAmbulances = useMemo(() => {
+    if (!searchTerm) return transformedAmbulances;
+    
+    return transformedAmbulances.filter(ambulance =>
+      ambulance.plate_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ambulance.ambulance_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ambulance.Type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ambulance.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ambulance.address.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [transformedAmbulances, searchTerm]);
+
+  const totalPages = Math.ceil(filteredAmbulances.length / pageSize);
+  const paginatedAmbulances = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return transformedDrivers.slice(start, start + pageSize);
-  }, [transformedDrivers, page, pageSize]);
+    return filteredAmbulances.slice(start, start + pageSize);
+  }, [filteredAmbulances, page, pageSize]);
 
   const columns: ColumnDef<any>[] = [
     {
-      accessorKey: 'driver_id',
-      header: 'Driver ID',
+      accessorKey: 'ambulance_id',
+      header: 'Ambulance ID',
+      cell: ({row}) => (
+        <span className="font-medium">#{row.original.ambulance_id}</span>
+      ),
     },
     {
-      accessorKey: 'name',
-      header: 'Full Name',
+      accessorKey: 'plate_number',
+      header: 'Plate Number',
+      cell: ({row}) => (
+        <span className="font-semibold">{row.original.plate_number}</span>
+      ),
     },
     {
-      accessorKey: 'license',
-      header: 'License Status',
+      accessorKey: 'price_per_kilometer',
+      header: 'Price per Kilometer',
     },
     {
-      accessorKey: 'license_no',
-      header: 'Drivers License Number',
+      accessorKey: 'base_rate_fee',
+      header: 'Base Rate Fee',
     },
     {
-      accessorKey: 'phone',
-      header: 'Phone Number',
+      accessorKey: 'Type',
+      header: 'Type',
+      cell: ({row}) => (
+        <span className="capitalize">{row.original.Type}</span>
+      ),
     },
     {
-      accessorKey: 'email',
-      header: 'Email',
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({row}) => (
+        <span 
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            row.original.status === 'Available' 
+              ? 'bg-green-100 text-green-800'
+              : row.original.status === 'Unavailable'
+              ? 'bg-red-100 text-red-800'
+              : 'bg-yellow-100 text-yellow-800'
+          }`}
+        >
+          {row.original.status}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'location',
+      header: 'Location',
     },
     {
       accessorKey: 'address',
@@ -112,9 +171,6 @@ const Drivers = () => {
       header: 'Action',
       enableHiding: false,
       cell: ({row}) => {
-        const isEmptyRow = !row.original.id && !row.original.name;
-        if (isEmptyRow) return null;
-        
         return (
           <div className="flex items-center gap-4">
             <div>
@@ -133,7 +189,7 @@ const Drivers = () => {
   ];
 
   const table = useReactTable({
-    data: paginatedDrivers,
+    data: paginatedAmbulances,
     columns,
     state: {
       sorting,
@@ -151,23 +207,27 @@ const Drivers = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  // Show loading state
   if (loading) {
     return (
       <DashboardLayout>
         <div className="flex justify-center items-center h-64">
-          <Loader/>
+         <Loader/>
         </div>
       </DashboardLayout>
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <DashboardLayout>
         <div className="flex justify-center items-center h-64">
           <div className="text-lg text-red-500">Error: {error}</div>
+          <button 
+            onClick={() => dispatch(fetchAmbulances())}
+            className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
         </div>
       </DashboardLayout>
     );
@@ -180,11 +240,19 @@ const Drivers = () => {
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
               <h1 className="text-xl text-gray-800">
-                All Drivers ({transformedDrivers.length})
+                All Ambulances ({ambulances.length})
               </h1>
+
+              <input
+                type="text"
+                placeholder="Search by plate, ID, type, or location"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
+              />
             </div>
             <div className="flex gap-4 items-center">
-              <AddDriver />
+              <AddAmbulance />
             </div>
           </div>
 
@@ -235,11 +303,15 @@ const Drivers = () => {
                       className="h-24 text-center"
                     >
                       <div className="flex flex-col items-center justify-center space-y-4">
-                        <span className="font-medium">No Drivers found</span>
-                        <span className="text-sm text-gray-500">
-                          All added Drivers will appear here
+                        <span className="font-medium">
+                          No ambulances found
                         </span>
-                        <AddDriver />
+                        {searchTerm && (
+                          <span className="text-sm text-gray-500">
+                            No results for "{searchTerm}". Try different search terms.
+                          </span>
+                        )}
+                        <AddAmbulance />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -248,11 +320,11 @@ const Drivers = () => {
             </Table>
           </div>
 
-          {/* Pagination stuck at bottom */}
+          {/* Pagination */}
           <div className="p-4 flex items-center justify-end">
             <Pagination
-              totalEntriesSize={drivers.length}
-           
+              totalEntriesSize={filteredAmbulances.length}
+              currentEntriesSize={paginatedAmbulances.length}
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}
@@ -269,4 +341,4 @@ const Drivers = () => {
   );
 };
 
-export default Drivers;
+export default AllAmbulances;

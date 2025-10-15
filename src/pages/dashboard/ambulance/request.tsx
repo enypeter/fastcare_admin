@@ -1,5 +1,5 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
 import {Button} from '@/components/ui/button';
 import {ArrowDownLeft} from 'lucide-react';
 import claim from '/svg/totalamb.svg';
@@ -31,40 +31,28 @@ import {Pagination} from '@/components/ui/pagination';
 
 import { RequestFilter } from '@/features/modules/ambulance/filter';
 import RequestDetails from '@/features/modules/ambulance/request-details';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/services/store';
+import { fetchAmbulanceRequests } from '@/services/thunks';
+import { Loader } from '@/components/ui/loading';
 
+// Helper function to format date
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return 'N/A';
+  return dateString.replace(';', ',');
+};
 
-const requests = [
-  {
-    id: '1',
-    location: '23 Ogui rd, Achara layout, Enugu',
-    request_id: 'REQ2301',
-    type: 'Emergency, Headache',
-    no: 'AMB-12011 : LAG23AEJ',
-    time: '11/03/25; 11:30am',
-    action: 'Assign team',
-    isNew: true, // new row
-  },
-  {
-    id: '2',
-    location: '63 Peace Avenue, Yaba, Lagos',
-    request_id: 'REQ2301',
-    type: 'Standby',
-    no: 'AMB-12011 : LAG23LSR',
-    time: '11/03/25; 11:30am',
-    action: 'View trip',
-    isNew: false,
-  },
-  {
-    id: '3',
-    location: '63 Eriga Bashorun, Ojota, Lagos',
-    request_id: 'REQ2301',
-    type: 'Vomitting',
-    no: 'AMB-12021 : LAG23LSR',
-    time: '11/03/25; 11:30am',
-    action: 'Assign team',
-    isNew: false,
-  },
-];
+// Helper function to get pickup address
+const getPickupAddress = (request: any) => {
+  return request.pickupAddress || 
+         `${request.pickupLocation?.latitude?.toFixed(4)}, ${request.pickupLocation?.longitude?.toFixed(4)}` || 
+         'Location not specified';
+};
+
+// Helper function to get ambulance display number
+const getAmbulanceDisplay = (request: any) => {
+  return request.ambulanceNumber || request.ambulanceId?.slice(-8) || 'N/A';
+};
 
 const claimStats = [
   {
@@ -80,7 +68,7 @@ const claimStats = [
     title: 'Available Ambulance',
     value: 0,
     borderColor: '#0e9f2e',
-    bgColor: 'rgba(14, 159, 46, 0.05)', // #0e9f2e 5%
+    bgColor: 'rgba(14, 159, 46, 0.05)',
     icon: approved,
   },
   {
@@ -88,7 +76,7 @@ const claimStats = [
     title: 'En Route',
     value: 0,
     borderColor: '#CFC923',
-    bgColor: 'rgba(207, 201, 35, 0.05)', // fixed
+    bgColor: 'rgba(207, 201, 35, 0.05)',
     icon: en,
   },
   {
@@ -96,13 +84,15 @@ const claimStats = [
     title: 'Unavailable',
     value: 0,
     borderColor: '#cf2323',
-    bgColor: 'rgba(207, 35, 35, 0.05)', // #cf2323 5%
+    bgColor: 'rgba(207, 35, 35, 0.05)',
     icon: disputed,
   },
 ];
 
 const Request = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
+  const { requests, loading, error } = useSelector((state: RootState) => state.ambulanceRequests);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -111,17 +101,53 @@ const Request = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const filteredClaims = requests.filter(
+  //  useEffect(() => {
+  //   console.log('Redux requests state:', requests);
+  //   console.log('Loading:', loading);
+  //   console.log('Error:', error);
+  // }, [requests, loading, error]);
+// ambulanceProviders.selectedProvider?.id
+  const providerId = useSelector((state: RootState) => state.auth.user?.id); 
+
+    useEffect(() => {
+ 
+      if(!requests.length && providerId){
+        dispatch(fetchAmbulanceRequests(providerId));
+      }
+    }, [dispatch, requests.length, providerId]);
+
+  // useEffect(() => {
+  //   dispatch(fetchAmbulanceRequests());
+  // }, [dispatch]);
+
+  // Transform API data to match table structure
+  const transformedRequests = useMemo(() => {
+    return requests.map(request => ({
+      id: request.id,
+      location: getPickupAddress(request),
+      request_id: request.id.slice(-8).toUpperCase(), 
+      type: request.emergencyType || 'General',
+      no: getAmbulanceDisplay(request),
+      time: formatDate(request.creationDate),
+      action: 'View details',
+      isNew: false, 
+      rawData: request, // Keep original data for details
+    }));
+  }, [requests]);
+
+  const filteredClaims = transformedRequests.filter(
     item =>
       item.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.no.toLowerCase().includes(searchTerm.toLowerCase()),
+      item.no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.request_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredClaims.length / pageSize);
-  const paginatedProviders = useMemo(() => {
+  const paginatedRequests = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredClaims.slice(start, start + pageSize);
-  }, [filteredClaims, page]);
+  }, [filteredClaims, page, pageSize]);
 
   const columns: ColumnDef<any>[] = [
     {
@@ -131,14 +157,16 @@ const Request = () => {
         <div
           className={
             row.original.isNew
-              ? 'font-semibold text-gray-900 flex flex-col '
-              : ''
+              ? 'font-semibold text-gray-900 flex flex-col'
+              : 'flex flex-col'
           }
         >
           {row.original.isNew && (
-            <span className=" text-sm text-red-500 ">New</span>
+            <span className="text-sm text-red-500">New</span>
           )}
-          {row.original.location}
+          <span className={row.original.isNew ? 'font-semibold' : ''}>
+            {row.original.location}
+          </span>
         </div>
       ),
     },
@@ -156,7 +184,7 @@ const Request = () => {
       header: 'Request ID',
       cell: ({row}) => (
         <span className={row.original.isNew ? 'font-semibold text-gray-900' : ''}>
-          {row.original.request_id}
+          #{row.original.request_id}
         </span>
       ),
     },
@@ -170,16 +198,25 @@ const Request = () => {
       ),
     },
     {
+      accessorKey: 'type',
+      header: 'Emergency Type',
+      cell: ({row}) => (
+        <span className={row.original.isNew ? 'font-semibold text-gray-900' : ''}>
+          {row.original.type}
+        </span>
+      ),
+    },
+    {
       id: 'action',
       header: 'Action',
       cell: ({row}) => (
-       <RequestDetails data={row.original} />
+        <RequestDetails data={row.original.rawData} />
       ),
     },
   ];
 
   const table = useReactTable({
-    data: paginatedProviders,
+    data: paginatedRequests,
     columns,
     state: {
       sorting,
@@ -207,19 +244,61 @@ const Request = () => {
     if (filters.time) {
       newFilters.push({id: 'time', value: filters.time});
     }
+    if (filters.type) {
+      newFilters.push({id: 'type', value: filters.type});
+    }
 
     setColumnFilters(newFilters);
   };
+
   // Function to reset filters
   const handleResetFilter = () => {
     setColumnFilters([]);
   };
 
+  // Update stats based on actual data
+  const updatedClaimStats = useMemo(() => {
+    const total = requests.length;
+    const available = requests.filter(req => req.ambulanceType === 'Available').length;
+    const enRoute = requests.filter(req => req.ambulanceType === 'Emergency').length;
+    const unavailable = requests.filter(req => !req.ambulanceType || req.ambulanceType === 'Unavailable').length;
+
+    return claimStats.map(stat => {
+      switch (stat.id) {
+        case 1: return {...stat, value: total};
+        case 2: return {...stat, value: available};
+        case 3: return {...stat, value: enRoute};
+        case 4: return {...stat, value: unavailable};
+        default: return stat;
+      }
+    });
+  }, [requests]);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader/>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg text-red-500">Error: {error}</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
-      <div className="bg-gray-100 overflow-scroll h-full ">
+      <div className="bg-gray-100 overflow-scroll h-full">
         <div className="my-10 mx-8 flex flex-col lg:flex-row justify-between gap-6 items-center">
-          {claimStats.map(stat => (
+          {updatedClaimStats.map(stat => (
             <div
               key={stat.id}
               className="flex justify-between items-center rounded-md bg-white p-6 w-full"
@@ -229,7 +308,7 @@ const Request = () => {
               }}
             >
               <div>
-                <h4 className="text-2xl  leading-tight mb-2">{stat.value}</h4>
+                <h4 className="text-2xl leading-tight mb-2">{stat.value}</h4>
                 <p className="text-sm text-gray-600">{stat.title}</p>
               </div>
               <div>
@@ -239,13 +318,13 @@ const Request = () => {
           ))}
         </div>
 
-        <div className="lg:mx-8 mt-10 bg-white mb-32 rounded-md flex flex-col ">
+        <div className="lg:mx-8 mt-10 bg-white mb-32 rounded-md flex flex-col">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-4">
-              <h1 className="text-lg text-gray-800">All Ambulances Request</h1>
+              <h1 className="text-lg text-gray-800">All Ambulance Requests</h1>
               <input
                 type="text"
-                placeholder="Search driver or ambulance number"
+                placeholder="Search location, ambulance number, or type"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
@@ -289,19 +368,17 @@ const Request = () => {
                       data-state={row.getIsSelected() && 'selected'}
                     >
                       {row.getVisibleCells().map(cell => (
-                        <>
-                          <TableCell
-                            key={cell.id}
-                            className={
-                              cell.column.id === 'actions' ? 'text-right' : ''
-                            }
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        </>
+                        <TableCell
+                          key={cell.id}
+                          className={
+                            cell.column.id === 'actions' ? 'text-right' : ''
+                          }
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))
@@ -311,8 +388,13 @@ const Request = () => {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      <div className="flex flex-col items-start">
-                        <span className="font-medium">No ambulance request found</span>
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="font-medium">No ambulance requests found</span>
+                        {searchTerm && (
+                          <span className="text-sm text-gray-500 mt-1">
+                            Try adjusting your search terms
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -321,8 +403,8 @@ const Request = () => {
             </Table>
           </div>
 
-          {/* Pagination stuck at bottom */}
-          <div className="p-4 flex items-center justify-end ">
+          {/* Pagination */}
+          <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={filteredClaims.length}
              
