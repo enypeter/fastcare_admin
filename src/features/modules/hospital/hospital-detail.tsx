@@ -18,7 +18,7 @@ const editSchema = z.object({
   hospitalCode: z.string().min(2, 'Required'),
   physicalConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
   virtualConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
-  homeAddresses: z.string().min(5, 'Required'),
+  hospitalAddresses: z.string().min(5, 'Required'),
   address: z.string().min(5, 'Required'),
   website: z.string().url('Invalid URL').optional().or(z.literal('')),
   phoneNumber: z.string().min(7, 'Invalid phone'),
@@ -46,7 +46,7 @@ const HospitalDetail = ({ data, isEditing, onCancel, onUpdated }: Props) => {
   const form = useForm<EditFormValues>({
     resolver: zodResolver(editSchema),
     defaultValues: {
-      hospitalName: '', hospitalCode: '', physicalConsultationFee: '', virtualConsultationFee: '', homeAddresses: '', address: '', website: '', phoneNumber: '', countryCode: '+234', email: '', accountNumber: '', invoiceAccountNumber: '', bankCode: '', invoiceBankCode: ''
+      hospitalName: '', hospitalCode: '', physicalConsultationFee: '', virtualConsultationFee: '', hospitalAddresses: '', address: '', website: '', phoneNumber: '', countryCode: '+234', email: '', accountNumber: '', invoiceAccountNumber: '', bankCode: '', invoiceBankCode: ''
     },
     mode: 'onChange'
   });
@@ -60,7 +60,7 @@ const HospitalDetail = ({ data, isEditing, onCancel, onUpdated }: Props) => {
       hospitalCode: data.hospitalCode || '',
       physicalConsultationFee: (data.physicalConsultationCharge ?? '').toString(),
       virtualConsultationFee: (data.virtualConsultationCharge ?? '').toString(),
-      homeAddresses: data.hospitalAddresses || '',
+      hospitalAddresses: data.hospitalAddresses || '',
       address: data.address || '',
       website: data.website || '',
       phoneNumber: data.phoneNumber || '',
@@ -75,7 +75,7 @@ const HospitalDetail = ({ data, isEditing, onCancel, onUpdated }: Props) => {
 
   const watched = watch();
   const isFormComplete = (() => {
-    const required: (keyof EditFormValues)[] = ['hospitalName','hospitalCode','physicalConsultationFee','virtualConsultationFee','homeAddresses','address','phoneNumber','email','accountNumber','invoiceAccountNumber','bankCode','invoiceBankCode'];
+    const required: (keyof EditFormValues)[] = ['hospitalName','hospitalCode','physicalConsultationFee','virtualConsultationFee','hospitalAddresses','address','phoneNumber','email','accountNumber','invoiceAccountNumber','bankCode','invoiceBankCode'];
     if (!required.every(k => typeof watched[k] === 'string' && (watched[k] as string).trim().length > 0)) return false;
     const hasErr = required.some(k => (errors as Record<string, unknown>)[k]);
     return !hasErr;
@@ -86,7 +86,7 @@ const HospitalDetail = ({ data, isEditing, onCancel, onUpdated }: Props) => {
     try {
       const fd = new FormData();
       const map: Record<keyof EditFormValues, string> = {
-        hospitalName: 'HospitalName', hospitalCode: 'HospitalCode', physicalConsultationFee: 'PhysicalConsultationFee', virtualConsultationFee: 'VirtualConsultationFee', homeAddresses: 'HomeAddresses', address: 'Address', website: 'Website', phoneNumber: 'PhoneNumber', countryCode: 'CountryCode', email: 'Email', accountNumber: 'AccountNumber', invoiceAccountNumber: 'InvoiceAccountNumber', bankCode: 'BankCode', invoiceBankCode: 'InvoiceBankCode'
+        hospitalName: 'HospitalName', hospitalCode: 'HospitalCode', physicalConsultationFee: 'PhysicalConsultationFee', virtualConsultationFee: 'VirtualConsultationFee', hospitalAddresses: 'HospitalAddresses', address: 'Address', website: 'Website', phoneNumber: 'PhoneNumber', countryCode: 'CountryCode', email: 'Email', accountNumber: 'AccountNumber', invoiceAccountNumber: 'InvoiceAccountNumber', bankCode: 'BankCode', invoiceBankCode: 'InvoiceBankCode'
       };
       const numeric: (keyof EditFormValues)[] = ['physicalConsultationFee','virtualConsultationFee'];
       Object.entries(values).forEach(([k, raw]) => {
@@ -125,7 +125,7 @@ const HospitalDetail = ({ data, isEditing, onCancel, onUpdated }: Props) => {
         />
         <Input label="Hospital Address" disabled={!isEditing} requiredIndicator required {...register('address')} error={errors.address?.message} />
         <Input label="Website" disabled={!isEditing} {...register('website')} error={errors.website?.message} />
-        <Input label="IP Address" disabled={!isEditing} requiredIndicator required {...register('homeAddresses')} error={errors.homeAddresses?.message} />
+        <Input label="IP Address" disabled={!isEditing} requiredIndicator required {...register('hospitalAddresses')} error={errors.hospitalAddresses?.message} />
         <BankSelect label="Bank" value={watch('bankCode') || ''} onChange={(code) => setValue('bankCode', code, { shouldValidate: true })} error={errors.bankCode?.message} />
         <Input label="Account Number" maxLength={10} disabled={!isEditing} {...register('accountNumber')} error={errors.accountNumber?.message} />
         <BankSelect label="Invoice Bank" value={watch('invoiceBankCode') || ''} onChange={(code) => setValue('invoiceBankCode', code, { shouldValidate: true })} error={errors.invoiceBankCode?.message} />

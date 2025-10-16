@@ -27,7 +27,7 @@ const addHospitalSchema = z.object({
   hospitalCode: z.string().min(2, 'Required'),
   physicalConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
   virtualConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
-  homeAddresses: z.string().min(5, 'Required'),
+  hospitalAddresses: z.string().min(5, 'Required'),
   address: z.string().min(5, 'Required'),
   website: z.string().url('Invalid URL').optional().or(z.literal('')), // optional
   phoneNumber: z.string().min(7, 'Invalid phone'),
@@ -65,7 +65,7 @@ export default function AddHospital() {
       hospitalCode: '',
       physicalConsultationFee: '',
       virtualConsultationFee: '',
-      homeAddresses: '',
+      hospitalAddresses: '',
       address: '',
       website: '',
       phoneNumber: '',
@@ -86,7 +86,7 @@ export default function AddHospital() {
   const watchedValues = watch();
   const isFormComplete = (() => {
     const required: Array<keyof HospitalFormValues> = [
-      'hospitalName','hospitalCode','physicalConsultationFee','virtualConsultationFee','homeAddresses','address','phoneNumber','email','accountNumber','invoiceAccountNumber','bankCode','invoiceBankCode'
+      'hospitalName','hospitalCode','physicalConsultationFee','virtualConsultationFee','hospitalAddresses','address','phoneNumber','email','accountNumber','invoiceAccountNumber','bankCode','invoiceBankCode'
     ];
     const allFilled = required.every(k => !!watchedValues[k] && (watchedValues[k] as string).trim() !== '');
     if (!allFilled) return false;
@@ -115,7 +115,7 @@ export default function AddHospital() {
         hospitalCode: 'HospitalCode',
         physicalConsultationFee: 'PhysicalConsultationFee',
         virtualConsultationFee: 'VirtualConsultationFee',
-        homeAddresses: 'HomeAddresses',
+        hospitalAddresses: 'HospitalAddresses',
         address: 'Address',
         website: 'Website',
         phoneNumber: 'PhoneNumber',
@@ -267,8 +267,8 @@ export default function AddHospital() {
               required
               minLength={5}
               maxLength={150}
-              {...register('homeAddresses')}
-              error={errors.homeAddresses?.message as string}
+              {...register('hospitalAddresses')}
+              error={errors.hospitalAddresses?.message as string}
             />
             <Input
               label="Hospital Address"
