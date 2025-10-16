@@ -49,7 +49,7 @@ const ForgetPaswword = () => {
       </div>
 
       {/* White card */}
-      <div className="bg-white rounded-lg w-[90%] max-w-lg px-14 py-12 flex flex-col items-center mt-10 shadow-sm">
+      <div className="bg-white rounded-lg w-[90%] max-w-lg px-14 flex flex-col items-center shadow-sm">
         <h2 className="text-2xl font-medium text-primary text-center mb-12">
           LOGIN
         </h2>

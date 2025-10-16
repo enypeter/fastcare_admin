@@ -16,7 +16,9 @@ export type LoginT = {
   password: string;
   deviceToken? : string;
   role?: string;
-};// types/auth.ts
+};
+
+// types/auth.ts
 export interface User {
   id: string;
   email: string;
@@ -47,16 +49,15 @@ export interface AuthState {
   error: string | null;
 }
 
-
 export interface Hospital {
   id: number;
   hospitalName: string;
   hospitalCode: string;
   userId: string;
   hospitalNumber: string;
-  virtualConsultationFee: number;
+  virtualConsultationCharge: number;
   registrationFee: number;
-  physicalConsultationFee: number;
+  physicalConsultationCharge: number;
   consultationFee: number;
   status: string;
   isActive: boolean;
@@ -84,12 +85,9 @@ export interface HospitalState {
   selectedHospital: Hospital | null; 
   loading: boolean;
   error: string | null;
-   createLoading: boolean;
+  createLoading: boolean;
   createError: string | null;
 }
-
-
-
 
 export interface LicenseFile {
   licenseName: string;
@@ -99,42 +97,56 @@ export interface LicenseFile {
 
 export interface Doctor {
   id: string;
+  /** Optional legacy id */
+  oldId?: string | null;
   firstName: string;
   lastName: string;
-  otherNames: string;
+  otherNames: string | null;
   dateOfBirth?: string;
-  residentialAddress ?: string;
+  residentialAddress ?: string | null;
   licenseExpirationDate?: string;
   email: string;
   phoneNumber: string;
-  bio: string;
+  bio: string | null;
   licenseNumber: string;
   consultancyFee: number;
   agreeToTerms: boolean;
   specialization: string;
-  isActive: boolean;
+  isActive: boolean | null;
   isDoctorAvailable: boolean;
   feePercentage: number;
   bankCode: string;
   accountNumber: string;
   name: string;
-  photo: string;
-  password: string;
+  photo: string | null;
+  password: string | null;
   yearsOfExperience: number;
   role: string;
-  deviceToken: string;
-  licenseFile: LicenseFile;
+  deviceToken: string | null;
+  /** Raw license file object or null when not uploaded */
+  licenseFile: LicenseFile | null;
+  licenseName?: string | null;
+  licenseType?: string | null;
+  licenseContent?: string | null;
   languages: string[];
   qualifications: string[];
-  hospital: string;
-  profileImage: string;
+  hospital: string | null;
+  profileImage: string | null;
   averageRating: number;
   totalPatientsServed: number;
-  isApproved: boolean;
+  /**
+   * Approval status: true = approved, false = rejected, null = pending.
+   * Backend returns null for pending requests, so we model that explicitly.
+   */
+  isApproved: boolean | null;
   totalReviews: number;
-  status: number;
-  userId?: string
+  /** Online status e.g. 'Available' | 'Offline' */
+  status: string;
+  userId?: string;
+  /** Optional creation date returned for pending approval listings */
+  createdAt?: string;
 }
+
 export interface CallsStatistics {
   totalEarned: number;
   todayEarned: number;
@@ -180,11 +192,18 @@ export interface DoctorsState {
   loading: boolean;
   selectedDoctor: Doctor | null;
   error: string | null;
-
   dashboard: DashboardData | null;
 }
 
-
+export interface AmbulanceProvider {
+  id: string;
+  registrationNumber: string;
+  address: string;
+  adminName: string;
+  email: string;
+  phoneNumber: string;
+  serviceCharge: number;
+}
 
 export interface FAQ {
   id: number;
@@ -251,9 +270,7 @@ export interface AccountState {
   updateSuccess: boolean;
   createroleLoading: boolean;
   createroleError: string | null;
-
 }
-
 
 export type CreateAdminPayload = {
   name: string;
@@ -282,28 +299,49 @@ export interface AmenitiesState {
   updateLoading: boolean;
   updateError: string | null;
 }
-// ------ Amenities ------------
 
-// ------ AmbulanceProvider ------------
-export interface AmbulanceProvider {
-  id: string;
+export type CreateAmbulanceProvider = {
   registrationNumber: string;
   address: string;
   email: string;
   adminName: string;
   phoneNumber: string;
   serviceCharge: number;
-}
+};
 
 export interface AmbulanceProviderState {
   providers: AmbulanceProvider[];
   selectedProvider: AmbulanceProvider | null;
+}
+
+export type Article = {
+  id: number;
+  title: string;
+  body: string;
+  tag: string;
+  image: string;
+  creationDate: string;
+  creatorName: string;
+};
+
+export interface MetaData {
+  totalCount: number;
+  totalPages: number;
+  pageSize: number;
+  currentPage: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface ArticleState {
+  articles: Article[];
+  metaData: MetaData | null;
   loading: boolean;
   error: string | null;
   createLoading: boolean;
   createError: string | null;
 }
-// ------ AmbulanceProvider ------------
+
 // ------ AmbulanceRequests ------------
 export interface Location {
   latitude: number;
@@ -342,13 +380,8 @@ export interface AmbulanceRequestState {
 
 export type AmbulanceType = 'Emergency' | 'Transport' | 'ICU' | 'BLS' | 'ALS';
 export type RequestFilters = Partial<Pick<AmbulanceRequest, 'ambulanceType' | 'emergencyType'>>;
-// ------ AmbulanceRequests ------------
-// ------ Ambulance ------------
-export interface Location {
-  latitude: number;
-  longitude: number;
-}
 
+// ------ Ambulance ------------
 export interface Ambulance {
   id: string;
   status: string;
@@ -375,7 +408,7 @@ export interface AmbulanceState {
 
 export type CreateAmbulanceData = Omit<Ambulance, 'id' | 'creationDate'>;
 export type UpdateAmbulanceData = Partial<Omit<Ambulance, 'id' | 'creationDate'>>;
-// ------ Ambulance ------------
+
 // ------ Driver ------------
 export interface Driver {
   id: string;
@@ -404,7 +437,7 @@ export interface AddDriverData {
   address: string;
   ambulanceProviderId: string;
 }
-// -------- Driver ------------
+
 // -------- Respondents ------------
 export interface Respondent {
   id: string;
@@ -423,14 +456,8 @@ export interface RespondentsState {
   loading: boolean;
   error: string | null;
 }
-// -------- Respondents ------------
 
 //  ---- Dispatch History --------
-export interface Location {
-  latitude: number;
-  longitude: number;
-}
-
 export interface DispatchHistory {
   id: string;
   assignedByUser: string | null;
@@ -452,4 +479,233 @@ export interface DispatchHistoryState {
   loading: boolean;
   error: string | null;
 }
-//  ---- Dispatch History --------
+
+export type CreateArticle = {
+  Title: string;
+  Body: string;
+  Tag: string;
+  Image?: string;
+};
+
+// -----------------------------
+// Transactions & Refunds Types
+// -----------------------------
+
+export interface Transaction {
+  hospitalName: string | null;
+  patientName: string;
+  amount: number;
+  date: string; // ISO date string
+  serviceType: string; // e.g. Consultation, Registration, Emergency
+  paymentStatus: string; // COMPLETED, PENDING, FAILED etc.
+  transactionId: string;
+}
+
+export interface TransactionsState {
+  transactions: Transaction[];
+  metaData: MetaData | null;
+  loading: boolean;
+  error: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+    Status?: string;
+    HospitalName?: string;
+    PatientName?: string;
+    Date?: string; // single date filter (API appears to accept one date parameter)
+    ServiceType?: string;
+  };
+  exporting?: boolean;
+  exportError?: string | null;
+}
+
+export interface Refund {
+  id: number;
+  refundReason: string;
+  refundAmount: number;
+  requestDate: string; // ISO date
+  disputeDate: string | null; // may be null
+  refundReference: string;
+  status: string; // PENDING | APPROVED | FAILED ...
+  transactionId: string;
+  walletNumber: string | null;
+  patientName: string;
+  patientId: string | null;
+  approver: string | null;
+  createdBy: string | null;
+  document: string | null; // URL or file name
+}
+
+export interface RefundsState {
+  refunds: Refund[];
+  metaData: MetaData | null;
+  loading: boolean;
+  error: string | null;
+  creating: boolean;
+  createError: string | null;
+  selectedRefund: Refund | null;
+  exporting: boolean;
+  exportError: string | null;
+  // Flags for exporting a single refund detail
+  exportingDetail?: boolean;
+  exportDetailError?: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+    Status?: number; // success = 1, failed = 2
+    PatientName?: string;
+    Date?: string;
+  };
+}
+
+// -----------------------------
+// Referral Codes / Marketing Types
+// -----------------------------
+
+export interface ReferralCodeSummary {
+  code: string;
+  totalReferralCodeUsed: number;
+  staffName: string;
+}
+
+export interface ReferralCodeItem {
+  id: string;
+  code: string;
+  totalUsersRegistered: number;
+  staffName: string;
+}
+
+export interface ReferralCodeUser {
+  name: string;
+  email: string;
+  phoneNumber: string;
+  registrationDate: string; // ISO date
+}
+
+export interface ReferralCodeDetail {
+  id: string;
+  code: string;
+  dateCreated: string; // ISO date
+  referralCodeUsers: ReferralCodeUser[];
+}
+
+export interface ReferralCodesState {
+  summary: ReferralCodeSummary | null;
+  codes: ReferralCodeItem[];
+  selected: ReferralCodeDetail | null;
+  metaData: MetaData | null;
+  loadingSummary: boolean;
+  loadingList: boolean;
+  loadingDetail: boolean;
+  generating: boolean;
+  exportingList: boolean;
+  exportingUsers: boolean;
+  errorSummary: string | null;
+  errorList: string | null;
+  errorDetail: string | null;
+  generateError: string | null;
+  exportListError: string | null;
+  exportUsersError: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+    Code?: string;
+    StaffName?: string;
+  };
+}
+
+// -----------------------------
+// Admin Users (Teammates) Types
+// -----------------------------
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  roleAssigned: string[]; // list of roles assigned
+  lastLogin: string | null; // ISO date or null
+  isActive: boolean;
+}
+
+export interface AdminUsersState {
+  users: AdminUser[];
+  metaData: MetaData | null;
+  loading: boolean;
+  error: string | null;
+  updating: boolean;
+  updateError: string | null;
+  toggling: boolean;
+  toggleError: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+  };
+}
+
+// -----------------------------
+// User Reports Types
+// -----------------------------
+
+export interface UserReportItem {
+  date: string; // ISO date string (e.g. 2020-05-08T00:00:00 or 2020-05-08)
+  userCount: number;
+}
+
+export interface UserReportDetailItem {
+  date: string; // date without time per detail response
+  email: string;
+  fullName: string;
+  phoneNumber: string;
+}
+
+export interface UserReportsState {
+  list: UserReportItem[];
+  detail: UserReportDetailItem[];
+  metaData: MetaData | null; // for list
+  detailMeta: MetaData | null; // for detail pagination
+  loadingList: boolean;
+  loadingDetail: boolean;
+  errorList: string | null;
+  errorDetail: string | null;
+  exportingDetail?: boolean;
+  exportDetailError?: string | null;
+  filters: {
+    Page?: number;
+    PageSize?: number;
+  };
+  detailFilters: {
+    Page?: number;
+    PageSize?: number;
+    Date?: string; // selected date
+  };
+}
+
+// -----------------------------
+// Appointment Reports Types
+// -----------------------------
+
+export interface AppointmentReportItem {
+  patientName: string;
+  doctorName: string | null;
+  date: string | null; // ISO or yyyy-mm-dd
+  duration: string | null; // e.g. "1 hour(s)"
+}
+
+export interface AppointmentReportsState {
+  list: AppointmentReportItem[];
+  metaData: MetaData | null;
+  loading: boolean;
+  error: string | null;
+  exporting: boolean;
+  exportError: string | null;
+  filters: {
+    StartDate?: string; // ISO date-time
+    EndDate?: string;   // ISO date-time
+    MinDuration?: { ticks: number }; // object shape per spec
+    DoctorName?: string;
+    HospitalId?: string;
+    ClinicId?: string;
+    Page?: number;
+    PageSize?: number;
+  };
+}

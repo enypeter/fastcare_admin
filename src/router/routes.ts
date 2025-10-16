@@ -42,6 +42,10 @@ export const ROUTES = {
 
   checkers: '/checkers',
   marketing: '/marketing-campaign',
+  referral: {
+    codes: '/marketing-campaign/referral-codes',
+    // detail by id can reuse modal fetch so path optional
+  },
 
 
   payments: {

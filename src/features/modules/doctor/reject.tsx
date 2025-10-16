@@ -6,22 +6,16 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import Success from '../dashboard/success';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/services/store';
+import { disapproveDoctor, fetchPendingDoctors } from '@/services/thunks';
+import toast from 'react-hot-toast';
 
-type Doctor = {
-  name: string;
-  // add other fields if needed
-};
+import { Doctor } from '@/types';
 
 type Props = {
   open: boolean;
@@ -31,10 +25,23 @@ type Props = {
 
 export default function Reject({ open, setOpen, data }: Props) {
   const [openSuccess, setOpenSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
 
-  const handleSuccess = () => {
-    setOpenSuccess(true);
-    setOpen(false);
+  const handleReject = async () => {
+    if (!data?.userId) return;
+    setLoading(true);
+    try {
+  // Backend no longer requires a reason; send only doctorId
+  await dispatch(disapproveDoctor({ doctorId: data.id })).unwrap();
+      setOpenSuccess(true);
+      setOpen(false);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Rejection failed';
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -61,25 +68,7 @@ export default function Reject({ open, setOpen, data }: Props) {
               doctor.
             </p>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-gray-800">Reason for rejection</label>
-              <Select>
-                <SelectTrigger className="border border-gray-300 rounded-lg px-3 py-3 text-gray-800">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="incomplete">
-                    Incomplete certification documents
-                  </SelectItem>
-                  <SelectItem value="invalid-license">
-                    Invalid license number
-                  </SelectItem>
-                  <SelectItem value="blurry-docs">
-                    Document too blurry, use another camera
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Reason selection removed as backend no longer requires a reason */}
           </div>
 
           <DialogFooter className="mt-10 flex items-center justify-between">
@@ -93,9 +82,10 @@ export default function Reject({ open, setOpen, data }: Props) {
             <Button
               variant="destructive"
               className="py-3"
-              onClick={handleSuccess}
+              onClick={handleReject}
+              disabled={loading}
             >
-              Reject
+              {loading ? 'Rejecting...' : 'Reject'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -105,6 +95,7 @@ export default function Reject({ open, setOpen, data }: Props) {
         open={openSuccess}
         setOpen={setOpenSuccess}
         text="Doctor was rejected successfully"
+        onClose={() => dispatch(fetchPendingDoctors({ page: 1, pageSize: 5 }))}
       />
     </>
   );

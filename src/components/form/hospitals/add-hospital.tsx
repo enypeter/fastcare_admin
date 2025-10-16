@@ -1,4 +1,4 @@
-import {ImageIcon, X} from 'lucide-react';
+import { ImageIcon, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -6,149 +6,171 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {useState} from 'react';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 import Success from '../../../features/modules/dashboard/success';
-import {Switch} from '@/components/ui/switch';
-import {useDispatch} from 'react-redux';
-import {AppDispatch} from '@/services/store';
-import {createHospital} from '@/services/thunks';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/services/store';
+import { createHospital, fetchHospitals } from '@/services/thunks';
 import toast from 'react-hot-toast';
+import { Input } from '@/components/ui/input';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { BankSelect } from '@/components/ui/bank-select';
+
+// Inline schema aligned with backend contract (camelCase in form, PascalCase when sending)
+// Registration fee remains optional unless toggle enabled (handled outside schema)
+const addHospitalSchema = z.object({
+  hospitalName: z.string().min(2, 'Required'),
+  hospitalCode: z.string().min(2, 'Required'),
+  physicalConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
+  virtualConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
+  hospitalAddresses: z.string().min(5, 'Required'),
+  address: z.string().min(5, 'Required'),
+  website: z.string().url('Invalid URL').optional().or(z.literal('')), // optional
+  phoneNumber: z.string().min(7, 'Invalid phone'),
+  countryCode: z.string().min(1),
+  email: z.string().email('Invalid email'),
+  accountNumber: z.string().length(10, 'Must be 10 digits'),
+  invoiceAccountNumber: z.string().length(10, 'Must be 10 digits'),
+  bankCode: z.string().min(1, 'Required'),
+  invoiceBankCode: z.string().min(1, 'Required'),
+});
+
+type HospitalFormValues = z.infer<typeof addHospitalSchema>;
+
 
 export default function AddHospital() {
   const [openSuccess, setOpenSuccess] = useState(false);
   const [open, setOpen] = useState(false);
-  const [showRegInput, setShowRegInput] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
 
-  const [formData, setFormData] = useState({
-    hospitalName: '',
-    hospitalCode: '',
-    hospitalNumber: '',
-    physicalConsultationFee: '',
-    virtualConsultationFee: '',
-    registrationFee: '',
-    hospitalAddresses: '',
-    address: '',
-    website: '',
-    phoneNumber: '',
-    countryCode: '+234', // default Nigeria code
-    email: '',
-    accountNumber: '',
-    invoiceAccountNumber: '',
-    bankCode: '',
-    invoiceBankCode: '',
-    logoContent: null as File | null,
+  const {
+  register,
+  handleSubmit,
+  setValue,
+  reset,
+  watch,
+  formState: { errors },
+  } = useForm<HospitalFormValues>({
+    resolver: zodResolver(addHospitalSchema),
+    defaultValues: {
+      hospitalName: '',
+      hospitalCode: '',
+      physicalConsultationFee: '',
+      virtualConsultationFee: '',
+      hospitalAddresses: '',
+      address: '',
+      website: '',
+      phoneNumber: '',
+      countryCode: '+234',
+      email: '',
+      accountNumber: '',
+      invoiceAccountNumber: '',
+      bankCode: '',
+      invoiceBankCode: '',
+    },
+    mode: 'onChange',
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const {name, value} = e.target;
+  // Ensure fees & numeric fields respect max length constraints on change
+  const clampDigits = (val: string, maxLen: number) => val.replace(/\D/g, '').slice(0, maxLen);
 
-    // fees stay as flexible input, format on blur
-    if (
-      name === 'physicalConsultationFee' ||
-      name === 'virtualConsultationFee' ||
-      name === 'registrationFee'
-    ) {
-      setFormData(prev => ({...prev, [name]: value}));
-    }
-    // ensure countryCode always starts with +
-    else if (name === 'countryCode') {
-      setFormData(prev => ({
-        ...prev,
-        countryCode: value.startsWith('+') ? value : `+${value}`,
-      }));
-    }
-    // phoneNumber only allows digits
-    else if (name === 'phoneNumber') {
-      const digitsOnly = value.replace(/\D/g, '');
-      setFormData(prev => ({...prev, phoneNumber: digitsOnly}));
-    } else {
-      setFormData(prev => ({...prev, [name]: value}));
-    }
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const {name, value} = e.target;
-    if (
-      name === 'physicalConsultationFee' ||
-      name === 'virtualConsultationFee' ||
-      name === 'registrationFee'
-    ) {
-      const num = parseFloat(value);
-      setFormData(prev => ({
-        ...prev,
-        [name]: isNaN(num) ? '' : num.toFixed(1),
-      }));
-    }
-  };
+  // Reactive completeness check (avoid stale useMemo depending on stable watch fn)
+  const watchedValues = watch();
+  const isFormComplete = (() => {
+    const required: Array<keyof HospitalFormValues> = [
+      'hospitalName','hospitalCode','physicalConsultationFee','virtualConsultationFee','hospitalAddresses','address','phoneNumber','email','accountNumber','invoiceAccountNumber','bankCode','invoiceBankCode'
+    ];
+    const allFilled = required.every(k => !!watchedValues[k] && (watchedValues[k] as string).trim() !== '');
+    if (!allFilled) return false;
+    // honor current errors only for required fields
+    const hasErr = required.some(k => (errors as Record<string, unknown>)[k]);
+    return !hasErr;
+  })();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setFormData(prev => ({...prev, logoContent: file}));
-
+      setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPreviewUrl(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = async () => {
+  const onSubmit = async (values: HospitalFormValues) => {
     setIsLoading(true);
     try {
       const payload = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null && value !== '') {
-          payload.append(key, value as any);
+      // Build FormData 1:1 with backend keys (missing numeric values default to 0)
+      const map: Record<keyof HospitalFormValues, string> = {
+        hospitalName: 'HospitalName',
+        hospitalCode: 'HospitalCode',
+        physicalConsultationFee: 'PhysicalConsultationFee',
+        virtualConsultationFee: 'VirtualConsultationFee',
+        hospitalAddresses: 'HospitalAddresses',
+        address: 'Address',
+        website: 'Website',
+        phoneNumber: 'PhoneNumber',
+        countryCode: 'CountryCode',
+        email: 'Email',
+        accountNumber: 'AccountNumber',
+        invoiceAccountNumber: 'InvoiceAccountNumber',
+        bankCode: 'BankCode',
+        invoiceBankCode: 'InvoiceBankCode',
+      };
+
+      const numericKeys: Array<keyof HospitalFormValues> = ['physicalConsultationFee','virtualConsultationFee'];
+
+      Object.entries(values).forEach(([k, raw]) => {
+        const key = k as keyof HospitalFormValues;
+        const apiKey = map[key];
+        if (!apiKey) return;
+        const valStr = (raw ?? '').toString().trim();
+        if (!valStr) return; // skip empty optional fields
+        if (numericKeys.includes(key)) {
+          payload.append(apiKey, String(Number(valStr || '0')));
+        } else {
+          payload.append(apiKey, valStr);
         }
       });
+      if (logoFile) payload.append('LogoContent', logoFile);
 
-      await dispatch(createHospital(payload)).unwrap();
+  await dispatch(createHospital(payload)).unwrap();
+  // Refetch hospitals list to ensure UI reflects newly added hospital
+  dispatch(fetchHospitals());
 
-    // Open success modal first
       setOpenSuccess(true);
-
-      // Then close the form dialog after a short delay (optional)
       setTimeout(() => setOpen(false), 200);
 
-      // reset
-      setFormData({
-        hospitalName: '',
-        hospitalCode: '',
-        hospitalNumber: '',
-        physicalConsultationFee: '',
-        virtualConsultationFee: '',
-        registrationFee: '',
-        hospitalAddresses: '',
-        address: '',
-        website: '',
-        phoneNumber: '',
-        countryCode: '+234',
-        email: '',
-        accountNumber: '',
-        invoiceAccountNumber: '',
-        bankCode: '',
-        invoiceBankCode: '',
-        logoContent: null,
-      });
+      reset();
+      setLogoFile(null);
       setPreviewUrl(null);
-
-    } catch (error: any) {
-      console.error('Error adding hospital:', error.message);
-      toast.error(error.message)
+    } catch (error: unknown) {
+      console.error('Error adding hospital:', error);
+      interface WithMessage { message: string }
+      const message = ((): string => {
+        if (typeof error === 'string') {
+          return error;
+        }
+        if (typeof error === 'object' && error && 'message' in error) {
+          const maybe = error as Partial<WithMessage>;
+            if (maybe.message) return maybe.message;
+        }
+        return 'Failed to add hospital';
+      })();
+      toast.error(message);
     } finally {
-      setIsLoading(false); // stop loading
+      setIsLoading(false);
     }
   };
-
-  const inputClass =
-    'w-full border-gray-300 border rounded-lg px-3 py-2 mt-1 outline-none';
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -170,177 +192,144 @@ export default function AddHospital() {
             </button>
           </DialogTitle>
         </DialogHeader>
-
-        <div className="overflow-scroll h-[300px] lg:h-[300px]">
+        <form
+          className="overflow-scroll h-[300px] lg:h-[300px]"
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div>
-              <label className="text-gray-800">Hospital Code</label>
-              <input
-                name="hospitalCode"
-                value={formData.hospitalCode}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-800">Hospital Name</label>
-              <input
-                name="hospitalName"
-                value={formData.hospitalName}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-800">Virtual Consultation Fee</label>
-              <input
-                name="virtualConsultationFee"
-                value={formData.virtualConsultationFee}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="#0.0"
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-800">Physical Consultation Fee</label>
-              <input
-                name="physicalConsultationFee"
-                value={formData.physicalConsultationFee}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="#0.0"
-                className={inputClass}
-              />
-            </div>
-
-            {/* Country code + phone number in one row */}
-            <div className="flex gap-2">
-              <div className="w-1/3">
-                <label className="text-gray-800">Code</label>
-                <input
-                  name="countryCode"
-                  value={formData.countryCode}
-                  onChange={handleChange}
-                  placeholder="+234"
-                  className={inputClass}
-                />
-              </div>
-              <div className="w-2/3">
-                <label className="text-gray-800">Phone Number</label>
-                <input
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  placeholder="8012345678"
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-gray-800">Email</label>
-              <input
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-800">Hospital Address</label>
-              <input
-                name="hospitalAddresses"
-                value={formData.hospitalAddresses}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-800">Website</label>
-              <input
-                name="website"
-                value={formData.website}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
+            <Input
+              label="Hospital Code"
+              required
+              requiredIndicator
+              maxLength={30}
+              {...register('hospitalCode')}
+              error={errors.hospitalCode?.message}
+            />
+            <Input
+              label="Hospital Name"
+              required
+              requiredIndicator
+              minLength={2}
+              maxLength={50}
+              {...register('hospitalName')}
+              error={errors.hospitalName?.message}
+            />
+            <Input
+              label="Virtual Consultation Fee"
+              type="number"
+              min={0}
+              max={999999}
+              inputMode="numeric"
+              placeholder="e.g. 5000"
+              {...register('virtualConsultationFee', {
+                onChange: e => {
+                  const v = clampDigits(e.target.value, 6);
+                  setValue('virtualConsultationFee', v, { shouldValidate: true });
+                },
+              })}
+              error={errors.virtualConsultationFee?.message}
+            />
+            <Input
+              label="Physical Consultation Fee"
+              type="number"
+              min={0}
+              max={999999}
+              inputMode="numeric"
+              placeholder="e.g. 7000"
+              {...register('physicalConsultationFee', {
+                onChange: e => {
+                  const v = clampDigits(e.target.value, 6);
+                  setValue('physicalConsultationFee', v, { shouldValidate: true });
+                },
+              })}
+              error={errors.physicalConsultationFee?.message}
+            />
+            <PhoneInput
+              value={{ countryCode: watch('countryCode') || '+234', phoneNumber: watch('phoneNumber') || '' }}
+              onChange={(val) => {
+                setValue('countryCode', val.countryCode); // no validation needed
+                setValue('phoneNumber', val.phoneNumber, { shouldValidate: true });
+              }}
+              required // only phone number is effectively required
+              error={errors.phoneNumber?.message || undefined}
+            />
+            <Input
+              label="Email"
+              type="email"
+              required
+              maxLength={50}
+              {...register('email')}
+              error={errors.email?.message}
+            />
+            <Input
+              label="IP Address"
+              required
+              minLength={5}
+              maxLength={150}
+              {...register('hospitalAddresses')}
+              error={errors.hospitalAddresses?.message as string}
+            />
+            <Input
+              label="Hospital Address"
+              required
+              minLength={5}
+              maxLength={100}
+              placeholder="Primary address"
+              {...register('address')}
+              error={errors.address?.message}
+            />
+            <Input
+              label="Website"
+              placeholder="https://example.com"
+              {...register('website')}
+              error={errors.website?.message}
+            />
           </div>
 
-          {/* Registration Fee toggle */}
-          <div className="mt-6">
-            <div className="flex items-center gap-4">
-              <h1 className="font-semibold text-lg text-gray-800">
-                Registration service fee
-              </h1>
-              <Switch
-                checked={showRegInput}
-                onCheckedChange={setShowRegInput}
-              />
-            </div>
-            {showRegInput && (
-              <div className="mt-3">
-                <input
-                  name="registrationFee"
-                  value={formData.registrationFee}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="#0.0"
-                  className={inputClass}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Banking fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-            <div>
-              <label className="text-gray-800">Account Number</label>
-              <input
-                name="accountNumber"
-                value={formData.accountNumber}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-800">Invoice Account Number</label>
-              <input
-                name="invoiceAccountNumber"
-                value={formData.invoiceAccountNumber}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-800">Bank Code</label>
-              <input
-                name="bankCode"
-                value={formData.bankCode}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-800">Invoice Bank Code</label>
-              <input
-                name="invoiceBankCode"
-                value={formData.invoiceBankCode}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
+            <BankSelect
+              label="Bank"
+              required
+              value={watch('bankCode')}
+              onChange={code => setValue('bankCode', code, { shouldValidate: true })}
+              error={errors.bankCode?.message}
+            />
+            <Input
+              label="Account Number"
+              placeholder="0123456789"
+              required
+              maxLength={10}
+              {...register('accountNumber', {
+                onChange: e => {
+                  const v = clampDigits(e.target.value, 10);
+                  setValue('accountNumber', v, { shouldValidate: true });
+                },
+              })}
+              error={errors.accountNumber?.message}
+            />
+            <BankSelect
+              label="Invoice Bank"
+              required
+              value={watch('invoiceBankCode')}
+              onChange={code => setValue('invoiceBankCode', code, { shouldValidate: true })}
+              error={errors.invoiceBankCode?.message}
+            />
+            <Input
+              label="Invoice Account Number"
+              placeholder="0123456789"
+              required
+              maxLength={10}
+              {...register('invoiceAccountNumber', {
+                onChange: e => {
+                  const v = clampDigits(e.target.value, 10);
+                  setValue('invoiceAccountNumber', v, { shouldValidate: true });
+                },
+              })}
+              error={errors.invoiceAccountNumber?.message}
+            />
           </div>
 
-          {/* Logo Upload */}
           <div className="mt-8">
             <label className="text-gray-800">Logo Content</label>
             <div className="flex">
@@ -372,21 +361,20 @@ export default function AddHospital() {
               </label>
             </div>
           </div>
-        </div>
 
-        {/* Action buttons */}
-        <div className="flex justify-between items-center gap-4 mt-8">
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="py-2 w-48 rounded-md flex items-center justify-center gap-2"
-          >
-            {isLoading && (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            )}
-            {isLoading ? 'Adding...' : 'Add hospital'}
-          </Button>
-        </div>
+          <div className="flex justify-between items-center gap-4 mt-8">
+            <Button
+              type="submit"
+              disabled={isLoading || !isFormComplete}
+              className="py-2 w-48 rounded-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading && (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              )}
+              {isLoading ? 'Adding...' : 'Add hospital'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
 
       <Success

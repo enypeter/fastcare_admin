@@ -8,10 +8,18 @@ import accountReducer from '../slice/accountSlice'
 import amenitiesReducer from "../slice/amenitiesSlice"
 import ambulanceProviderReducer from "../slice/ambulanceProviderSlice"
 import ambulanceRequestsReducer from "../slice/ambulanceRequestSlice"
-import ambulanceReducer from "../slice/ambulanceSlice"
+// import ambulanceReducer from "../slice/ambulanceSlice"
 import driverReducer from "../slice/driverSlice"
 import respondentsReducer from "../slice/respondentsSlice"
 import dispatchHistoryReducer from "../slice/dispatchHistorySlice"
+import ambulanceReducer from '../slice/ambulanceSlice'
+import articlesReducer from '../slice/articleSlice'
+import transactionsReducer from '../slice/transactionSlice'
+import refundsReducer from '../slice/refundSlice'
+import referralsReducer from '../slice/referralSlice'
+import adminUsersReducer from '../slice/adminUsersSlice'
+import userReportsReducer from '../slice/userReportsSlice'
+import appointmentReportsReducer from '../slice/appointmentReportsSlice'
 
 
 export const store = configureStore({
@@ -28,7 +36,15 @@ export const store = configureStore({
     allAmbulances: ambulanceReducer,
     drivers: driverReducer,
     respondents: respondentsReducer,
-    dispatchHistory: dispatchHistoryReducer
+    dispatchHistory: dispatchHistoryReducer,
+    ambulance: ambulanceReducer,
+    articles: articlesReducer,
+    transactions: transactionsReducer,
+    refunds: refundsReducer,
+    referrals: referralsReducer,
+    adminUsers: adminUsersReducer,
+    userReports: userReportsReducer,
+    appointmentReports: appointmentReportsReducer
   },
 });
 

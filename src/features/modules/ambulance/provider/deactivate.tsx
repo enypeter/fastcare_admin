@@ -7,38 +7,36 @@ import {
 } from '@/components/ui/dialog';
 import {X} from 'lucide-react';
 import {useState} from 'react';
-import Success from '../dashboard/success';
+import Success from '../../dashboard/success';
 import {useDispatch} from 'react-redux';
 import {AppDispatch} from '@/services/store';
-import {approveDoctor, fetchPendingDoctors} from '@/services/thunks';
-import {Doctor} from '@/types';
+import { deactivateAmbulanceProvider} from '@/services/thunks';
+import {AmbulanceProvider} from '@/types';
 import toast from 'react-hot-toast';
 import {createPortal} from 'react-dom';
 
 type Props = {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  data?: Doctor;
+  data?: AmbulanceProvider;
 };
 
-export default function Confirm({open, setOpen, data}: Props) {
+export default function DeactivateProvider({open, setOpen, data}: Props) {
   const [openSuccess, setOpenSuccess] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
 
   const handleApprove = async () => {
-    if (!data?.userId) return;
+    if (!data?.id) return;
 
     setLoading(true);
 
     try {
-      await dispatch(approveDoctor(data.id)).unwrap();
+      await dispatch(deactivateAmbulanceProvider(data.id)).unwrap();
 
       setOpenSuccess(true);
       
-
-      // Then close the form dialog after a short delay (optional)
       setTimeout(() => setOpen(false), 200);
     } catch (err: any) {
      toast.error(err || 'Approve failed');
@@ -64,12 +62,10 @@ export default function Confirm({open, setOpen, data}: Props) {
 
             <div className="flex flex-col gap-8 mt-8">
               <h1 className="text-center text-lg font-semibold text-gray-700">
-                Confirm {data?.name || ''}
+                Deactivate {data?.registrationNumber || ''}
               </h1>
               <p className="text-ms text-center text-[#15322d]">
-                Are you sure you want to approve this doctor’s credentials? This
-                action will grant them access to consult patients on the
-                platform
+                Are you sure you want to deactivate this ambulance provider? 
               </p>
             </div>
 
@@ -83,11 +79,12 @@ export default function Confirm({open, setOpen, data}: Props) {
                 No, cancel
               </Button>
               <Button
+               variant="destructive"
                 className="py-3"
                 onClick={handleApprove}
                 disabled={loading}
               >
-                {loading ? 'Approving...' : 'Yes, Approve'}
+                {loading ? 'Deactivate...' : 'Yes, Deactivate'}
               </Button>
             </DialogFooter>
           </DialogContent>,
@@ -98,8 +95,7 @@ export default function Confirm({open, setOpen, data}: Props) {
       <Success
         open={openSuccess}
         setOpen={setOpenSuccess}
-        text="Doctor was approved successfully"
-        onClose={() => dispatch(fetchPendingDoctors({page: 1, pageSize: 5}))}
+        text="Ambulance provider deactivated successfully "
       />
     </>
   );

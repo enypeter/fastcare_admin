@@ -21,8 +21,7 @@ import {
 } from '@tanstack/react-table';
 
 import { Pagination } from '@/components/ui/pagination';
-import { DoctorFilter } from '../filter';
-import { Hospital, Monitor } from 'lucide-react';
+// import { Hospital, Monitor } from 'lucide-react';
 
 export interface Consultation {
   id: string;
@@ -44,7 +43,8 @@ const AllConsultation = ({ consultations }: AllConsultationProps) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [columnFilters, setColumnFilters] = useState<any[]>([]);
+  // Removed external filter component; only simple search retained
+  const [columnFilters, setColumnFilters] = useState<import('@tanstack/react-table').ColumnFiltersState>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
@@ -64,34 +64,57 @@ const AllConsultation = ({ consultations }: AllConsultationProps) => {
       accessorKey: 'duration',
       header: 'Duration',
       cell: ({ getValue }) => {
-        const raw = getValue() as string;
-        if (!raw) return <span>-</span>;
+        const raw = getValue() as string | number | null | undefined;
+        // Sentinel value from backend meaning "no duration"
+        const SENTINEL = '0001-01-01T00:00:00';
+        if (!raw || raw === SENTINEL) return <span className="text-gray-400">--</span>;
+
+        // If backend later switches to numeric seconds, support that.
+        const formatFromSeconds = (totalSeconds: number) => {
+          if (!isFinite(totalSeconds) || totalSeconds < 0) return '--';
+          const h = Math.floor(totalSeconds / 3600);
+          const m = Math.floor((totalSeconds % 3600) / 60);
+          const s = Math.floor(totalSeconds % 60);
+          return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+        };
+
+        if (typeof raw === 'number') {
+          return <span>{formatFromSeconds(raw)}</span>;
+        }
+
+        // Attempt to parse ISO date (even if it's a placeholder). Some backends may send duration as a Date starting at epoch.
         const date = new Date(raw);
-        const hours = date.getUTCHours().toString().padStart(2, '0');
-        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-        const seconds = date.getUTCSeconds().toString().padStart(2, '0');
-        return <span>{`${hours}:${minutes}:${seconds}`}</span>;
+        if (isNaN(date.getTime())) return <span className="text-gray-400">--</span>;
+        const hours = date.getUTCHours();
+        const minutes = date.getUTCMinutes();
+        const seconds = date.getUTCSeconds();
+        const formatted = [hours, minutes, seconds]
+          .map(v => v.toString().padStart(2, '0'))
+          .join(':');
+        // If all are zero and not sentinel, still treat as '--'
+        if (formatted === '00:00:00') return <span className="text-gray-400">--</span>;
+        return <span>{formatted}</span>;
       },
     },
-    {
-      accessorKey: 'type',
-      header: 'Appointment Type',
-      cell: ({ getValue }) => {
-        const value = (getValue() as string) || '-';
-        const isVirtual = value.toLowerCase() === 'virtual';
-        return (
-          <div className="flex items-center gap-2 font-medium">
-            <span>{value}</span>
-            {value !== '-' &&
-              (isVirtual ? (
-                <Monitor size={16} className="text-primary" />
-              ) : (
-                <Hospital size={16} className="text-primary" />
-              ))}
-          </div>
-        );
-      },
-    },
+    // {
+    //   accessorKey: 'type',
+    //   header: 'Appointment Type',
+    //   cell: ({ getValue }) => {
+    //     const value = (getValue() as string) || '-';
+    //     const isVirtual = value.toLowerCase() === 'virtual';
+    //     return (
+    //       <div className="flex items-center gap-2 font-medium">
+    //         <span>{value}</span>
+    //         {value !== '-' &&
+    //           (isVirtual ? (
+    //             <Monitor size={16} className="text-primary" />
+    //           ) : (
+    //             <Hospital size={16} className="text-primary" />
+    //           ))}
+    //       </div>
+    //     );
+    //   },
+    // },
     { accessorKey: 'reason', header: 'Reason' },
     {
       accessorKey: 'amount',
@@ -171,15 +194,7 @@ const AllConsultation = ({ consultations }: AllConsultationProps) => {
 
   const totalPages = table.getPageCount();
 
-  const handleApplyFilter = (filters: any) => {
-    const newFilters: any[] = [];
-    if (filters.status) newFilters.push({ id: 'status', value: filters.status });
-    if (filters.name) newFilters.push({ id: 'patientName', value: filters.name });
-    if (filters.date) newFilters.push({ id: 'date', value: filters.date });
-    setColumnFilters(newFilters);
-  };
-
-  const handleResetFilter = () => setColumnFilters([]);
+  // Removed apply/reset filter handlers (no longer needed)
 
   return (
     <div>
@@ -201,9 +216,7 @@ const AllConsultation = ({ consultations }: AllConsultationProps) => {
               className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
             />
           </div>
-          <div className="flex gap-4 items-center mr-10">
-            <DoctorFilter onApply={handleApplyFilter} onReset={handleResetFilter} />
-          </div>
+          {/* Filter component removed */}
         </div>
 
         {/* Table */}

@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
+// import {Button} from '@/components/ui/button';
 
 type Props = {
   open: boolean;
@@ -97,9 +97,9 @@ export default function TransactionDetails({open, setOpen, data}: Props) {
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-center items-center mt-4">
+        {/* <div className="flex justify-center items-center mt-4">
           <Button className="py-3 w-32">Print</Button>
-        </div>
+        </div> */}
       </DialogContent>
     </Dialog>
   );

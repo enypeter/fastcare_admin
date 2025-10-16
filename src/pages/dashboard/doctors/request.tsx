@@ -24,13 +24,13 @@ import {useSelector, useDispatch} from 'react-redux';
 import {RootState, AppDispatch} from '@/services/store';
 import {fetchPendingDoctors} from '@/services/thunks';
 import {Pagination} from '@/components/ui/pagination';
-import {DoctorFilter} from '@/features/modules/doctor/filter';
 import DoctorVerificationDetails from '@/features/modules/doctor/doctor-veri-details';
 import {Loader} from '@/components/ui/loading';
+import { Doctor } from '@/types';
 
 const VerificationRequest = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const {pendingDoctors, loading, error, totalCount, currentPage} = useSelector(
+  const {pendingDoctors, loading, error, totalCount, currentPage, totalPages, pageSize: storePageSize} = useSelector(
     (state: RootState) => state.doctors,
   );
 
@@ -38,12 +38,13 @@ const VerificationRequest = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [columnFilters, setColumnFilters] = useState<any[]>([]);
+  const [columnFilters, setColumnFilters] = useState<import('@tanstack/react-table').ColumnFiltersState>([]);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
-  const [filterStatus, setFilterStatus] = useState<string | undefined>();
+  const [pageSize, setPageSize] = useState(storePageSize || 5);
+  // Removed filterStatus (filter UI removed)
 
-  const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
+  // We can rely directly on Doctor type (updated to allow nullable isApproved & optional createdAt)
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [openVerify, setOpenVerify] = useState(false);
 
  useEffect(() => {
@@ -51,29 +52,12 @@ const VerificationRequest = () => {
  }, [dispatch, page, pageSize]);
 
   const filteredDoctors = useMemo(() => {
-    return pendingDoctors.filter(d => {
-      const fullName = `${d.firstName} ${d.lastName}`.toLowerCase();
-      const matchesName = searchTerm
-        ? fullName.includes(searchTerm.toLowerCase())
-        : true;
+    if (!searchTerm) return pendingDoctors;
+    const term = searchTerm.toLowerCase();
+    return pendingDoctors.filter(d => `${d.firstName} ${d.lastName}`.toLowerCase().includes(term));
+  }, [pendingDoctors, searchTerm]);
 
-      const matchesStatus = filterStatus
-        ? filterStatus === 'online'
-          ? d.isDoctorAvailable
-          : !d.isDoctorAvailable
-        : true;
-
-      return matchesName && matchesStatus;
-    });
-  }, [pendingDoctors, searchTerm, filterStatus]);
-
-  const totalPages = Math.ceil(filteredDoctors.length / pageSize);
-  const paginatedDoctors = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredDoctors.slice(start, start + pageSize);
-  }, [filteredDoctors, page, pageSize]);
-
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<Doctor>[] = [
     {
       accessorKey: 'firstName',
       header: 'Doctor Name',
@@ -87,10 +71,14 @@ const VerificationRequest = () => {
       accessorKey: 'licenseNumber',
       header: 'License Number',
     },
-    {
-      accessorKey: 'createdAt',
-      header: 'Submission Date',
-    },
+    // {
+    //   accessorKey: 'createdAt',
+    //   header: 'Submission Date',
+    //   cell: ({ row }) => {
+    //     const value = (row.original as Doctor).createdAt;
+    //     return value ? new Date(value).toLocaleDateString() : '--';
+    //   }
+    // },
     {
       accessorKey: 'isApproved',
       header: 'Status',
@@ -103,10 +91,12 @@ const VerificationRequest = () => {
         if (value === true) {
           statusText = 'Approved';
           statusClasses += 'text-green-700';
-        } else if (value === false) {
-          statusText = 'Rejected';
-          statusClasses += 'text-red-800';
-        } else {
+        } 
+        // else if (value === false) {
+        //   statusText = 'Rejected';
+        //   statusClasses += 'text-red-800';
+        // }
+         else {
           statusText = 'Pending';
           statusClasses += 'text-yellow-600';
         }
@@ -117,6 +107,7 @@ const VerificationRequest = () => {
     {
       id: 'action',
       enableHiding: false,
+      header: 'Action',
       cell: ({row}) => {
        
         return (
@@ -135,7 +126,7 @@ const VerificationRequest = () => {
   ];
 
   const table = useReactTable({
-    data: paginatedDoctors,
+    data: filteredDoctors,
     columns,
     state: {sorting, columnVisibility, rowSelection, columnFilters},
     onSortingChange: setSorting,
@@ -148,17 +139,7 @@ const VerificationRequest = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const handleApplyFilter = (filters: any) => {
-    setSearchTerm(filters.name || '');
-    setFilterStatus(filters.status);
-    setPage(1);
-  };
-
-  const handleResetFilter = () => {
-    setSearchTerm('');
-    setFilterStatus(undefined);
-    setPage(1);
-  };
+  // Removed handleApplyFilter / handleResetFilter (filter UI removed)
 
   return (
     <DashboardLayout>
@@ -177,15 +158,7 @@ const VerificationRequest = () => {
                 className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
               />
             </div>
-            <div className="flex gap-4 items-center">
-              <DoctorFilter
-                onApply={handleApplyFilter}
-                onReset={handleResetFilter}
-              />
-              <Button variant="ghost" className="py-2.5 w-36 rounded-md">
-                Export
-              </Button>
-            </div>
+            {/* Filter and export controls removed per request */}
           </div>
 
           <div className="flex-1  lg:px-0 lg:mt-4">
@@ -257,7 +230,9 @@ const VerificationRequest = () => {
                     totalEntriesSize={totalCount}
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    onPageChange={setPage}
+                    onPageChange={(p:number) => {
+                      setPage(p);
+                    }}
                     pageSize={pageSize}
                     onPageSizeChange={size => {
                       setPageSize(size);
@@ -271,7 +246,7 @@ const VerificationRequest = () => {
         </div>
 
         <DoctorVerificationDetails
-          data={selectedDoctor}
+          data={selectedDoctor || undefined}
           open={openVerify}
           setOpen={setOpenVerify}
         />

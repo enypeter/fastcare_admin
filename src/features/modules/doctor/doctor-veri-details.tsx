@@ -27,6 +27,7 @@ export default function DoctorVerificationDetails({data, open, setOpen}: Props) 
     setOpen(false);
     setOpenReject(true);
   };
+  
   const handleApprove = () => {
     setOpen(false);
     setOpenConfirm(true);

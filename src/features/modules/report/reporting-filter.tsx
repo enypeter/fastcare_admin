@@ -51,19 +51,19 @@ export const ReportingFilter = ({onApply, onReset}: any) => {
       {/* Grid Form */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Date range */}
-        <div className="col-span-1">
+        <div className="col-span-2">
           <Label>Date</Label>
-          <div className="flex items-center gap-2">
+          <div className="flex justify-between items-center gap-2">
             <input
               type="date"
-              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-36 outline-none"
+              className="border border-gray-300 rounded-md py-2 px-3 w-full outline-none"
               value={startDate ?? ''}
               onChange={e => setStartDate(e.target.value || null)}
             />
             <p className="text-md font-semibold">To</p>
             <input
               type="date"
-              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-36 outline-none"
+              className="border border-gray-300 rounded-md py-2 px-3 w-full outline-none"
               value={endDate ?? ''}
               onChange={e => setEndDate(e.target.value || null)}
             />

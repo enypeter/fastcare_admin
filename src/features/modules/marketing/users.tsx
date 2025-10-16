@@ -32,7 +32,7 @@ const users = [
     name: 'John Doe',
     email: 'johndoe@gmail.com',
     phone: '1234566789',
-    date: '24/10/2020',
+    date: '24/10/1990',
     action: '',
   },
   {
@@ -200,6 +200,7 @@ const UsersWho = () => {
         <Pagination
           totalEntriesSize={users.length}
           // currentEntriesSize={paginatedProviders.length}
+          
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}

@@ -1,23 +1,69 @@
-import {X} from 'lucide-react';
+import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-
-import {useState} from 'react';
-import Success from '../../../../features/modules/dashboard/success';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import Success from "../../../../features/modules/dashboard/success";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/services/store";
+import { createAmbulanceProviders } from "@/services/thunks";
+import { CreateAmbulanceProvider } from "@/types";
 
 export default function AddProviders() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { createLoading } = useSelector((state: RootState) => state.ambulance);
+
   const [openSuccess, setOpenSuccess] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const handleSubmit = () => {
-    setOpen(false)
-    setOpenSuccess(true);
+  // Controlled form state
+  const [formData, setFormData] = useState<CreateAmbulanceProvider>({
+    registrationNumber: "",
+    address: "",
+    email: "",
+    adminName: "",
+    phoneNumber: "",
+    serviceCharge: 0,
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]:
+        name === "serviceCharge" ? Number(value) : value,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const res = await dispatch(
+        createAmbulanceProviders(formData)
+      ).unwrap();
+
+      if (res) {
+        setOpen(false);
+        setOpenSuccess(true);
+        // Reset form
+        setFormData({
+          registrationNumber: "",
+          address: "",
+          email: "",
+          adminName: "",
+          phoneNumber: "",
+          serviceCharge: 0,
+        });
+      }
+    } catch (err) {
+      console.error("Create provider failed:", err);
+    }
   };
 
   return (
@@ -29,7 +75,7 @@ export default function AddProviders() {
         <DialogHeader className="flex w-full items-center justify-between">
           <DialogTitle className="flex w-full items-center justify-between border-b py-2">
             <span className="text-gray-800 text-xl font-normal py-3">
-             New Ambulance Provider
+              New Ambulance Provider
             </span>
 
             <button
@@ -43,47 +89,71 @@ export default function AddProviders() {
         </DialogHeader>
 
         <div className="overflow-scroll h-[400px] ">
-          <div>
-            {/* 2-column form */}
-            <div className="grid grid-cols-1 md:grid-cols-2  gap-6 mt-6  ">
-              <div>
-                <label className="text-gray-800">Provider ID</label>
-                <input className="w-full border-gray-300 border  rounded-lg px-3 py-3 mt-1 outline-none" />
-              </div>
-
-              <div>
-                <label className="text-gray-800">
-                  Company Registration Number
-                </label>
-                <input className="w-full border-gray-300 border  rounded-lg px-3 py-3 mt-1 outline-none" />
-              </div>
-
-              <div>
-                <label className="text-gray-800">Company Email</label>
-                <input className="w-full border-gray-300 border  rounded-lg px-3 py-3 mt-1 outline-none" />
-              </div>
-
-              <div>
-                <label className="text-gray-800">Office Address</label>
-                <input className="w-full border-gray-300 border  rounded-lg px-3 py-3 mt-1 outline-none" />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div>
+              <label className="text-gray-800">Company Registration Number</label>
+              <input
+                name="registrationNumber"
+                value={formData.registrationNumber}
+                onChange={handleChange}
+                className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none"
+              />
             </div>
 
-            <div className='mt-4'>
-              <h1 className="text-gray-800 text-2xl border-b py-4">Contact Person</h1>
+            <div>
+              <label className="text-gray-800">Company Email</label>
+              <input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none"
+              />
+            </div>
 
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mt-4'>
+            <div>
+              <label className="text-gray-800">Office Address</label>
+              <input
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none"
+              />
+            </div>
 
-                <div>
+            <div>
+              <label className="text-gray-800">Service Charge</label>
+              <input
+                name="serviceCharge"
+                type="number"
+                value={formData.serviceCharge}
+                onChange={handleChange}
+                className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <h1 className="text-gray-800 text-2xl border-b py-4">Contact Person</h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+              <div>
                 <label className="text-gray-800">Name</label>
-                <input className="w-full border-gray-300 border  rounded-lg px-3 py-3 mt-1 outline-none" />
+                <input
+                  name="adminName"
+                  value={formData.adminName}
+                  onChange={handleChange}
+                  className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none"
+                />
               </div>
 
               <div>
                 <label className="text-gray-800">Phone number</label>
-                <input className="w-full border-gray-300 border  rounded-lg px-3 py-3 mt-1 outline-none" />
-              </div>
-
+                <input
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none"
+                />
               </div>
             </div>
           </div>
@@ -91,8 +161,12 @@ export default function AddProviders() {
 
         {/* Action buttons */}
         <div className="flex justify-between items-center gap-4 mt-8">
-          <Button onClick={handleSubmit} className="py-3 w-48 rounded-md">
-            Add Provider
+          <Button
+            onClick={handleSubmit}
+            disabled={createLoading}
+            className="py-3 w-48 rounded-md"
+          >
+            {createLoading ? "Adding..." : "Add Provider"}
           </Button>
         </div>
       </DialogContent>
