@@ -150,9 +150,14 @@ export const deactivateHospital = createAsyncThunk(
 // Using generic record type for hospital update to avoid any
 export const updateHospital = createAsyncThunk(
   "hospitals/updateHospital",
-  async (hospital: Record<string, unknown> & { id: string | number }, { rejectWithValue }) => {
+  async (
+    hospital: Record<string, unknown> & { id: string | number },
+    { rejectWithValue, dispatch }
+  ) => {
     try {
       const response = await apiClient.put(`/Hospitals/${hospital.id}`, hospital);
+      // Immediately trigger a refetch of all hospitals to ensure list stays current
+      dispatch(fetchHospitals());
       return response.data; // updated hospital
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, "Update failed"));
@@ -165,12 +170,14 @@ export const updateHospitalFormData = createAsyncThunk(
   "hospitals/updateHospitalFormData",
   async (
     { id, formData }: { id: string | number; formData: FormData },
-    { rejectWithValue }
+    { rejectWithValue, dispatch }
   ) => {
     try {
       const res = await apiClient.put(`/Hospitals/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      // Refetch hospitals list after form-data update (e.g., logo changes)
+      dispatch(fetchHospitals());
       return res.data;
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, 'Failed to update hospital'));

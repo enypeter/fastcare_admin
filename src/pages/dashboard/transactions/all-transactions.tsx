@@ -18,9 +18,7 @@ import {
   VisibilityState,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 
@@ -81,7 +79,7 @@ const AllTransactions = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [columnFilters, setColumnFilters] = useState<{ id: string; value: unknown }[]>([]);
+  // Removed client-side column filters; backend controls filtering
 
   const [open, setOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
@@ -121,10 +119,7 @@ const AllTransactions = () => {
       header: 'Transaction ID',
     },
 
-    {
-      accessorKey: 'name',
-      header: 'Patient Name',
-    },
+    { accessorKey: 'name', header: 'Patient Name' },
     {
       accessorKey: 'amount',
       header: 'Amount',
@@ -216,15 +211,35 @@ const AllTransactions = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchTransactions({
+    // Server-side pagination: request one page defined by Page & PageSize.
+    const normalize = (val: unknown) => {
+      if (!val || typeof val !== 'string') return undefined;
+      const trimmed = val.trim().replace(/\s+/g, ' ');
+      return trimmed.length ? trimmed : undefined;
+    };
+    // NOTE: Backend might accept different casing for patient name. We send multiple keys to be safe.
+    const patientNorm = normalize(appliedFilters.patient);
+    const hospitalNorm = normalize(appliedFilters.hospital);
+    const typeNorm = normalize(appliedFilters.type);
+    interface ExtraParams {
+      Page?: number; PageSize?: number; Status?: string | number; HospitalName?: string; PatientName?: string; Date?: string; ServiceType?: string;
+      [key: string]: unknown;
+    }
+    const params: ExtraParams = {
       Page: page,
       PageSize: pageSize,
       Status: mapStatusForApi(appliedFilters.status),
-      HospitalName: appliedFilters.hospital as string | undefined,
-      PatientName: appliedFilters.patient as string | undefined,
-      Date: appliedFilters.date as string | undefined,
-      ServiceType: appliedFilters.type as string | undefined,
-    }));
+      HospitalName: hospitalNorm,
+      PatientName: patientNorm,
+      Date: (appliedFilters.date as string | undefined) || undefined,
+      ServiceType: typeNorm,
+    };
+    // Add alternative casing keys only if patientNorm exists
+    if (patientNorm) {
+      params.patientName = patientNorm;
+      params.Patient = patientNorm;
+    }
+    dispatch(fetchTransactions(params));
   }, [dispatch, page, pageSize, appliedFilters]);
 
   const mappedTransactions = useMemo(() => transactions.map(mapTransactionToRow), [transactions]);
@@ -236,35 +251,24 @@ const AllTransactions = () => {
       sorting,
       columnVisibility,
       rowSelection,
-      columnFilters,
     },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
   });
 
   const handleApplyFilter = (filters: Record<string, unknown>) => {
-    const newFilters: { id: string; value: unknown }[] = [];
-    if (filters.status) {
-      const mapped = mapStatusForApi(filters.status);
-      if (mapped) newFilters.push({ id: 'status', value: mapped });
-    }
-    if (filters.type) newFilters.push({ id: 'type', value: filters.type });
-    if (filters.patient) newFilters.push({ id: 'name', value: filters.patient });
-    if (filters.hospital) newFilters.push({ id: 'hospital', value: filters.hospital });
-    const singleDate = filters.date as string | undefined;
-    if (singleDate) newFilters.push({ id: 'date', value: { start: singleDate, end: singleDate } });
-    setColumnFilters(newFilters);
+    // Only update appliedFilters; backend fetch will re-run via useEffect
+    setAppliedFilters(filters);
+    setPage(1);
   };
 
   // Function to reset filters
   const handleResetFilter = () => {
-    setColumnFilters([]);
+    setAppliedFilters({});
+    setPage(1);
   };
 
   // Track initial load to avoid flashing the empty state before first fetch resolves
@@ -276,11 +280,7 @@ const AllTransactions = () => {
   }, [loading]);
 
   const hasData = mappedTransactions.length > 0;
-  const anyFiltersApplied = Object.entries(appliedFilters).some(
-    ([, v]) => v !== undefined && v !== null && v !== ''
-  );
-  const isFilteredEmpty = !initialLoad && !loading && !error && mappedTransactions.length === 0 && anyFiltersApplied;
-  const isBaseEmpty = !initialLoad && !loading && !error && mappedTransactions.length === 0 && !anyFiltersApplied;
+  const isBaseEmpty = !initialLoad && !loading && !error && mappedTransactions.length === 0;
   const showLoader = loading || initialLoad;
 
   return (
@@ -315,24 +315,14 @@ const AllTransactions = () => {
           <p className="text-gray-500 mt-2">All transactions appear here</p>
         </div>
       )}
-      {!showLoader && !error && isFilteredEmpty && (
-        <div className="flex flex-col items-center justify-center h-[70vh] ">
-          <p className="text-lg font-semibold text-gray-800">No transactions match your filters</p>
-          <p className="text-gray-500 mt-2">Try adjusting or clearing the filters.</p>
-          <Button variant="outline" className="mt-4" onClick={() => { setAppliedFilters({}); handleResetFilter(); setPage(1); }}>Clear Filters</Button>
-        </div>
-      )}
+      {/* Removed filtered empty state since client-side filtering disabled */}
 
       {!showLoader && !error && hasData && (
         <div className="bg-gray-200 overflow-scroll h-full ">
           <div className="bg-white p-6 rounded-md flex justify-between items-center mx-8 mt-10">
             <TransactionFilter
-              onApply={(f: Record<string, unknown>) => {
-                setAppliedFilters(f);
-                handleApplyFilter(f);
-                setPage(1);
-              } }
-              onReset={() => { setAppliedFilters({}); handleResetFilter(); setPage(1);} }
+              onApply={handleApplyFilter}
+              onReset={handleResetFilter}
             />
           </div>
 

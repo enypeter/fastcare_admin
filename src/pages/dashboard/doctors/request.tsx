@@ -71,14 +71,14 @@ const VerificationRequest = () => {
       accessorKey: 'licenseNumber',
       header: 'License Number',
     },
-    {
-      accessorKey: 'createdAt',
-      header: 'Submission Date',
-      cell: ({ row }) => {
-        const value = (row.original as Doctor).createdAt;
-        return value ? new Date(value).toLocaleDateString() : '--';
-      }
-    },
+    // {
+    //   accessorKey: 'createdAt',
+    //   header: 'Submission Date',
+    //   cell: ({ row }) => {
+    //     const value = (row.original as Doctor).createdAt;
+    //     return value ? new Date(value).toLocaleDateString() : '--';
+    //   }
+    // },
     {
       accessorKey: 'isApproved',
       header: 'Status',
@@ -107,6 +107,7 @@ const VerificationRequest = () => {
     {
       id: 'action',
       enableHiding: false,
+      header: 'Action',
       cell: ({row}) => {
        
         return (

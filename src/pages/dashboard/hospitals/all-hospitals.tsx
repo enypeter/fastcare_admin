@@ -64,13 +64,18 @@ export const AllHospitals = () => {
 
   // fetch once
   useEffect(() => {
-    if (!hospitals.length) {
+    if (!hospitals || !Array.isArray(hospitals) || !hospitals.length) {
       dispatch(fetchHospitals());
     }
-  }, [dispatch, hospitals.length]);
+  }, [dispatch, hospitals]);
 
   // map into table data
   const mappedHospitals = useMemo(() => {
+    // Ensure hospitals is an array before mapping
+    if (!hospitals || !Array.isArray(hospitals)) {
+      return [];
+    }
+    
     const base: HospitalRow[] = hospitals.map((item, index) => ({
       sn: index + 1,
       code: item.hospitalCode || '',
