@@ -7,16 +7,33 @@ import {
 } from '@/components/ui/dialog';
 import {Button} from '@/components/ui/button';
 import {useState} from 'react';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/services/store';
+import { updateRefundStatus, fetchRefunds } from '@/services/thunks';
+import toast from 'react-hot-toast';
 import Success from '../dashboard/success';
+
+interface RefundLite {
+  id?: number | string;
+  status?: string;
+  amount?: string | number;
+  transaction_id?: string;
+  name?: string;
+  patient_id?: string;
+  account?: string;
+  date?: string;
+}
 
 type Props = {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  data?: any;
+  data?: RefundLite | null;
 };
 
 export default function CheckerDetails({open, setOpen, data}: Props) {
   const [openSuccess, setOpenSuccess] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<null | 'approve' | 'reject'>(null);
+  const dispatch = useDispatch<AppDispatch>();
   // ✅ function to get status color
   const getStatusColor = (status?: string) => {
     if (!status) return 'text-gray-500';
@@ -30,9 +47,28 @@ export default function CheckerDetails({open, setOpen, data}: Props) {
     return 'text-gray-500';
   };
 
-  const handleSubmit = () => {
-    setOpen(false);
-    setOpenSuccess(true);
+  const RefundStatusEnum = {
+    Pending: 1 as const,
+    Approved: 2 as const,
+    Rejected: 3 as const,
+  };
+
+  const handleAction = async (action: 'approve' | 'reject') => {
+    if (!data?.id) return;
+    setLoadingAction(action);
+    const status = action === 'approve' ? RefundStatusEnum.Approved : RefundStatusEnum.Rejected;
+    try {
+      await dispatch(updateRefundStatus({ id: Number(data.id), status })).unwrap();
+      toast.success(`Refund ${action === 'approve' ? 'approved' : 'rejected'} successfully`);
+      setOpen(false);
+      setOpenSuccess(true);
+      // refresh pending list (filter outside or refetch all)
+      dispatch(fetchRefunds(undefined));
+    } catch {
+      toast.error('Failed to update refund');
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   return (
@@ -115,13 +151,24 @@ export default function CheckerDetails({open, setOpen, data}: Props) {
           </div>
         </div>
 
-        {data?.status === 'Pending' && (
-          <div className="flex justify-center items-center mt-4">
+        {data?.status?.toLowerCase() === 'pending' && (
+          <div className="flex justify-center items-center mt-4 gap-4">
             <Button
-              onClick={handleSubmit}
-              className="py-3 bg-green-500 w-48 border-none"
+              onClick={() => handleAction('approve')}
+              disabled={loadingAction !== null}
+              className="py-3 bg-green-600 hover:bg-green-700 w-40 border-none flex items-center justify-center gap-2 disabled:opacity-60"
             >
-              Approved Request
+              {loadingAction === 'approve' && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              Approve
+            </Button>
+            <Button
+              onClick={() => handleAction('reject')}
+              variant="destructive"
+              disabled={loadingAction !== null}
+              className="py-3 w-40 flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {loadingAction === 'reject' && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              Reject
             </Button>
           </div>
         )}
