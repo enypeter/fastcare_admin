@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { createRefund, exportRefunds, exportRefundDetail, fetchRefundById, fetchRefunds } from '../thunks';
+import { createRefund, exportRefunds, fetchRefundById, fetchRefunds } from '../thunks';
 import { RefundsState, Refund } from '@/types';
 
 const initialState: RefundsState = {
@@ -12,8 +12,6 @@ const initialState: RefundsState = {
   selectedRefund: null,
   exporting: false,
   exportError: null,
-  exportingDetail: false,
-  exportDetailError: null,
   filters: {},
 };
 
@@ -70,17 +68,6 @@ const refundSlice = createSlice({
       .addCase(exportRefunds.rejected, (state, action) => {
         state.exporting = false;
         state.exportError = action.payload as string;
-      })
-      .addCase(exportRefundDetail.pending, state => {
-        state.exportingDetail = true;
-        state.exportDetailError = null;
-      })
-      .addCase(exportRefundDetail.fulfilled, state => {
-        state.exportingDetail = false;
-      })
-      .addCase(exportRefundDetail.rejected, (state, action) => {
-        state.exportingDetail = false;
-        state.exportDetailError = action.payload as string;
       });
   },
 });

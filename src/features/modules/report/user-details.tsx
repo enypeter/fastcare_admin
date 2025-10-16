@@ -20,8 +20,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {ArrowLeft} from 'lucide-react';
 import {useDispatch, useSelector} from 'react-redux';
 import {AppDispatch, RootState} from '@/services/store';
-import {fetchUserReportDetail, exportUserReportDetail} from '@/services/thunks';
-import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
+import {fetchUserReportDetail} from '@/services/thunks';
 import {setDetailPage, setDetailPageSize} from '@/services/slice/userReportsSlice';
 
 interface UserReportDetailRow {
@@ -42,7 +41,6 @@ const UsersDetails = () => {
     loadingDetail,
     errorDetail,
     detailFilters,
-    exportingDetail,
   } = useSelector((s: RootState) => s.userReports);
 
   const page = detailFilters.Page || 1;
@@ -95,62 +93,15 @@ const UsersDetails = () => {
           <div className="flex flex-wrap gap-4 justify-between items-center px-6 pb-4">
             <div className="flex items-center gap-4">
               <h1 className="text-xl text-gray-900 font-medium">
-                {decodedDate?.split('T')[0]}
+                {decodedDate?.split('T')[0]} Users
               </h1>
               {loadingDetail && (
                 <span className="text-xs text-gray-500">Loading...</span>
               )}
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="py-2.5 w-44"
-                  disabled={loadingDetail || !detail.length || exportingDetail}
-                >
-                  {exportingDetail ? 'Exporting...' : 'Export'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={async () => {
-                    try {
-                      const res = await dispatch(exportUserReportDetail({ Date: decodedDate, format: 0 })).unwrap();
-                      const { blob } = res as { blob: Blob };
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `user-report-${decodedDate}.csv`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      URL.revokeObjectURL(url);
-                    } catch (e) { console.error(e); }
-                  }}
-                >
-                  CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={async () => {
-                    try {
-                      const res = await dispatch(exportUserReportDetail({ Date: decodedDate, format: 1 })).unwrap();
-                      const { blob } = res as { blob: Blob };
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `user-report-${decodedDate}.xlsx`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      URL.revokeObjectURL(url);
-                    } catch (e) { console.error(e); }
-                  }}
-                >
-                  Excel
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button className="py-2.5 w-44" disabled>
+              Export
+            </Button>
           </div>
           <div className="flex-1 overflow-auto lg:px-0 lg:mt-2">
             {loadingDetail ? (
