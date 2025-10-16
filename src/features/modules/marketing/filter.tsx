@@ -5,28 +5,26 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {Label} from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+// removed select components as filters now only use text inputs
 
 import {useState} from 'react';
 
-export const MarketingFilter = ({onApply, onReset}: any) => {
-  const [total, setTotal] = useState<string>('');
-  
-  const [status, setStatus] = useState<string | undefined>();
+interface MarketingFilterProps {
+  onApply: (filters: { Code?: string; StaffName?: string }) => void;
+  onReset: () => void;
+}
+
+export const MarketingFilter = ({onApply, onReset}: MarketingFilterProps) => {
+  const [code, setCode] = useState<string>('');
+  const [staffName, setStaffName] = useState<string>('');
 
   const handleApply = () => {
-    onApply({ status, total});
+    onApply({ Code: code || undefined, StaffName: staffName || undefined });
   };
 
   const handleReset = () => {
-    setTotal('')
-    setStatus(undefined);
+    setCode('');
+    setStaffName('');
     onReset();
   };
 
@@ -47,32 +45,25 @@ export const MarketingFilter = ({onApply, onReset}: any) => {
         {/* 2x2 Grid Form */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
-            <Label>Total</Label>
+            <Label>Code</Label>
             <input
               type="text"
-              placeholder="Enter"
+              placeholder="Enter code"
               className="border border-gray-300 rounded-md py-2 px-3 outline-none"
-              value={total}
-              onChange={e => setTotal(e.target.value)}
+              value={code}
+              onChange={e => setCode(e.target.value)}
             />
           </div>
-
-          {/* Enrolee Class */}
           <div className="flex flex-col gap-2">
-            <Label>Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-                
-              </SelectContent>
-            </Select>
+            <Label>Staff Name</Label>
+            <input
+              type="text"
+              placeholder="Enter staff name"
+              className="border border-gray-300 rounded-md py-2 px-3 outline-none"
+              value={staffName}
+              onChange={e => setStaffName(e.target.value)}
+            />
           </div>
-
-         
         </div>
 
         {/* Buttons */}

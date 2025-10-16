@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from '@/components/ui/select';
 import { useState } from 'react';
 
 export const CheckerFilter = ({ onApply, onReset }: any) => {
@@ -24,7 +24,7 @@ export const CheckerFilter = ({ onApply, onReset }: any) => {
   const handleReset = () => {
     setStartDate(null);
     setEndDate(null);
-    setStatus(null);
+    setStatus('pending');
     setAccount('');
     onReset();
   };
@@ -74,7 +74,7 @@ export const CheckerFilter = ({ onApply, onReset }: any) => {
 
 
         {/* Status */}
-        <div className="flex flex-col gap-2 w-full">
+        {/* <div className="flex flex-col gap-2 w-full">
           <Label>Status</Label>
           <Select value={status || ''} onValueChange={setStatus}>
             <SelectTrigger>
@@ -86,7 +86,7 @@ export const CheckerFilter = ({ onApply, onReset }: any) => {
               <SelectItem value="failed">Failed</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </div> */}
 
         <div className="mt-6">
           <Button className="py-2.5 rounded-md w-44" onClick={handleApply}>

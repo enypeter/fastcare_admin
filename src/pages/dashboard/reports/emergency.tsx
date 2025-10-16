@@ -301,7 +301,7 @@ const EmergencyCall = () => {
             <div className="p-4 flex items-center justify-end ">
               <Pagination
                 totalEntriesSize={emergency.length}
-                currentEntriesSize={paginatedReporting.length}
+              
                 currentPage={page}
                 totalPages={totalPages}
                 onPageChange={setPage}

@@ -1,5 +1,5 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {Button} from '@/components/ui/button';
 //import {ArrowDownLeft, Edit2Icon, InfoIcon, MoreVertical} from 'lucide-react';
 
@@ -43,53 +43,37 @@ import {
 import {TransactionFilter} from '@/features/modules/transactions/filter';
 import TransactionDetails from '@/features/modules/transactions/transaction-details';
 import { InfoIcon, MoreVertical } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/services/store';
+import { fetchTransactions, exportTransactions } from '@/services/thunks';
+import { Pagination } from '@/components/ui/pagination';
+import { Loader } from '@/components/ui/loading';
+import { formatNaira } from '@/helpers/naira';
 
-const transactions = [
-  {
-    id: '1',
-    transaction_id: 'JgD5XB160755',
-    name: 'Thelma George',
-    type: 'Registration',
-    hospital: 'FMC Asaba',
-    amount: '#50,000.00',
-    status: 'Pending',
-    date: '24/07/2023',
-    action: '',
-  },
-  {
-    id: '2',
-    transaction_id: 'JgD5XB160755',
-    name: 'Thelma George',
-    type: 'Consultation',
-    hospital: 'FMC Asaba',
-    amount: '#50,000.00',
-    status: 'Successful',
-    date: '25/07/2023',
-    action: '',
-  },
-  {
-    id: '2',
-    transaction_id: 'JgD5XB160755',
-    name: 'Thelma George',
-    type: 'Consultation',
-    hospital: 'FMC Asaba',
-    amount: '#50,000.00',
-    status: 'Failed',
-    date: '26/07/2023',
-    action: '',
-  },
-  {
-    id: '2',
-    transaction_id: 'JgD5XB160755',
-    name: 'Thelma George',
-    type: 'Registration',
-    hospital: 'FMC Asaba',
-    amount: '#50,000.00',
-    status: 'Pending',
-    date: '25/07/2023',
-    action: '',
-  },
-];
+// Adapt API transaction payload to existing row structure
+interface TransactionRow {
+  id: string;
+  transaction_id: string;
+  name: string;
+  type: string;
+  hospital: string;
+  amount: string; // formatted
+  status: string; // raw status from API (e.g. 'completed' | 'failed' | 'pending' ...)
+  date: string;
+}
+
+import type { Transaction } from '@/types';
+
+const mapTransactionToRow = (t: Transaction): TransactionRow => ({
+  id: t.transactionId,
+  transaction_id: t.transactionId,
+  name: t.patientName || '-',
+  type: t.serviceType,
+  hospital: t.hospitalName || '-',
+  amount: formatNaira(t.amount ?? 0),
+  status: (t.paymentStatus || '').toLowerCase(), // keep lowercase for filtering logic
+  date: t.date,
+});
 
 const AllTransactions = () => {
   //const [searchTerm, setSearchTerm] = useState('');
@@ -97,10 +81,10 @@ const AllTransactions = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [columnFilters, setColumnFilters] = useState<any[]>([]);
+  const [columnFilters, setColumnFilters] = useState<{ id: string; value: unknown }[]>([]);
 
   const [open, setOpen] = useState(false);
-   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
 
   //const [page, setPage] = useState(1);
   //const [pageSize, setPageSize] = useState(10);
@@ -117,7 +101,7 @@ const AllTransactions = () => {
   //     return filteredClaims.slice(start, start + pageSize);
   //   }, [filteredClaims, page]);
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<TransactionRow>[] = [
     {
       accessorKey: 'date',
       header: 'Date',
@@ -157,24 +141,18 @@ const AllTransactions = () => {
     {
       accessorKey: 'status',
       header: 'Status',
-      cell: ({getValue}) => {
-        const value = getValue() as string; // ✅ cast from unknown to string
-        const status = (value || '').toLowerCase();
-
-        let statusClasses = ' py-1  text-md font-semibold w-fit';
-
-        if (status === 'successful' || status === 'approved') {
-          statusClasses += '  text-green-700';
-        } else if (status === 'pending') {
-          statusClasses += '  text-yellow-600';
-        } else if (status === 'disputed' || status === 'failed') {
-          statusClasses += '  text-red-800';
-        } else {
-          statusClasses += '  text-gray-500';
-        }
-
-        return <span className={statusClasses}>{value || '-'}</span>;
-      },
+      cell: ({ getValue }) => {
+        const status = (getValue() as string || '').toLowerCase();
+        let label = status;
+        if (status === 'completed') label = 'Successful';
+        else if (status) label = label.charAt(0).toUpperCase() + label.slice(1);
+        let statusClasses = 'py-1 text-md font-semibold w-fit';
+        if (status === 'completed' || status === 'approved' || status === 'successful') statusClasses += ' text-green-700';
+        else if (status === 'pending') statusClasses += ' text-yellow-600';
+        else if (status === 'failed' || status === 'rejected' || status === 'disputed') statusClasses += ' text-red-800';
+        else statusClasses += ' text-gray-500';
+        return <span className={statusClasses}>{label || '-'} </span>;
+      }
     },
     {
           id: 'action',
@@ -217,8 +195,42 @@ const AllTransactions = () => {
 
   ];
 
+  const dispatch = useDispatch<AppDispatch>();
+  const { transactions, loading, error, metaData, exporting } = useSelector((s: RootState) => {
+    // transactions slice augmented with exporting/exportError in slice
+    return s.transactions as typeof s.transactions & { exporting?: boolean };
+  });
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>({});
+
+  // Backend only expects Status as 'completed' or 'failed'. Map any user-chosen variant.
+  const mapStatusForApi = (raw: unknown): 'completed' | 'failed' | undefined => {
+    if (!raw) return undefined;
+    const s = String(raw).toLowerCase();
+    if (['completed', 'successful', 'success', 'approved'].includes(s)) return 'completed';
+    if (['failed', 'rejected', 'disputed'].includes(s)) return 'failed';
+    // For any other status (e.g. pending) do not send a Status param
+    return undefined;
+  };
+
+  useEffect(() => {
+    dispatch(fetchTransactions({
+      Page: page,
+      PageSize: pageSize,
+      Status: mapStatusForApi(appliedFilters.status),
+      HospitalName: appliedFilters.hospital as string | undefined,
+      PatientName: appliedFilters.patient as string | undefined,
+      Date: appliedFilters.date as string | undefined,
+      ServiceType: appliedFilters.type as string | undefined,
+    }));
+  }, [dispatch, page, pageSize, appliedFilters]);
+
+  const mappedTransactions = useMemo(() => transactions.map(mapTransactionToRow), [transactions]);
+
   const table = useReactTable({
-    data: transactions,
+    data: mappedTransactions,
     columns,
     state: {
       sorting,
@@ -236,28 +248,17 @@ const AllTransactions = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const handleApplyFilter = (filters: any) => {
-    const newFilters: any[] = [];
-
+  const handleApplyFilter = (filters: Record<string, unknown>) => {
+    const newFilters: { id: string; value: unknown }[] = [];
     if (filters.status) {
-      newFilters.push({id: 'status', value: filters.status});
+      const mapped = mapStatusForApi(filters.status);
+      if (mapped) newFilters.push({ id: 'status', value: mapped });
     }
-    if (filters.type) {
-      newFilters.push({id: 'type', value: filters.type});
-    }
-    if (filters.patient) {
-      newFilters.push({id: 'name', value: filters.patient}); // accessorKey is "name"
-    }
-    if (filters.hospital) {
-      newFilters.push({id: 'hospital', value: filters.hospital});
-    }
-    if (filters.startDate || filters.endDate) {
-      newFilters.push({
-        id: 'date',
-        value: {start: filters.startDate, end: filters.endDate},
-      });
-    }
-
+    if (filters.type) newFilters.push({ id: 'type', value: filters.type });
+    if (filters.patient) newFilters.push({ id: 'name', value: filters.patient });
+    if (filters.hospital) newFilters.push({ id: 'hospital', value: filters.hospital });
+    const singleDate = filters.date as string | undefined;
+    if (singleDate) newFilters.push({ id: 'date', value: { start: singleDate, end: singleDate } });
     setColumnFilters(newFilters);
   };
 
@@ -266,23 +267,72 @@ const AllTransactions = () => {
     setColumnFilters([]);
   };
 
-  const hasData = transactions.length > 0;
+  // Track initial load to avoid flashing the empty state before first fetch resolves
+  const [initialLoad, setInitialLoad] = useState(true);
+  useEffect(() => {
+    if (!loading) {
+      setInitialLoad(false);
+    }
+  }, [loading]);
+
+  const hasData = mappedTransactions.length > 0;
+  const anyFiltersApplied = Object.entries(appliedFilters).some(
+    ([, v]) => v !== undefined && v !== null && v !== ''
+  );
+  const isFilteredEmpty = !initialLoad && !loading && !error && mappedTransactions.length === 0 && anyFiltersApplied;
+  const isBaseEmpty = !initialLoad && !loading && !error && mappedTransactions.length === 0 && !anyFiltersApplied;
+  const showLoader = loading || initialLoad;
 
   return (
     <DashboardLayout>
-      {!hasData ? (
+      {showLoader && (
+        <div className="flex flex-col items-center justify-center h-[70vh]">
+          <Loader height="h-40" />
+        </div>
+      )}
+
+      {!showLoader && error && (
+        <div className="flex flex-col items-center justify-center h-[70vh]">
+          <p className="text-lg font-semibold text-red-600">Failed to load transactions</p>
+          <p className="text-gray-500 mt-2">{error}</p>
+          <Button className="mt-4" variant="outline" onClick={() => {
+            dispatch(fetchTransactions({
+              Page: page,
+              PageSize: pageSize,
+              Status: appliedFilters.status as string | undefined,
+              HospitalName: appliedFilters.hospital as string | undefined,
+              PatientName: appliedFilters.patient as string | undefined,
+              Date: appliedFilters.date as string | undefined,
+              ServiceType: appliedFilters.type as string | undefined,
+            }));
+          }}>Retry</Button>
+        </div>
+      )}
+
+      {!showLoader && !error && isBaseEmpty && (
         <div className="flex flex-col items-center justify-center h-[70vh] ">
-          <p className="text-lg font-semibold text-gray-800">
-            You have no transactions yet
-          </p>
+          <p className="text-lg font-semibold text-gray-800">You have no transactions yet</p>
           <p className="text-gray-500 mt-2">All transactions appear here</p>
         </div>
-      ) : (
+      )}
+      {!showLoader && !error && isFilteredEmpty && (
+        <div className="flex flex-col items-center justify-center h-[70vh] ">
+          <p className="text-lg font-semibold text-gray-800">No transactions match your filters</p>
+          <p className="text-gray-500 mt-2">Try adjusting or clearing the filters.</p>
+          <Button variant="outline" className="mt-4" onClick={() => { setAppliedFilters({}); handleResetFilter(); setPage(1); }}>Clear Filters</Button>
+        </div>
+      )}
+
+      {!showLoader && !error && hasData && (
         <div className="bg-gray-200 overflow-scroll h-full ">
           <div className="bg-white p-6 rounded-md flex justify-between items-center mx-8 mt-10">
             <TransactionFilter
-              onApply={handleApplyFilter}
-              onReset={handleResetFilter}
+              onApply={(f: Record<string, unknown>) => {
+                setAppliedFilters(f);
+                handleApplyFilter(f);
+                setPage(1);
+              } }
+              onReset={() => { setAppliedFilters({}); handleResetFilter(); setPage(1);} }
             />
           </div>
 
@@ -292,12 +342,63 @@ const AllTransactions = () => {
                 <h1 className="text-xl text-gray-800">All Transactions</h1>
               </div>
               <div className="flex gap-4 items-center">
-                <Button variant="ghost" className="py-2.5 w-44">
-                  Export
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" disabled={exporting} className="py-2.5 w-44 flex items-center gap-2">
+                      {exporting ? 'Exporting...' : 'Export'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => {
+                      dispatch(exportTransactions({
+                        format: 0,
+                        Status: mapStatusForApi(appliedFilters.status),
+                        HospitalName: appliedFilters.hospital as string | undefined,
+                        PatientName: appliedFilters.patient as string | undefined,
+                        Date: appliedFilters.date as string | undefined,
+                        ServiceType: appliedFilters.type as string | undefined,
+                      })).then(res => {
+                        const action = res as { payload?: { blob: Blob; params: { format: number } } };
+                        if (action.payload?.blob) {
+                          const blob = action.payload.blob;
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'transactions_export.csv';
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(url);
+                        }
+                      });
+                    }}>CSV</DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => {
+                      dispatch(exportTransactions({
+                        format: 1,
+                        Status: mapStatusForApi(appliedFilters.status),
+                        HospitalName: appliedFilters.hospital as string | undefined,
+                        PatientName: appliedFilters.patient as string | undefined,
+                        Date: appliedFilters.date as string | undefined,
+                        ServiceType: appliedFilters.type as string | undefined,
+                      })).then(res => {
+                        const action = res as { payload?: { blob: Blob; params: { format: number } } };
+                        if (action.payload?.blob) {
+                          const blob = action.payload.blob;
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'transactions_export.xlsx';
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(url);
+                        }
+                      });
+                    }}>Excel</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
-
             <div className="flex-1 overflow-auto px-6 lg:px-0 mt-4">
               <Table className="min-w-[600px]">
                 <TableHeader>
@@ -321,34 +422,26 @@ const AllTransactions = () => {
                     table.getRowModel().rows.map(row => (
                       <TableRow
                         key={row.id}
-                          className="cursor-pointer hover:bg-gray-100"
-                       
+                        className="cursor-pointer hover:bg-gray-100"
                         data-state={row.getIsSelected() && 'selected'}
                       >
                         {row.getVisibleCells().map(cell => (
-                          <>
-                            <TableCell
-                              key={cell.id}
-                              className={
-                                cell.column.id === 'actions' ? 'text-right' : ''
-                              }
-                            >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </TableCell>
-                          </>
+                          <TableCell
+                            key={cell.id}
+                            className={cell.column.id === 'actions' ? 'text-right' : ''}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-24 text-center"
-                      >
-                        <div className="flex flex-col items-start">
+                      <TableCell colSpan={columns.length} className="h-24 text-center">
+                        <div className="flex flex-col items-center">
                           <span className="font-medium">No data available</span>
                         </div>
                       </TableCell>
@@ -358,26 +451,23 @@ const AllTransactions = () => {
               </Table>
             </div>
 
-            {/* Pagination stuck at bottom */}
-            {/* <div className="p-4 flex items-center justify-end ">
-            <Pagination
-              totalEntriesSize={filteredClaims.length}
-              currentEntriesSize={paginatedProviders.length}
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              pageSize={pageSize}
-              onPageSizeChange={size => {
-                setPageSize(size);
-                setPage(1);
-              }}
-            />
-          </div> */}
+            {metaData && (
+              <div className="p-4 flex items-center justify-end">
+                <Pagination
+                  totalEntriesSize={metaData.totalCount}
+                  currentPage={metaData.currentPage || page}
+                  totalPages={metaData.totalPages || 1}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={(size: number) => { setPageSize(size); setPage(1);} }
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
 
-       {/* transaction details modal */}
+      {/* transaction details modal */}
       <TransactionDetails open={open} setOpen={setOpen} data={selectedTransaction} />
     </DashboardLayout>
   );

@@ -1,168 +1,165 @@
-import { ChevronRight, ChevronLeft, X } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { X, Check, ChevronDown } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Success from "../../../features/modules/dashboard/success";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useDispatch, useSelector } from "react-redux";
+import { generateReferralCodes, fetchReferralCodes, fetchReferralSummary, fetchAdminUsers } from "@/services/thunks";
+import type { AppDispatch, RootState } from "@/services/store";
 
 export default function GenerateCode() {
-  const [openSuccess, setOpenSuccess] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [showTeammates, setShowTeammates] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const { generating, generateError } = useSelector((s: RootState) => s.referrals);
+  const { users, loading: loadingUsers } = useSelector((s: RootState) => s.adminUsers);
 
-  const teammates = [
-    { id: 1, name: "John Doe", email: "john@example.com" },
-    { id: 2, name: "Pascal", email: "pascal@example.com" },
-    { id: 3, name: "Ogechi", email: "ogechi@example.com" },
-  ];
+  const [open, setOpen] = useState(false);
+  const [openSuccess, setOpenSuccess] = useState(false);
+  const [emails, setEmails] = useState<string[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [filter, setFilter] = useState("");
+
+  const resetForm = () => {
+    setEmails([]);
+    setFilter("");
+    setDropdownOpen(false);
+  };
+
+  useEffect(() => {
+    if (open) {
+      // fetch users if list empty
+      if (users.length === 0) dispatch(fetchAdminUsers(undefined));
+    } else {
+      resetForm();
+    }
+  }, [open, users.length, dispatch]);
+
+  const toggleEmail = (email: string) => {
+    setEmails(prev => prev.includes(email) ? prev.filter(x => x !== email) : [...prev, email]);
+  };
+
+  const removeEmail = (e: string) => {
+    setEmails(prev => prev.filter(x => x !== e));
+  };
+
+  const selectAll = () => {
+    if (emails.length === filteredUsers.length) {
+      setEmails([]);
+    } else {
+      setEmails(filteredUsers.map(u => u.email).filter(Boolean));
+    }
+  };
 
   const handleSubmit = () => {
-    setOpenSuccess(true);
+    if (emails.length === 0 || generating) return;
+    dispatch(generateReferralCodes({ UserEmails: emails }))
+      .unwrap()
+      .then(() => {
+        setOpenSuccess(true);
+        dispatch(fetchReferralSummary());
+        dispatch(fetchReferralCodes({ Page: 1, PageSize: 20 }));
+        resetForm();
+      })
+      .catch(() => {});
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
+  const filteredUsers = users.filter(u => (
+    u.email?.toLowerCase().includes(filter.toLowerCase()) ||
+    u.name?.toLowerCase().includes(filter.toLowerCase())
+  ));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="py-3 w-36 rounded-md">Generate Code</Button>
+        <Button className="py-3 w-40 rounded-md">Generate Code</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader className="flex w-full items-center justify-between">
           <DialogTitle className="flex w-full items-center justify-between border-b py-2">
             <div>
-              <span className="text-gray-800 text-2xl font-normal">
-                Generate Code
-              </span>
-              <p className="text-gray-500 text-md font-normal">
-                Send code to teammate as single or a batch
-              </p>
+              <span className="text-gray-800 text-2xl font-normal">Generate Code</span>
+              <p className="text-gray-500 text-sm font-normal">Send referral codes to one or multiple staff emails</p>
             </div>
-
-            <button
-              onClick={() => setOpen(false)}
-              type="button"
-              className="p-1 border border-gray-300 rounded-full hover:bg-gray-100"
-            >
+            <button onClick={() => setOpen(false)} type="button" className="p-1 border border-gray-300 rounded-full hover:bg-gray-100">
               <X className="w-5 h-5 text-primary" />
             </button>
           </DialogTitle>
         </DialogHeader>
-
-        {/* If not showing teammates - show selection */}
-        {!showTeammates ? (
-          <div className="overflow-scroll">
-            <div className="grid grid-cols-1 gap-2 mt-2">
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-800">Send to email</label>
-                <Select>
-                  <SelectTrigger className="border border-gray-300 rounded-lg px-3 py-3 text-gray-800">
-                    <SelectValue placeholder="Add email or name" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teammates.map((tm) => (
-                      <SelectItem key={tm.id} value={tm.email}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback>
-                              {getInitials(tm.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{tm.name}</span>
-                          <span className="ml-2">
-                            {tm.email}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="mt-4 space-y-5">
+          <div className="flex flex-col gap-2 relative">
+            <label className="text-gray-800 text-sm font-medium">Select Teammates</label>
+            <div
+              className="flex items-center justify-between border border-gray-300 rounded-md px-3 py-2 cursor-pointer bg-white"
+              onClick={() => setDropdownOpen(o => !o)}
+            >
+              <span className="text-sm text-gray-600">
+                {emails.length === 0 ? 'Choose teammates' : `${emails.length} selected`}
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </div>
-
-            <div className="flex justify-between items-center gap-4 mt-6">
-              <Button onClick={handleSubmit} className="py-3 w-48 rounded-md">
-                Send code
-              </Button>
-            </div>
-
-            <div className="mt-6">
-              <h1 className="text-gray-500 text-lg font-normal">
-                See all teammates
-              </h1>
-
-              <div
-                className="flex items-center justify-between text-gray-500 text-lg font-normal cursor-pointer"
-                onClick={() => setShowTeammates(true)}
-              >
-                <h1>
-                  {teammates.map((t) => t.name).join(", ")}
-                </h1>
-                <ChevronRight className="w-6 h-6 ml-2" />
-              </div>
-            </div>
-          </div>
-        ) : (
-          // If showing teammates
-          <div className="mt-1">
-            <div className="flex justify-between items-center">
-              <button
-                onClick={() => setShowTeammates(false)}
-                className="flex items-center text-gray-600"
-              >
-                <ChevronLeft className="w-5 h-5 mr-1" />
-                Back
-              </button>
-
-              <Button className="py-2 rounded-md" onClick={handleSubmit}>
-                Send All
-              </Button>
-            </div>
-
-            <div className="mt-2">
-              {teammates.map((tm) => (
-                <div
-                  key={tm.id}
-                  className="flex items-center gap-2  p-2 rounded-lg"
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getInitials(tm.name)}</AvatarFallback>
-                  </Avatar>
-                  
-                    <p className="text-gray-800 text-md">{tm.name}</p>
-                    <p className="text-gray-800 text-md ">{tm.email}</p>
-                  
+            {dropdownOpen && (
+              <div className="absolute z-50 top-full mt-1 w-full rounded-md border border-gray-200 bg-white shadow-md max-h-64 overflow-auto">
+                <div className="p-2 border-b bg-gray-50 sticky top-0">
+                  <input
+                    value={filter}
+                    onChange={e => setFilter(e.target.value)}
+                    placeholder="Search users..."
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none"
+                  />
+                  <div className="flex items-center justify-between mt-2">
+                    <button type="button" onClick={selectAll} className="text-xs text-primary font-medium">
+                      {emails.length === filteredUsers.length && filteredUsers.length > 0 ? 'Clear all' : 'Select all'}
+                    </button>
+                    <span className="text-[10px] text-gray-500">{filteredUsers.length} users</span>
+                  </div>
                 </div>
+                <ul className="divide-y divide-gray-100">
+                  {loadingUsers && (
+                    <li className="py-4 text-center text-xs text-gray-500">Loading users...</li>
+                  )}
+                  {!loadingUsers && filteredUsers.length === 0 && (
+                    <li className="py-4 text-center text-xs text-gray-500">No users found</li>
+                  )}
+                  {!loadingUsers && filteredUsers.map(u => {
+                    const selected = emails.includes(u.email);
+                    return (
+                      <li
+                        key={u.id}
+                        className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm"
+                        onClick={() => toggleEmail(u.email)}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-gray-800 font-medium">{u.name || '-'}</span>
+                          <span className="text-gray-500 text-xs">{u.email}</span>
+                        </div>
+                        {selected && <Check className="w-4 h-4 text-primary" />}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+            <p className="text-xs text-gray-500">Open and pick teammates; you can select multiple or all.</p>
+          </div>
+          {emails.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {emails.map(e => (
+                <span key={e} className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700 border border-blue-200">
+                  {e}
+                  <button type="button" onClick={() => removeEmail(e)} className="text-blue-500 hover:text-blue-800">&times;</button>
+                </span>
               ))}
             </div>
+          )}
+          {generateError && <p className="text-xs text-red-600">{generateError}</p>}
+          <div className="pt-2 flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => { resetForm(); setOpen(false); }}>Cancel</Button>
+            <Button type="button" onClick={handleSubmit} disabled={emails.length === 0 || generating} className="min-w-32">
+              {generating ? 'Generating...' : 'Generate'}
+            </Button>
           </div>
-        )}
+        </div>
       </DialogContent>
-
-      <Success
-        open={openSuccess}
-        setOpen={setOpenSuccess}
-        text="You've successfully added a new user."
-      />
+      <Success open={openSuccess} setOpen={setOpenSuccess} text="Referral codes generated successfully." />
     </Dialog>
   );
 }

@@ -407,7 +407,7 @@ const Request = () => {
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={filteredClaims.length}
-              currentEntriesSize={paginatedRequests.length}
+             
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}

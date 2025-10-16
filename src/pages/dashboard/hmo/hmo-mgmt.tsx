@@ -322,7 +322,6 @@ const HMOMgmt = () => {
                     <div className="p-4 flex items-center justify-end">
                         <Pagination
                             totalEntriesSize={hmosData.length}
-                            currentEntriesSize={paginatedhmos.length}
                             currentPage={page}
                             totalPages={totalPages}
                             onPageChange={setPage}

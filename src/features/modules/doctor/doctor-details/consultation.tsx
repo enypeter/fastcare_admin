@@ -1,22 +1,15 @@
-import { Doctor } from '@/types';
+import { Doctor, DashboardData, DoctorRecentCall } from '@/types';
 import totalcon from '/svg/totalcon.svg';
 import completedcon from '/svg/completedcon.svg';
 import pendingcon from '/svg/pendingcon.svg';
 import missedcon from '/svg/missedcon.svg';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import AllConsultation from './all-consultation';
 import { Loader } from '@/components/ui/loading';
 
 type Props = {
   consulation: Doctor | null;
-  dashboard: any;
+  dashboard: DashboardData | null;
   loading: boolean;
 };
 
@@ -56,14 +49,14 @@ const Consultation = ({  dashboard, loading }: Props) => {
     );
   }
 
-  const { callsStatistics, doctorRecentCalls = [] } = dashboard || {};
+  const { callsStatistics, performanceMetric, doctorRecentCalls = [] } = dashboard || {};
 
   // ✅ Map API response into table shape
   const mappedConsultations: Consultation[] = doctorRecentCalls?.map(
-    (item: any, index: number) => ({
+    (item: DoctorRecentCall, index: number) => ({
       id: String(index + 1),
       patientName: item.patientName,
-      type: item.type || '-', // optional, default to "-"
+      type: '-', // API does not supply type in sample; placeholder
       duration: item.callDuration,
       status: item.status,
       reason: item.reason,
@@ -119,30 +112,18 @@ const Consultation = ({  dashboard, loading }: Props) => {
         {/* Chart */}
         <div className="w-full lg:w-1/2">
           <div className="bg-white border py-5 px-3 w-full rounded-md">
-            <div className="flex items-end justify-end">
-              <Select defaultValue="monthly">
-                <SelectTrigger className="px-3 py-1 w-32 font-semibold rounded-lg bg-blue-100 text-primary text-sm border-none">
-                  <SelectValue placeholder="Filter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="mt-6 flex items-center gap-6">
-              {/* Left side */}
-              <div className="flex flex-col items-center justify-center gap-2 w-[50%]">
-                <h3 className="text-md text-gray-700">Average Wait Time</h3>
-                <span className="text-2xl font-bold text-gray-900">1.32 min</span>
-                <span className="text-green-600 font-semibold text-sm">+0.1</span>
-                <p className="text-sm text-gray-500">This month – September</p>
+            <div className="mt-2 flex items-center gap-6">
+              {/* Metrics summary */}
+              <div className="flex flex-col items-start justify-center gap-2 w-[45%]">
+                <h3 className="text-md text-gray-700">Performance</h3>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p><span className="font-medium">Satisfaction:</span> {performanceMetric?.satisfactionPercentage || '0%'}</p>
+                  <p><span className="font-medium">Rating:</span> {performanceMetric?.rating || '0/0'}</p>
+                  <p><span className="font-medium">Avg Duration:</span> {performanceMetric?.averageCallDuration || '0m 0s'}</p>
+                  <p><span className="font-medium">Response Time:</span> {performanceMetric?.responseTime || 'N/A'}</p>
+                </div>
               </div>
-
-              {/* Right side (chart) */}
+              {/* Chart */}
               <div className="w-full h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data}>

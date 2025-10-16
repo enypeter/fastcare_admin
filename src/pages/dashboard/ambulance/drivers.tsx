@@ -248,23 +248,21 @@ const Drivers = () => {
             </Table>
           </div>
 
-          {/* Pagination */}
-          {transformedDrivers.length > 0 && (
-            <div className="p-4 flex items-center justify-end">
-              <Pagination
-                totalEntriesSize={transformedDrivers.length}
-                currentEntriesSize={paginatedDrivers.length}
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                pageSize={pageSize}
-                onPageSizeChange={size => {
-                  setPageSize(size);
-                  setPage(1);
-                }}
-              />
-            </div>
-          )}
+          {/* Pagination stuck at bottom */}
+          <div className="p-4 flex items-center justify-end">
+            <Pagination
+              totalEntriesSize={drivers.length}
+           
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={size => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          </div>
         </div>
       </div>
     </DashboardLayout>

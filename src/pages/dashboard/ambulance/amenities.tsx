@@ -222,7 +222,7 @@ const Amenities = () => {
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={amenities.length}
-              currentEntriesSize={paginatedProviders.length}
+          
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}

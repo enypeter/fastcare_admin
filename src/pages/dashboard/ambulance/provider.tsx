@@ -1,6 +1,6 @@
-import { DashboardLayout } from '@/layout/dashboard-layout';
-import { useState, useMemo, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import {DashboardLayout} from '@/layout/dashboard-layout';
+import {useState, useEffect} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {
   Table,
@@ -23,93 +23,59 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
-import { Pagination } from '@/components/ui/pagination';
-
-import { EyeIcon, Trash } from 'lucide-react';
+import {Pagination} from '@/components/ui/pagination';
+import {EyeIcon, Trash} from 'lucide-react';
 import AddProviders from '@/components/form/ambulance/providers/add-provider';
-import { AppDispatch, RootState } from '@/services/store';
-import { fetchAmbulanceProviders } from '@/services/thunks';
-import { Loader } from '@/components/ui/loading';
+
+import {fetchAmbulanceProviders} from '@/services/thunks';
+import {AmbulanceProvider} from '@/types';
+import {AppDispatch, RootState} from '@/services/store';
+import {Loader} from '@/components/ui/loading';
+import ProvidersDetails from '@/features/modules/ambulance/provider/provider-details';
 
 const Providers = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { providers, loading, error } = useSelector((state: RootState) => state.ambulanceProviders);
+
+  const {providers, loading, error} = useSelector(
+    (state: RootState) => state.ambulance,
+  );
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
+  const [pageSize, setPageSize] = useState(5);
+  const [selectedProvider, setSelectedProvider] = useState<any | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchAmbulanceProviders());
-  }, [dispatch]);
+    dispatch(fetchAmbulanceProviders({page, pageSize}));
+  }, [dispatch, page, pageSize]);
 
-
-  const transformedProviders = useMemo(() => {
-    return providers.map(provider => ({
-      id: provider.id,
-      provider_id: provider.registrationNumber, 
-      name: provider.adminName, 
-      cac: provider.registrationNumber, 
-      email: provider.email,
-      phone: provider.phoneNumber,
-      date: '2023-01-01', 
-      action: '',
-      // Include original data if needed
-      originalData: provider,
-    }));
-  }, [providers]);
-
-  const totalPages = Math.ceil(transformedProviders.length / pageSize);
-  
-  const paginatedProviders = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return transformedProviders.slice(start, start + pageSize);
-  }, [transformedProviders, page, pageSize]);
-
-  const columns: ColumnDef<any>[] = [
-        {
-      accessorKey: 'name',
-      header: 'Contact Person',
-    },
-    {
-      accessorKey: 'provider_id',
-      header: 'Provider ID',
-    },
-    {
-      accessorKey: 'cac',
-      header: 'CAC Number',
-    },
-    {
-      accessorKey: 'email',
-      header: 'Company Email',
-    },
-
-    {
-      accessorKey: 'phone',
-      header: 'Phone Number',
-    },
+  const columns: ColumnDef<AmbulanceProvider>[] = [
+    {accessorKey: 'registrationNumber', header: 'Registration Number'},
+    {accessorKey: 'address', header: 'Address'},
+    {accessorKey: 'adminName', header: 'Admin Name'},
+    {accessorKey: 'email', header: 'Company Email'},
+    {accessorKey: 'phoneNumber', header: 'Phone Number'},
+    {accessorKey: 'serviceCharge', header: 'Service Charge'},
     {
       id: 'action',
       header: 'Action',
       enableHiding: false,
-      cell: ({ row }) => {
-        const isEmptyRow = !row.original.id && !row.original.name;
-
-        if (isEmptyRow) {
-          return null;
-        }
+      cell: ({row}) => {
+        if (!row.original.id && !row.original.adminName) return null;
         return (
           <div className="flex items-center gap-4">
-            <div>
-              <EyeIcon className='cursor-pointer w-4 h-4' />
-            </div>
-            <div>
-              <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
-            </div>
+            <EyeIcon
+              onClick={() => {
+                setSelectedProvider(row.original);
+                setOpen(true);
+              }}
+              className="cursor-pointer w-4 h-4"
+            />
+            <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
           </div>
         );
       },
@@ -117,14 +83,9 @@ const Providers = () => {
   ];
 
   const table = useReactTable({
-    data: paginatedProviders,
+    data: providers,
     columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
+    state: {sorting, columnVisibility, rowSelection, columnFilters},
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
@@ -135,128 +96,105 @@ const Providers = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  // Show loading state
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="bg-gray-100 overflow-scroll h-full">
-          <div className="lg:mx-8 mt-10 bg-white rounded-md flex items-center justify-center h-64">
-             <div className="flex items-center justify-center h-screen">
-                            <Loader/>
-                          </div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="bg-gray-100 overflow-scroll h-full">
-          <div className="lg:mx-8 mt-10 bg-white rounded-md flex items-center justify-center h-64">
-            <div className="text-lg text-red-500">Error: {error}</div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
-      <div className="bg-gray-100 overflow-scroll h-full ">
-        <div className="lg:mx-8 mt-10 bg-white  rounded-md flex flex-col h-[500px] mb-36">
+      <div className="bg-gray-100 overflow-scroll h-full">
+        <div className="lg:mx-8 mt-10 bg-white rounded-md flex flex-col  mb-36">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
-            <div className="flex items-center gap-8">
-              <h1 className="text-lg text-gray-800">All Providers</h1>
-              <div className="text-sm text-gray-600">
-                {transformedProviders.length} provider(s) found
+            <h1 className="text-lg text-gray-800">All Providers</h1>
+            <AddProviders />
+          </div>
+
+          <div className="flex-1 ">
+            {loading ? (
+              <div className="flex items-center justify-center h-60">
+                <Loader />
               </div>
-            </div>
-            <div className="flex gap-4 items-center">
-              <AddProviders />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-auto lg:px-0 lg:mt-4">
-            <Table className="min-w-[600px]">
-              <TableHeader className="border border-[#CDE5F9]">
-                {table.getHeaderGroups().map(headerGroup => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map(header => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
+            ) : error ? (
+              <div className="p-6 text-red-500 text-center">{error}</div>
+            ) : (
+              <>
+                <Table className="min-w-[600px]">
+                  <TableHeader className="border border-[#CDE5F9]">
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map(header => (
+                          <TableHead key={header.id}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )}
+                          </TableHead>
+                        ))}
+                      </TableRow>
                     ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length ? (
-                  table.getRowModel().rows.map(row => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && 'selected'}
-                    >
-                      {row.getVisibleCells().map(cell => (
-                        <TableCell
-                          key={cell.id}
-                          className={
-                            cell.column.id === 'actions' ? 'text-right' : ''
-                          }
+                  </TableHeader>
+                  <TableBody>
+                    {table.getRowModel().rows.length ? (
+                      table.getRowModel().rows.map(row => (
+                        <TableRow
+                          key={row.id}
+                          data-state={row.getIsSelected() && 'selected'}
                         >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
+                          {row.getVisibleCells().map(cell => (
+                            <TableCell
+                              key={cell.id}
+                              className={
+                                cell.column.id === 'actions' ? 'text-right' : ''
+                              }
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          className="h-24 text-center"
+                        >
+                          <div className="flex flex-col items-center">
+                            <span className="font-medium">
+                              No ambulance provider found
+                            </span>
+                            <AddProviders />
+                          </div>
                         </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      <div className="flex flex-col items-start">
-                        <span className="font-medium">
-                          No ambulance providers found
-                        </span>
-                        <span className="font-medium">
-                          All your ambulance providers will appear here
-                        </span>
-                        <AddProviders />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
 
-          {/* Pagination */}
-          <div className="p-4 flex items-center justify-end">
-            <Pagination
-              totalEntriesSize={transformedProviders.length}
-              currentEntriesSize={paginatedProviders.length}
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              pageSize={pageSize}
-              onPageSizeChange={size => {
-                setPageSize(size);
-                setPage(1);
-              }}
-            />
+                {/* 🔹 API-driven Pagination */}
+                <div className="p-4 flex items-center justify-end">
+                  <Pagination
+                    totalEntriesSize={100} // 🔹 Replace with API total count if available
+                    currentPage={page}
+                    totalPages={Math.ceil(100 / pageSize)} // 🔹 update with backend response
+                    onPageChange={setPage}
+                    pageSize={pageSize}
+                    onPageSizeChange={size => {
+                      setPageSize(size);
+                      setPage(1);
+                    }}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
+
+        <ProvidersDetails
+          open={open}
+          setOpen={setOpen}
+          data={selectedProvider}
+        />
       </div>
     </DashboardLayout>
   );

@@ -12,11 +12,11 @@ const initialState: AccountState = {
   roles: null,
   rolesLoading: false,
   rolesError: null,
-   createLoading: false,
+  createLoading: false,
   createError: null,
   updateLoading: false,
   updateSuccess: false,
-   createroleLoading: false,
+  createroleLoading: false,
   createroleError: null,
 
 };

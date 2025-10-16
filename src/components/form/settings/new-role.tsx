@@ -9,15 +9,26 @@ import {
 import {Button} from '@/components/ui/button';
 import {useState} from 'react';
 import Success from '../../../features/modules/dashboard/success';
+import { createRole } from '@/services/thunks';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/services/store';
 
 export default function NewRole() {
   const [openSuccess, setOpenSuccess] = useState(false);
   const [open, setOpen] = useState(false);
+    const dispatch = useDispatch<AppDispatch>();
 
+  const [role, setRole] = useState("");
 
-
-  const handleSubmit = () => {
-    setOpenSuccess(true);
+  const handleSubmit = async () => {
+     try {
+          await dispatch(createRole({ role })).unwrap();
+          setOpenSuccess(true);
+          setOpen(false);
+          setRole("");
+        } catch (error) {
+          console.error("Failed to create admin:", error);
+        }
   };
 
   return (
@@ -47,7 +58,10 @@ export default function NewRole() {
             <div className="grid grid-cols-1 gap-2 mt-6">
               <div>
                 <label className="text-gray-800">Role name</label>
-                <input className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none" />
+                <input 
+                   value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                className="w-full border-gray-300 border rounded-lg px-3 py-3 mt-1 outline-none" />
               </div>
 
               <div>
