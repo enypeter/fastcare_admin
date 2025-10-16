@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
+export type UserStatusT = string;
+export type SubscriptionT = string;
+export type PaymentStatusT = string;
+export type ApplicationStatusT = string;
+export type JobStatusT = string;
 
 export type CreatePasswordT = {
   password: string;
