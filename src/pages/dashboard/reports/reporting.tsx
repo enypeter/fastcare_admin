@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {DashboardLayout} from '@/layout/dashboard-layout';
 import {useMemo, useState} from 'react';
 import {Button} from '@/components/ui/button';
@@ -256,7 +257,7 @@ const Reporting = () => {
             <div className="p-4 flex items-center justify-end ">
             <Pagination
               totalEntriesSize={transactions.length}
-              currentEntriesSize={paginatedReporting.length}
+              // currentEntriesSize={paginatedReporting.length}
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}

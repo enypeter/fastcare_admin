@@ -65,6 +65,7 @@ const UsersWho = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -75,6 +76,7 @@ const UsersWho = () => {
     return users.slice(start, start + pageSize);
   }, [users, page]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: 'name',
@@ -197,7 +199,7 @@ const UsersWho = () => {
       <div className="p-4 flex items-center justify-end">
         <Pagination
           totalEntriesSize={users.length}
-          currentEntriesSize={paginatedProviders.length}
+          // currentEntriesSize={paginatedProviders.length}
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}

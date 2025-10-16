@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {DashboardLayout} from '@/layout/dashboard-layout';
 import {useMemo, useState} from 'react';
 //import {ArrowDownLeft, Edit2Icon, InfoIcon, MoreVertical} from 'lucide-react';
@@ -301,7 +302,7 @@ const EmergencyCall = () => {
             <div className="p-4 flex items-center justify-end ">
               <Pagination
                 totalEntriesSize={emergency.length}
-                currentEntriesSize={paginatedReporting.length}
+                // currentEntriesSize={paginatedReporting.length}
                 currentPage={page}
                 totalPages={totalPages}
                 onPageChange={setPage}

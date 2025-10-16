@@ -10,6 +10,7 @@ import {
 type Props = {
   totalEntriesSize: number;
   totalPages: number;
+
   currentPage: number;
   onPageChange: (page: number) => void;
   pageSize: number;
@@ -18,6 +19,7 @@ type Props = {
 
 export const Pagination = ({
   totalEntriesSize,
+
   totalPages,
   currentPage,
   onPageChange,

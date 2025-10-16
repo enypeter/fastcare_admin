@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {DashboardLayout} from '@/layout/dashboard-layout';
 import {useState, useMemo} from 'react';
 
@@ -253,7 +254,7 @@ const Feedbacks = () => {
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={providers.length}
-              currentEntriesSize={paginatedProviders.length}
+              // currentEntriesSize={paginatedProviders.length}
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}

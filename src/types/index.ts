@@ -4,6 +4,7 @@ export type SubscriptionT = string;
 export type PaymentStatusT = string;
 export type ApplicationStatusT = string;
 export type JobStatusT = string;
+export type CourseStatusT = string;
 
 export type CreatePasswordT = {
   password: string;

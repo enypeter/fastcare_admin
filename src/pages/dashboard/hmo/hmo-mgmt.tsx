@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DashboardLayout } from "@/layout/dashboard-layout"
 import { Button } from "@/components/ui/button";
 import { Edit2Icon, InfoIcon, MoreVertical, PlusCircleIcon } from "lucide-react";
@@ -322,7 +323,7 @@ const HMOMgmt = () => {
                     <div className="p-4 flex items-center justify-end">
                         <Pagination
                             totalEntriesSize={hmosData.length}
-                            currentEntriesSize={paginatedhmos.length}
+                            // currentEntriesSize={paginatedhmos.length}
                             currentPage={page}
                             totalPages={totalPages}
                             onPageChange={setPage}

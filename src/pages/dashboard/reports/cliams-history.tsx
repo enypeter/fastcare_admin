@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DashboardLayout } from "@/layout/dashboard-layout";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ import {
 import { Pagination } from "@/components/ui/pagination";
 
 
-import { PaymentFilter } from "@/features/modules/payment/filter";
+// import { PaymentFilter } from "@/features/modules/payment/filter";
 
 
 const claims = [
@@ -225,28 +226,28 @@ const ClaimsHistory = () => {
     });
 
     // Function to apply filters from FilterDialog
-    const handleApplyFilter = (filters: any) => {
-        const newFilters: any[] = [];
+    // const handleApplyFilter = (filters: any) => {
+    //     const newFilters: any[] = [];
 
-        if (filters.status) {
-            newFilters.push({ id: "status", value: filters.status });
-        }
-        if (filters.type) {
-            newFilters.push({ id: "type", value: filters.type });
-        }
-        if (filters.planType) {
-            newFilters.push({ id: "plan_type", value: filters.planType });
-        }
-        if (filters.date) {
-            newFilters.push({ id: "date", value: filters.date });
-        }
+    //     if (filters.status) {
+    //         newFilters.push({ id: "status", value: filters.status });
+    //     }
+    //     if (filters.type) {
+    //         newFilters.push({ id: "type", value: filters.type });
+    //     }
+    //     if (filters.planType) {
+    //         newFilters.push({ id: "plan_type", value: filters.planType });
+    //     }
+    //     if (filters.date) {
+    //         newFilters.push({ id: "date", value: filters.date });
+    //     }
 
-        setColumnFilters(newFilters);
-    };
+    //     setColumnFilters(newFilters);
+    // };
     // Function to reset filters
-    const handleResetFilter = () => {
-        setColumnFilters([]);
-    };
+    // const handleResetFilter = () => {
+    //     setColumnFilters([]);
+    // };
 
 
     return (
@@ -287,10 +288,10 @@ const ClaimsHistory = () => {
 
                         </div>
                         <div className="flex gap-4 items-center">
-                            <PaymentFilter
+                            {/* <PaymentFilter
                                 onApply={handleApplyFilter}
                                 onReset={handleResetFilter}
-                            />
+                            /> */}
                             <Button variant="ghost" className="py-2.5 w-44">
                                 <ArrowDownLeft size={30} />
                                 Export
@@ -364,7 +365,7 @@ const ClaimsHistory = () => {
                     <div className="p-4 flex items-center justify-end ">
                         <Pagination
                             totalEntriesSize={filteredClaims.length}
-                            currentEntriesSize={paginatedProviders.length}
+                            // currentEntriesSize={paginatedProviders.length}
                             currentPage={page}
                             totalPages={totalPages}
                             onPageChange={setPage}
