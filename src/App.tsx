@@ -15,8 +15,6 @@ const App = () => {
       </BrowserRouter>
     </Provider>
 
-
-
   );
 };
 

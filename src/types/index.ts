@@ -264,3 +264,192 @@ export type CreateAdminPayload = {
 export type CreateRolePayload = {
   role: string;
 };
+
+// ------ Amenities ------------
+export interface Amenity {
+  equipmentName: string;
+  description: string;
+  action: boolean;
+}
+
+export interface AmenitiesState {
+  amenities: Amenity[];
+  selectedAmenity: Amenity | null;
+  loading: boolean;
+  error: string | null;
+  createLoading: boolean;
+  createError: string | null;
+  updateLoading: boolean;
+  updateError: string | null;
+}
+// ------ Amenities ------------
+
+// ------ AmbulanceProvider ------------
+export interface AmbulanceProvider {
+  id: string;
+  registrationNumber: string;
+  address: string;
+  email: string;
+  adminName: string;
+  phoneNumber: string;
+  serviceCharge: number;
+}
+
+export interface AmbulanceProviderState {
+  providers: AmbulanceProvider[];
+  selectedProvider: AmbulanceProvider | null;
+  loading: boolean;
+  error: string | null;
+  createLoading: boolean;
+  createError: string | null;
+}
+// ------ AmbulanceProvider ------------
+// ------ AmbulanceRequests ------------
+export interface Location {
+  latitude: number;
+  longitude: number;
+}
+
+export interface AmbulanceRequest {
+  id: string;
+  ambulanceProviderId: string;
+  userId: string;
+  clientName: string;
+  clientAge: string;
+  clientGender: string | null;
+  ambulanceId: string;
+  ambulanceNumber: string;
+  ambulanceType: string;
+  distance: number;
+  pickupLocation: Location;
+  destinationLocation: Location;
+  creationDate: string;
+  emergencyType: string;
+  amenities: string;
+  pickupAddress: string | null;
+  destinationAddress: string | null;
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface AmbulanceRequestState {
+  requests: AmbulanceRequest[];
+  currentRequest: AmbulanceRequest | null;
+  loading: boolean;
+  error: string | null;
+  selectedRequestId: string | null;
+}
+
+export type AmbulanceType = 'Emergency' | 'Transport' | 'ICU' | 'BLS' | 'ALS';
+export type RequestFilters = Partial<Pick<AmbulanceRequest, 'ambulanceType' | 'emergencyType'>>;
+// ------ AmbulanceRequests ------------
+// ------ Ambulance ------------
+export interface Location {
+  latitude: number;
+  longitude: number;
+}
+
+export interface Ambulance {
+  id: string;
+  status: string;
+  ambulanceProviderId: string;
+  pricePerKm: number | null;
+  baseRateFee: number;
+  plateNumber: string;
+  amenities: string;
+  address: string | null;
+  location: Location;
+  creationDate: string;
+}
+
+export interface AmbulanceState {
+  ambulances: Ambulance[];
+  selectedAmbulance: Ambulance | null;
+  loading: boolean;
+  error: string | null;
+  createLoading: boolean;
+  createError: string | null;
+  updateLoading: boolean;
+  updateError: string | null;
+}
+
+export type CreateAmbulanceData = Omit<Ambulance, 'id' | 'creationDate'>;
+export type UpdateAmbulanceData = Partial<Omit<Ambulance, 'id' | 'creationDate'>>;
+// ------ Ambulance ------------
+// ------ Driver ------------
+export interface Driver {
+  id: string;
+  name: string;
+  certificationStatus: string;
+  licenseNumber: string;
+  phoneNumber: string;
+  email: string;
+  address: string;
+  ambulanceProviderId: string;
+}
+
+export interface DriverState {
+  drivers: Driver[];
+  loading: boolean;
+  error: string | null;
+  currentDriver: Driver | null;
+}
+
+export interface AddDriverData {
+  name: string;
+  certificationStatus: string;
+  licenseNumber: string;
+  phoneNumber: string;
+  email: string;
+  address: string;
+  ambulanceProviderId: string;
+}
+// -------- Driver ------------
+// -------- Respondents ------------
+export interface Respondent {
+  id: string;
+  name: string;
+  certificationStatus: string;
+  professionalLicense: string;
+  phoneNumber: string;
+  email: string;
+  address: string;
+  ambulanceProviderId: string;
+}
+
+export interface RespondentsState {
+  respondents: Respondent[];
+  selectedRespondents: Respondent | null;
+  loading: boolean;
+  error: string | null;
+}
+// -------- Respondents ------------
+
+//  ---- Dispatch History --------
+export interface Location {
+  latitude: number;
+  longitude: number;
+}
+
+export interface DispatchHistory {
+  id: string;
+  assignedByUser: string | null;
+  driverName: string | null;
+  respondantName: string | null;
+  ambulanceNumber: string;
+  amountPaid: number;
+  ambulanceType: string;
+  distance: number;
+  pickupLocation: Location;
+  destinationLocation: Location;
+  dateAssigned: string | null;
+  amenities: string;
+  creationDate: string;
+}
+
+export interface DispatchHistoryState {
+  dispatchHistory: DispatchHistory[];
+  loading: boolean;
+  error: string | null;
+}
+//  ---- Dispatch History --------

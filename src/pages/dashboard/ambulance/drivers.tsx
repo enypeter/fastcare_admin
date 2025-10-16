@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
 
 import {
   Table,
@@ -28,39 +28,13 @@ import AddDriver from '@/components/form/ambulance/drivers/add-drivers';
 import EditDriver from '@/components/form/ambulance/drivers/edit-driver';
 import DriverDetails from '@/features/modules/ambulance/driver-details';
 import { Trash } from 'lucide-react';
-
-//import {ProviderFilter} from '@/features/modules/providers/filter';
-
-const drivers = [
-  {
-    id: '1',
-    driver_id: 'DRI-001',
-    name: 'John Doe',
-    license: 'Valid',
-    license_no: '1210011',
-    phone: '123 444 555',
-    email: 'username@gmail.com',
-    address: '158, Undercover Boulev',
-    date: '2023-01-01',
-    action: '',
-  },
-  {
-    id: '2',
-    driver_id: 'DRI-001',
-    name: 'John Doe',
-    license: 'Valid',
-    license_no: '1210011',
-    phone: '123 444 555',
-    email: 'username@gmail.com',
-    address: '158, Undercover Boulev',
-    date: '2023-01-01',
-    action: '',
-  },
-];
+import { AppDispatch, RootState } from '@/services/store';
+import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
+import { fetchDrivers } from '@/services/thunks';
+import { Loader } from '@/components/ui/loading';
 
 const Drivers = () => {
-  //   const [searchTerm, setSearchTerm] = useState('');
-
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
@@ -68,22 +42,43 @@ const Drivers = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  //   const filteredProviders = hospitals.filter(item =>
-  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  //   );
+  const dispatch = useDispatch<AppDispatch>();
+  const { drivers, loading, error } = useSelector((state: RootState) => state.drivers);
+  const ambulanceProviderId = "c4ac7df8-1873-42db-97ba-8b240abc99df";
 
-  const totalPages = Math.ceil(drivers.length / pageSize);
-  const paginatedProviders = useMemo(() => {
+  useEffect(() => {
+    dispatch(fetchDrivers(ambulanceProviderId));
+  }, [dispatch, ambulanceProviderId]);
+
+  // Safe data transformation - handle undefined/empty drivers
+  const transformedDrivers = useMemo(() => {
+    if (!drivers || !Array.isArray(drivers)) return [];
+    
+    return drivers.map(driver => ({
+      id: driver.id,
+      driver_id: driver.id?.slice(-8)?.toUpperCase() || 'N/A',
+      name: driver.name,
+      license: driver.certificationStatus,
+      license_no: driver.licenseNumber,
+      phone: driver.phoneNumber,
+      email: driver.email,
+      address: driver.address,
+      date: '2023-01-01', 
+      rawData: driver, // Keep original data for details
+    }));
+  }, [drivers]);
+
+  const totalPages = Math.ceil(transformedDrivers.length / pageSize);
+  const paginatedDrivers = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return drivers.slice(start, start + pageSize);
-  }, [drivers, page]);
+    return transformedDrivers.slice(start, start + pageSize);
+  }, [transformedDrivers, page, pageSize]);
 
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: 'driver_id',
       header: 'Driver ID',
     },
-
     {
       accessorKey: 'name',
       header: 'Full Name',
@@ -104,7 +99,6 @@ const Drivers = () => {
       accessorKey: 'email',
       header: 'Email',
     },
-   
     {
       accessorKey: 'address',
       header: 'Address',
@@ -114,27 +108,22 @@ const Drivers = () => {
         </span>
       ),
     },
-
     {
       id: 'action',
       header: 'Action',
       enableHiding: false,
       cell: ({row}) => {
-        // Check if row is empty
         const isEmptyRow = !row.original.id && !row.original.name;
-
-        if (isEmptyRow) {
-          return null; // nothing rendered for empty row
-        }
+        if (isEmptyRow) return null;
+        
         return (
           <div className="flex items-center gap-4">
             <div>
-             <DriverDetails data={row.original} />
+              <DriverDetails data={row.original.rawData} />
             </div>
             <div>
-              <EditDriver data={row.original} />
+              <EditDriver data={row.original.rawData} />
             </div>
-
             <div>
               <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
             </div>
@@ -145,7 +134,7 @@ const Drivers = () => {
   ];
 
   const table = useReactTable({
-    data: paginatedProviders,
+    data: paginatedDrivers,
     columns,
     state: {
       sorting,
@@ -163,37 +152,37 @@ const Drivers = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  // Function to apply filters from FilterDialog
-  //   const handleApplyFilter = (filters: any) => {
-  //     const newFilters: any[] = [];
-  //     if (filters.status) newFilters.push({id: 'status', value: filters.status});
-  //     if (filters.location)
-  //       newFilters.push({id: 'location', value: filters.location});
-  //     if (filters.ranking)
-  //       newFilters.push({id: 'ranking', value: filters.ranking});
-  //     if (filters.date) newFilters.push({id: 'date', value: filters.date}); // make sure your data has a 'date' field
-  //     setColumnFilters(newFilters);
-  //   };
-  // Function to reset filters
-  //   const handleResetFilter = () => {
-  //     setColumnFilters([]);
-  //   };
+  // Show loading state
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader/>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg text-red-500">Error: {error}</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
-      <div className="bg-gray-100 overflow-scroll h-full ">
-        <div className="lg:mx-8 mt-10 bg-white  rounded-md flex flex-col h-[500px] mb-36">
+      <div className="bg-gray-100 overflow-scroll h-full">
+        <div className="lg:mx-8 mt-10 bg-white rounded-md flex flex-col h-[500px] mb-36">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
-              <h1 className="text-xl text-gray-800">All Drivers</h1>
-
-              {/* <input
-                type="text"
-                placeholder="Search hospital"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
-              /> */}
+              <h1 className="text-xl text-gray-800">
+                All Drivers ({transformedDrivers.length})
+              </h1>
             </div>
             <div className="flex gap-4 items-center">
               <AddDriver />
@@ -226,19 +215,17 @@ const Drivers = () => {
                       data-state={row.getIsSelected() && 'selected'}
                     >
                       {row.getVisibleCells().map(cell => (
-                        <>
-                          <TableCell
-                            key={cell.id}
-                            className={
-                              cell.column.id === 'actions' ? 'text-right' : ''
-                            }
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        </>
+                        <TableCell
+                          key={cell.id}
+                          className={
+                            cell.column.id === 'actions' ? 'text-right' : ''
+                          }
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))
@@ -248,12 +235,10 @@ const Drivers = () => {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      <div className="flex flex-col items-start">
-                        <span className="font-medium">
-                          No ambulance amenities found
-                        </span>
-                        <span className="font-medium">
-                          All added amenities appear here
+                      <div className="flex flex-col items-center justify-center space-y-4">
+                        <span className="font-medium">No Drivers found</span>
+                        <span className="text-sm text-gray-500">
+                          All added Drivers will appear here
                         </span>
                         <AddDriver />
                       </div>
@@ -264,21 +249,25 @@ const Drivers = () => {
             </Table>
           </div>
 
-          {/* Pagination stuck at bottom */}
-          <div className="p-4 flex items-center justify-end">
-            <Pagination
-              totalEntriesSize={drivers.length}
-              // currentEntriesSize={paginatedProviders.length}
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              pageSize={pageSize}
-              onPageSizeChange={size => {
-                setPageSize(size);
-                setPage(1);
-              }}
-            />
-          </div>
+
+          {/* Pagination */}
+          {transformedDrivers.length > 0 && (
+            <div className="p-4 flex items-center justify-end">
+              <Pagination
+                totalEntriesSize={transformedDrivers.length}
+                // currentEntriesSize={paginatedDrivers.length}
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={size => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
+              />
+            </div>
+          )}
+
         </div>
       </div>
     </DashboardLayout>

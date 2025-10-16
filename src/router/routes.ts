@@ -60,6 +60,7 @@ export const ROUTES = {
   },
 
   ambulance: {
+    select:  '/ambulance/select-provider',
      amenities: '/ambulance/amenities',
      all: '/ambulance/all',
      providers: '/ambulance/providers',

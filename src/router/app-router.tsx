@@ -34,6 +34,8 @@ import ProtectedRoutes from './ProtectedRoutes';
 
 import AllDoctors from '@/pages/dashboard/doctors/all-doctors';
 import { AllHospitals } from '@/pages/dashboard/hospitals/all-hospitals';
+import AllAmbulances from '@/pages/dashboard/ambulance/all-ambulances';
+import SelectProvider from '@/pages/dashboard/ambulance/select-provider';
 
 export const AppRouter = () => {
   return (
@@ -66,7 +68,9 @@ export const AppRouter = () => {
 
         <Route path={ROUTES.marketing} element={<MarketingCampaign />} />
 
+        <Route path={ROUTES.ambulance.select} element={<SelectProvider />} />
         <Route path={ROUTES.ambulance.amenities} element={<Amenities />} />
+        <Route path={ROUTES.ambulance.all} element={<AllAmbulances />} />
         <Route path={ROUTES.ambulance.providers} element={<Providers />} />
         <Route path={ROUTES.ambulance.requests} element={<Request />} />
         <Route path={ROUTES.ambulance.drivers} element={<Drivers />} />

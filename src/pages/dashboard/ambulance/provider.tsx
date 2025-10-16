@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useState, useMemo} from 'react';
+import { DashboardLayout } from '@/layout/dashboard-layout';
+import { useState, useMemo, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 import {
   Table,
@@ -23,48 +24,17 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
-import {Pagination} from '@/components/ui/pagination';
+import { Pagination } from '@/components/ui/pagination';
 
-import {EyeIcon, Trash} from 'lucide-react';
+import { EyeIcon, Trash } from 'lucide-react';
 import AddProviders from '@/components/form/ambulance/providers/add-provider';
-
-//import {ProviderFilter} from '@/features/modules/providers/filter';
-
-const providers = [
-  {
-    id: '1',
-    provider_id: 'PRO-001',
-    name: 'John Doe',
-    cac: '234567888',
-    email: 'info.@company.com',
-    phone: '0902 798 6721',
-    date: '2023-01-01',
-    action: '',
-  },
-  {
-    id: '2',
-    provider_id: 'PRO-002',
-    name: 'John Doe',
-    cac: '234567888',
-    email: 'info.@company.com',
-    phone: '0902 798 6721',
-    date: '2023-01-01',
-    action: '',
-  },
-  {
-    id: '3',
-    provider_id: 'PRO-003',
-    name: 'John Doe',
-    cac: '234567888',
-    email: 'info.@company.com',
-    phone: '0902 798 6721',
-    date: '2023-01-01',
-    action: '',
-  },
-];
+import { AppDispatch, RootState } from '@/services/store';
+import { fetchAmbulanceProviders } from '@/services/thunks';
+import { Loader } from '@/components/ui/loading';
 
 const Providers = () => {
-  //   const [searchTerm, setSearchTerm] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
+  const { providers, loading, error } = useSelector((state: RootState) => state.ambulanceProviders);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -73,22 +43,43 @@ const Providers = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  //   const filteredProviders = hospitals.filter(item =>
-  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  //   );
 
-  const totalPages = Math.ceil(providers.length / pageSize);
+  useEffect(() => {
+    dispatch(fetchAmbulanceProviders());
+  }, [dispatch]);
+
+
+  const transformedProviders = useMemo(() => {
+    return providers.map(provider => ({
+      id: provider.id,
+      provider_id: provider.registrationNumber, 
+      name: provider.adminName, 
+      cac: provider.registrationNumber, 
+      email: provider.email,
+      phone: provider.phoneNumber,
+      date: '2023-01-01', 
+      action: '',
+      // Include original data if needed
+      originalData: provider,
+    }));
+  }, [providers]);
+
+  const totalPages = Math.ceil(transformedProviders.length / pageSize);
+  
   const paginatedProviders = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return providers.slice(start, start + pageSize);
-  }, [providers, page]);
+    return transformedProviders.slice(start, start + pageSize);
+  }, [transformedProviders, page, pageSize]);
 
   const columns: ColumnDef<any>[] = [
+        {
+      accessorKey: 'name',
+      header: 'Contact Person',
+    },
     {
       accessorKey: 'provider_id',
       header: 'Provider ID',
     },
-
     {
       accessorKey: 'cac',
       header: 'CAC Number',
@@ -97,10 +88,7 @@ const Providers = () => {
       accessorKey: 'email',
       header: 'Company Email',
     },
-    {
-      accessorKey: 'name',
-      header: 'Contact Person',
-    },
+
     {
       accessorKey: 'phone',
       header: 'Phone Number',
@@ -109,19 +97,17 @@ const Providers = () => {
       id: 'action',
       header: 'Action',
       enableHiding: false,
-      cell: ({row}) => {
-        // Check if row is empty
+      cell: ({ row }) => {
         const isEmptyRow = !row.original.id && !row.original.name;
 
         if (isEmptyRow) {
-          return null; // nothing rendered for empty row
+          return null;
         }
         return (
           <div className="flex items-center gap-4">
             <div>
-               <EyeIcon className='cursor-pointer w-4 h-4' />
+              <EyeIcon className='cursor-pointer w-4 h-4' />
             </div>
-
             <div>
               <Trash className="text-red-500 w-4 h-4 cursor-pointer" />
             </div>
@@ -150,21 +136,33 @@ const Providers = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  // Function to apply filters from FilterDialog
-  //   const handleApplyFilter = (filters: any) => {
-  //     const newFilters: any[] = [];
-  //     if (filters.status) newFilters.push({id: 'status', value: filters.status});
-  //     if (filters.location)
-  //       newFilters.push({id: 'location', value: filters.location});
-  //     if (filters.ranking)
-  //       newFilters.push({id: 'ranking', value: filters.ranking});
-  //     if (filters.date) newFilters.push({id: 'date', value: filters.date}); // make sure your data has a 'date' field
-  //     setColumnFilters(newFilters);
-  //   };
-  // Function to reset filters
-  //   const handleResetFilter = () => {
-  //     setColumnFilters([]);
-  //   };
+  // Show loading state
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="bg-gray-100 overflow-scroll h-full">
+          <div className="lg:mx-8 mt-10 bg-white rounded-md flex items-center justify-center h-64">
+             <div className="flex items-center justify-center h-screen">
+                            <Loader/>
+                          </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="bg-gray-100 overflow-scroll h-full">
+          <div className="lg:mx-8 mt-10 bg-white rounded-md flex items-center justify-center h-64">
+            <div className="text-lg text-red-500">Error: {error}</div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -173,14 +171,9 @@ const Providers = () => {
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
               <h1 className="text-lg text-gray-800">All Providers</h1>
-
-              {/* <input
-                type="text"
-                placeholder="Search hospital"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
-              /> */}
+              <div className="text-sm text-gray-600">
+                {transformedProviders.length} provider(s) found
+              </div>
             </div>
             <div className="flex gap-4 items-center">
               <AddProviders />
@@ -213,19 +206,17 @@ const Providers = () => {
                       data-state={row.getIsSelected() && 'selected'}
                     >
                       {row.getVisibleCells().map(cell => (
-                        <>
-                          <TableCell
-                            key={cell.id}
-                            className={
-                              cell.column.id === 'actions' ? 'text-right' : ''
-                            }
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        </>
+                        <TableCell
+                          key={cell.id}
+                          className={
+                            cell.column.id === 'actions' ? 'text-right' : ''
+                          }
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))
@@ -237,10 +228,10 @@ const Providers = () => {
                     >
                       <div className="flex flex-col items-start">
                         <span className="font-medium">
-                          No ambulance ambulance provider found
+                          No ambulance providers found
                         </span>
                         <span className="font-medium">
-                          All your ambulance provider appear here
+                          All your ambulance providers will appear here
                         </span>
                         <AddProviders />
                       </div>
@@ -251,10 +242,10 @@ const Providers = () => {
             </Table>
           </div>
 
-          {/* Pagination stuck at bottom */}
+          {/* Pagination */}
           <div className="p-4 flex items-center justify-end">
             <Pagination
-              totalEntriesSize={providers.length}
+              totalEntriesSize={transformedProviders.length}
               // currentEntriesSize={paginatedProviders.length}
               currentPage={page}
               totalPages={totalPages}

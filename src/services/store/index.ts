@@ -5,6 +5,13 @@ import hospitalsReducer from "../slice/hospitalSlice"
 import doctorsReducer from "../slice/doctorsSlice"
 import faqsReducer from '../slice/faqsSlice'
 import accountReducer from '../slice/accountSlice'
+import amenitiesReducer from "../slice/amenitiesSlice"
+import ambulanceProviderReducer from "../slice/ambulanceProviderSlice"
+import ambulanceRequestsReducer from "../slice/ambulanceRequestSlice"
+import ambulanceReducer from "../slice/ambulanceSlice"
+import driverReducer from "../slice/driverSlice"
+import respondentsReducer from "../slice/respondentsSlice"
+import dispatchHistoryReducer from "../slice/dispatchHistorySlice"
 
 
 export const store = configureStore({
@@ -15,6 +22,13 @@ export const store = configureStore({
     doctors: doctorsReducer,
     faqs: faqsReducer,
     account: accountReducer,
+    amenities: amenitiesReducer,
+    ambulanceProviders: ambulanceProviderReducer,
+    ambulanceRequests: ambulanceRequestsReducer,
+    allAmbulances: ambulanceReducer,
+    drivers: driverReducer,
+    respondents: respondentsReducer,
+    dispatchHistory: dispatchHistoryReducer
   },
 });
 

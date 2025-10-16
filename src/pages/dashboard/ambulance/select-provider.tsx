@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {DashboardLayout} from '@/layout/dashboard-layout';
 import {useState, useMemo, useEffect} from 'react';
 
@@ -33,7 +32,7 @@ import { fetchAmenities } from '@/services/thunks';
 import { Loader } from '@/components/ui/loading';
 
 
-const Amenities = () => {
+const SelectProvider = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
@@ -223,7 +222,7 @@ const Amenities = () => {
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={amenities.length}
-              // currentEntriesSize={paginatedProviders.length}
+              currentEntriesSize={paginatedProviders.length}
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}
@@ -240,4 +239,4 @@ const Amenities = () => {
   );
 };
 
-export default Amenities;
+export default SelectProvider;
