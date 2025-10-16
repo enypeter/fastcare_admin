@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {DashboardLayout} from '@/layout/dashboard-layout';
 import {useState, useMemo, useEffect} from 'react';
 
@@ -222,7 +223,7 @@ const SelectProvider = () => {
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={amenities.length}
-              currentEntriesSize={paginatedProviders.length}
+              // currentEntriesSize={paginatedProviders.length}
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}

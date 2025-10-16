@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {DashboardLayout} from '@/layout/dashboard-layout';
 import {useState, useMemo, useEffect} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -223,7 +224,7 @@ const AllAmbulances = () => {
         <div className="flex justify-center items-center h-64">
           <div className="text-lg text-red-500">Error: {error}</div>
           <button 
-            onClick={() => dispatch(fetchAmbulances())}
+            onClick={() => dispatch(fetchAmbulances(ambulanceProviderId))}
             className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Retry
@@ -324,7 +325,7 @@ const AllAmbulances = () => {
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={filteredAmbulances.length}
-              currentEntriesSize={paginatedAmbulances.length}
+              // currentEntriesSize={paginatedAmbulances.length}
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}
