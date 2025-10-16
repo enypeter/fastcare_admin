@@ -1,6 +1,6 @@
 import { Doctor, DoctorsState } from "@/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { approveDoctor, disapproveDoctor, deleteDoctor, fetchDoctorById, fetchDoctorDashboardById, fetchDoctors, fetchPendingDoctors } from "../thunks";
+import { approveDoctor, deleteDoctor, fetchDoctorById, fetchDoctorDashboardById, fetchDoctors, fetchPendingDoctors } from "../thunks";
 
 const initialState: DoctorsState = {
   doctors: [],
@@ -111,21 +111,6 @@ const doctorsSlice = createSlice({
       state.loading = false;
       // Just save error for UI/toast, don't remove anything
       // state.error = action.payload as string;
-    })
-    .addCase(disapproveDoctor.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    })
-    .addCase(disapproveDoctor.fulfilled, (state, action) => {
-      state.loading = false;
-      const updatedDoctor = action.payload;
-      const index = state.pendingDoctors.findIndex(d => d.id === updatedDoctor.id);
-      if (index !== -1) {
-        state.pendingDoctors[index] = updatedDoctor;
-      }
-    })
-    .addCase(disapproveDoctor.rejected, (state) => {
-      state.loading = false;
     })
    .addCase(fetchDoctorDashboardById.pending, (state) => {
       state.loading = true;

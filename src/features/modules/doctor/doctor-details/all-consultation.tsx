@@ -21,6 +21,7 @@ import {
 } from '@tanstack/react-table';
 
 import { Pagination } from '@/components/ui/pagination';
+import { DoctorFilter } from '../filter';
 import { Hospital, Monitor } from 'lucide-react';
 
 export interface Consultation {
@@ -43,8 +44,7 @@ const AllConsultation = ({ consultations }: AllConsultationProps) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  // Removed external filter component; only simple search retained
-  const [columnFilters, setColumnFilters] = useState<import('@tanstack/react-table').ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
@@ -171,7 +171,15 @@ const AllConsultation = ({ consultations }: AllConsultationProps) => {
 
   const totalPages = table.getPageCount();
 
-  // Removed apply/reset filter handlers (no longer needed)
+  const handleApplyFilter = (filters: any) => {
+    const newFilters: any[] = [];
+    if (filters.status) newFilters.push({ id: 'status', value: filters.status });
+    if (filters.name) newFilters.push({ id: 'patientName', value: filters.name });
+    if (filters.date) newFilters.push({ id: 'date', value: filters.date });
+    setColumnFilters(newFilters);
+  };
+
+  const handleResetFilter = () => setColumnFilters([]);
 
   return (
     <div>
@@ -193,7 +201,9 @@ const AllConsultation = ({ consultations }: AllConsultationProps) => {
               className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
             />
           </div>
-          {/* Filter component removed */}
+          <div className="flex gap-4 items-center mr-10">
+            <DoctorFilter onApply={handleApplyFilter} onReset={handleResetFilter} />
+          </div>
         </div>
 
         {/* Table */}

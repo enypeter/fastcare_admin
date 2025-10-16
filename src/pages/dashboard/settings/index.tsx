@@ -1,6 +1,8 @@
 import { DashboardLayout } from '@/layout/dashboard-layout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
+import Deactivate from '@/features/modules/hospital/deactivate';
 import { useSearchParams } from 'react-router-dom';
 import Profile from '@/features/modules/settings/profile';
 import Services from '@/features/modules/settings/service';
@@ -10,6 +12,7 @@ import { AppDispatch, RootState } from '@/services/store';
 import { fetchProfile, updateProfile } from '@/services/thunks';
 
 const Settings = () => {
+  const [open, setOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'details';
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -36,8 +39,9 @@ const Settings = () => {
 
 
    // Submit handler for profile update
-  const handleUpdate = (formData: unknown) => {
-    dispatch(updateProfile(formData as Record<string, unknown>));
+  const handleUpdate = (formData: any) => {
+    console.log(formData)
+    dispatch(updateProfile(formData));
   };
 
 
@@ -59,7 +63,15 @@ const Settings = () => {
             </h1>
           </div>
 
-          {/* Deactivate account button removed pending account-level endpoint */}
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={() => setOpen(true)}
+              variant="destructive"
+              className="py-3 rounded-md"
+            >
+              Deactivate account
+            </Button>
+          </div>
         </div>
 
         <div className="bg-white mt-10 py-4 mx-10 rounded-md pb-36 mb-28 ">
@@ -96,6 +108,8 @@ const Settings = () => {
           </div>
         </div>
       </div>
+
+      <Deactivate open={open} setOpen={setOpen} />
     </DashboardLayout>
   );
 };
