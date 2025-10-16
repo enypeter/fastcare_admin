@@ -969,3 +969,17 @@ export const exportAppointmentReports = createAsyncThunk(
     }
   }
 );
+
+// -------- Dispatch History --------
+export const fetchDispatchHistory = createAsyncThunk(
+  "history/fetchAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get("/AmbulanceBookings/history");
+      return res.data.data; 
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch dispatch history");
+    }
+  }
+);
+
