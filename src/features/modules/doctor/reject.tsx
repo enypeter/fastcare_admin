@@ -122,4 +122,4 @@ export default function Reject({ open, setOpen, data }: Props) {
       />
     </>
   );
-}
+}}
