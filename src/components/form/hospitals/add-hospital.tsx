@@ -21,25 +21,26 @@ import { hospitalSchema } from '@/helpers/hospital-schema';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { BankSelect } from '@/components/ui/bank-select';
 
-// Form value shape
-type HospitalFormValues = {
-  hospitalName: string;
-  hospitalCode: string;
-  physicalConsultationFee: string;
-  virtualConsultationFee: string;
-  registrationFee: string; // conditional required (only when toggle active)
-  hospitalAddresses: string;
-  address: string; // backend expects Address separately
-  hospitalNumber: string; // maps to HospitalNumber (string digits)
-  website: string; // the only optional field
-  phoneNumber: string;
-  countryCode: string; // no validation required, default +234
-  email: string;
-  accountNumber: string;
-  invoiceAccountNumber: string;
-  bankCode: string;
-  invoiceBankCode: string;
-};
+// Inline schema aligned with backend contract (camelCase in form, PascalCase when sending)
+// Registration fee remains optional unless toggle enabled (handled outside schema)
+const addHospitalSchema = z.object({
+  hospitalName: z.string().min(2, 'Required'),
+  hospitalCode: z.string().min(2, 'Required'),
+  physicalConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
+  virtualConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
+  hospitalAddresses: z.string().min(5, 'Required'),
+  address: z.string().min(5, 'Required'),
+  website: z.string().url('Invalid URL').optional().or(z.literal('')), // optional
+  phoneNumber: z.string().min(7, 'Invalid phone'),
+  countryCode: z.string().min(1),
+  email: z.string().email('Invalid email'),
+  accountNumber: z.string().length(10, 'Must be 10 digits'),
+  invoiceAccountNumber: z.string().length(10, 'Must be 10 digits'),
+  bankCode: z.string().min(1, 'Required'),
+  invoiceBankCode: z.string().min(1, 'Required'),
+});
+
+type HospitalFormValues = z.infer<typeof addHospitalSchema>;
 
 
 export default function AddHospital() {
@@ -67,7 +68,6 @@ export default function AddHospital() {
       hospitalCode: '',
       physicalConsultationFee: '',
       virtualConsultationFee: '',
-      registrationFee: '',
       hospitalAddresses: '',
       address: '',
       hospitalNumber: '',
@@ -86,23 +86,11 @@ export default function AddHospital() {
   // Ensure fees & numeric fields respect max length constraints on change
   const clampDigits = (val: string, maxLen: number) => val.replace(/\D/g, '').slice(0, maxLen);
 
-  // Derive if form is "complete enough" to enable submit button.
-  const isFormComplete = useMemo(() => {
-    const values = watch();
-    // Required base fields (excluding website & hospitalNumber & registrationFee when toggle off)
-    const requiredKeys: Array<keyof HospitalFormValues> = [
-      'hospitalCode',
-      'hospitalName',
-      'physicalConsultationFee',
-      'virtualConsultationFee',
-      'hospitalAddresses',
-      'address',
-      'phoneNumber',
-      'email',
-      'accountNumber',
-      'invoiceAccountNumber',
-      'bankCode',
-      'invoiceBankCode',
+  // Reactive completeness check (avoid stale useMemo depending on stable watch fn)
+  const watchedValues = watch();
+  const isFormComplete = (() => {
+    const required: Array<keyof HospitalFormValues> = [
+      'hospitalName','hospitalCode','physicalConsultationFee','virtualConsultationFee','hospitalAddresses','address','phoneNumber','email','accountNumber','invoiceAccountNumber','bankCode','invoiceBankCode'
     ];
 
     // If registration fee toggle active, include it as required
@@ -162,7 +150,6 @@ export default function AddHospital() {
         hospitalNumber: 'HospitalNumber',
         physicalConsultationFee: 'PhysicalConsultationFee',
         virtualConsultationFee: 'VirtualConsultationFee',
-        registrationFee: 'RegistrationFee',
         hospitalAddresses: 'HospitalAddresses',
         address: 'Address',
         website: 'Website',
@@ -326,10 +313,10 @@ export default function AddHospital() {
             <Input
               label="Ip Address"
               required
-              minLength={10}
-              maxLength={100}
+              minLength={5}
+              maxLength={150}
               {...register('hospitalAddresses')}
-              error={errors.hospitalAddresses?.message}
+              error={errors.hospitalAddresses?.message as string}
             />
             <Input
               label="Hospital Address"

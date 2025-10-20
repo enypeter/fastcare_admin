@@ -8,7 +8,26 @@ import { Hospital } from '@/types';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { BankSelect } from '@/components/ui/bank-select';
 
-type Props = {
+// Inline schema for edit form (camelCase fields). RegistrationFee conditional.
+const editSchema = z.object({
+  hospitalName: z.string().min(2, 'Required'),
+  hospitalCode: z.string().min(2, 'Required'),
+  physicalConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
+  virtualConsultationFee: z.string().regex(/^\d+$/, 'Digits only').min(1, 'Required'),
+  hospitalAddresses: z.string().min(5, 'Required'),
+  address: z.string().min(5, 'Required'),
+  website: z.string().url('Invalid URL').optional().or(z.literal('')),
+  phoneNumber: z.string().min(7, 'Invalid phone'),
+  countryCode: z.string().min(1),
+  email: z.string().email('Invalid email'),
+  accountNumber: z.string().length(10, 'Must be 10 digits'),
+  invoiceAccountNumber: z.string().length(10, 'Must be 10 digits'),
+  bankCode: z.string().min(1, 'Required'),
+  invoiceBankCode: z.string().min(1, 'Required'),
+});
+type EditFormValues = z.infer<typeof editSchema>;
+
+interface Props {
   data: Hospital | null;
   isEditing: boolean;
   onSubmitEdit: (payload: Partial<Hospital>) => Promise<void> | void; // parent handles API
@@ -19,22 +38,7 @@ const HospitalDetail = ({ data, isEditing, onSubmitEdit, onCancel }: Props) => {
   const form = useForm<HospitalEditForm>({
     resolver: zodResolver(hospitalEditSchema),
     defaultValues: {
-      hospitalCode: '',
-      hospitalName: '',
-      physicalConsultationFee: '',
-      virtualConsultationFee: '',
-      registrationFee: '',
-      hospitalAddresses: '',
-      address: '',
-      hospitalNumber: '',
-      website: '',
-      phoneNumber: '',
-      email: '',
-      accountNumber: '',
-      invoiceAccountNumber: '',
-      bankCode: '',
-      invoiceBankCode: '',
-      countryCode: '+234',
+      hospitalName: '', hospitalCode: '', physicalConsultationFee: '', virtualConsultationFee: '', hospitalAddresses: '', address: '', website: '', phoneNumber: '', countryCode: '+234', email: '', accountNumber: '', invoiceAccountNumber: '', bankCode: '', invoiceBankCode: ''
     },
     mode: 'onBlur',
   });
@@ -43,44 +47,29 @@ const HospitalDetail = ({ data, isEditing, onSubmitEdit, onCancel }: Props) => {
 
   // Populate form when data changes
   useEffect(() => {
-    if (data) {
-      reset({
-        hospitalCode: data.hospitalCode || '',
-        hospitalName: data.hospitalName || '',
-  physicalConsultationFee: (data.physicalConsultationCharge ?? '').toString(),
-  virtualConsultationFee: (data.virtualConsultationCharge ?? '').toString(),
-        registrationFee: (data.registrationFee ?? '').toString(),
-        hospitalAddresses: data.hospitalAddresses || '',
-        address: data.address || '',
-        hospitalNumber: (data.hospitalNumber ?? '').toString(),
-        website: data.website || '',
-        phoneNumber: data.phoneNumber || '',
-        email: data.email || '',
-        accountNumber: (data.accountNumber ?? '').toString(),
-        invoiceAccountNumber: (data.invoiceAccountNumber ?? '').toString(),
-        bankCode: data.bankCode || '',
-        invoiceBankCode: data.invoiceBankCode || '',
-        countryCode: data.countryCode || '+234',
-      });
-    }
+    if (!data) return;
+    reset({
+      hospitalName: data.hospitalName || '',
+      hospitalCode: data.hospitalCode || '',
+      physicalConsultationFee: (data.physicalConsultationCharge ?? '').toString(),
+      virtualConsultationFee: (data.virtualConsultationCharge ?? '').toString(),
+      hospitalAddresses: data.hospitalAddresses || '',
+      address: data.address || '',
+      website: data.website || '',
+      phoneNumber: data.phoneNumber || '',
+      countryCode: data.countryCode || '+234',
+      email: data.email || '',
+      accountNumber: (data.accountNumber ?? '').toString(),
+      invoiceAccountNumber: (data.invoiceAccountNumber ?? '').toString(),
+      bankCode: data.bankCode || '',
+      invoiceBankCode: data.invoiceBankCode || '',
+    });
   }, [data, reset]);
 
-  // Mirror AddHospital enable logic subset for edit (no bank/account here)
-  const isFormComplete = useMemo(() => {
-    const v = watch();
-    const required: (keyof HospitalEditForm)[] = [
-      'hospitalCode',
-      'hospitalName',
-  'physicalConsultationFee',
-  'virtualConsultationFee',
-      'hospitalAddresses',
-      'address',
-      'phoneNumber',
-      'email',
-      // Bank/account fields optional if API allows null; only enforce if partially filled? We'll not include here.
-    ];
-    const filled = required.every(k => typeof v[k] === 'string' && v[k].trim().length > 0);
-    if (!filled) return false;
+  const watched = watch();
+  const isFormComplete = (() => {
+    const required: (keyof EditFormValues)[] = ['hospitalName','hospitalCode','physicalConsultationFee','virtualConsultationFee','hospitalAddresses','address','phoneNumber','email','accountNumber','invoiceAccountNumber','bankCode','invoiceBankCode'];
+    if (!required.every(k => typeof watched[k] === 'string' && (watched[k] as string).trim().length > 0)) return false;
     const hasErr = required.some(k => (errors as Record<string, unknown>)[k]);
     if (hasErr) return false;
     return true;
@@ -88,27 +77,28 @@ const HospitalDetail = ({ data, isEditing, onSubmitEdit, onCancel }: Props) => {
 
   const onSubmit = (values: HospitalEditForm) => {
     if (!data) return;
-    // Convert string fields back to expected numeric fields where needed
-    const payload: Partial<Hospital> = {
-      id: data.id,
-      hospitalCode: values.hospitalCode.toUpperCase(),
-      hospitalName: values.hospitalName,
-  physicalConsultationCharge: Number(values.physicalConsultationFee),
-  virtualConsultationCharge: Number(values.virtualConsultationFee),
-      registrationFee: values.registrationFee ? Number(values.registrationFee) : 0,
-      hospitalAddresses: values.hospitalAddresses,
-      address: values.address,
-      hospitalNumber: values.hospitalNumber || '',
-      website: values.website,
-      phoneNumber: values.phoneNumber,
-      email: values.email,
-      accountNumber: values.accountNumber || undefined,
-      invoiceAccountNumber: values.invoiceAccountNumber || undefined,
-      bankCode: values.bankCode || undefined,
-      invoiceBankCode: values.invoiceBankCode || undefined,
-      countryCode: values.countryCode || '+234',
-    };
-    onSubmitEdit(payload);
+    try {
+      const fd = new FormData();
+      const map: Record<keyof EditFormValues, string> = {
+        hospitalName: 'HospitalName', hospitalCode: 'HospitalCode', physicalConsultationFee: 'PhysicalConsultationFee', virtualConsultationFee: 'VirtualConsultationFee', hospitalAddresses: 'HospitalAddresses', address: 'Address', website: 'Website', phoneNumber: 'PhoneNumber', countryCode: 'CountryCode', email: 'Email', accountNumber: 'AccountNumber', invoiceAccountNumber: 'InvoiceAccountNumber', bankCode: 'BankCode', invoiceBankCode: 'InvoiceBankCode'
+      };
+      const numeric: (keyof EditFormValues)[] = ['physicalConsultationFee','virtualConsultationFee'];
+      Object.entries(values).forEach(([k, raw]) => {
+        const key = k as keyof EditFormValues;
+        const val = (raw ?? '').toString().trim();
+        if (!val) return;
+        const apiKey = map[key];
+        if (!apiKey) return;
+        fd.append(apiKey, numeric.includes(key) ? String(Number(val)) : val);
+      });
+      if (logoFile) fd.append('LogoContent', logoFile);
+      await dispatch(updateHospitalFormData({ id: data.id, formData: fd })).unwrap();
+      toast.success('Hospital updated');
+      dispatch(fetchHospitalById(String(data.id)));
+      onUpdated?.();
+    } catch (e) {
+      toast.error(typeof e === 'string' ? e : 'Update failed');
+    }
   };
 
   if (!data) return null;
@@ -133,36 +123,13 @@ const HospitalDetail = ({ data, isEditing, onSubmitEdit, onCancel }: Props) => {
           required
           error={errors.phoneNumber?.message}
         />
-        <Input label="Hospital Number" type="text" disabled={!isEditing} {...register('hospitalNumber')} error={errors.hospitalNumber?.message} />
-        <Input label="Hospital address" disabled={!isEditing} requiredIndicator required {...register('address')} error={errors.address?.message} />
-        <Input label="Website Url" disabled={!isEditing} {...register('website')} error={errors.website?.message} />
-        <Input label="Hospital Ip address" disabled={!isEditing} requiredIndicator required {...register('hospitalAddresses')} error={errors.hospitalAddresses?.message} />
-        <BankSelect
-          label="Bank"
-          value={watch('bankCode') || ''}
-          onChange={(code) => setValue('bankCode', code, { shouldValidate: true })}
-          error={errors.bankCode?.message}
-        />
-        <Input
-          label="Account Number"
-          maxLength={10}
-          disabled={!isEditing}
-          {...register('accountNumber')}
-          error={errors.accountNumber?.message}
-        />
-        <BankSelect
-          label="Invoice Bank"
-          value={watch('invoiceBankCode') || ''}
-          onChange={(code) => setValue('invoiceBankCode', code, { shouldValidate: true })}
-          error={errors.invoiceBankCode?.message}
-        />
-        <Input
-          label="Invoice Account Number"
-          maxLength={10}
-          disabled={!isEditing}
-          {...register('invoiceAccountNumber')}
-          error={errors.invoiceAccountNumber?.message}
-        />
+        <Input label="Hospital Address" disabled={!isEditing} requiredIndicator required {...register('address')} error={errors.address?.message} />
+        <Input label="Website" disabled={!isEditing} {...register('website')} error={errors.website?.message} />
+        <Input label="IP Address" disabled={!isEditing} requiredIndicator required {...register('hospitalAddresses')} error={errors.hospitalAddresses?.message} />
+        <BankSelect label="Bank" value={watch('bankCode') || ''} onChange={(code) => setValue('bankCode', code, { shouldValidate: true })} error={errors.bankCode?.message} />
+        <Input label="Account Number" maxLength={10} disabled={!isEditing} {...register('accountNumber')} error={errors.accountNumber?.message} />
+        <BankSelect label="Invoice Bank" value={watch('invoiceBankCode') || ''} onChange={(code) => setValue('invoiceBankCode', code, { shouldValidate: true })} error={errors.invoiceBankCode?.message} />
+        <Input label="Invoice Account Number" maxLength={10} disabled={!isEditing} {...register('invoiceAccountNumber')} error={errors.invoiceAccountNumber?.message} />
       </div>
       {isEditing && (
         <div className="flex gap-4">

@@ -32,6 +32,20 @@ type Props = {
 export default function Reject({ open, setOpen, data }: Props) {
   const [openSuccess, setOpenSuccess] = useState(false);
 
+  const handleReject = async () => {
+    if (!data?.userId) return;
+    setLoading(true);
+    try {
+  // Backend no longer requires a reason; send only doctorId
+  await dispatch(disapproveDoctor({ doctorId: data.id })).unwrap();
+      setOpenSuccess(true);
+      setOpen(false);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Rejection failed';
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   const handleSuccess = () => {
     setOpenSuccess(true);
     setOpen(false);
