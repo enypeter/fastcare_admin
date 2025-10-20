@@ -94,54 +94,41 @@ export interface LicenseFile {
 
 export interface Doctor {
   id: string;
-  /** Optional legacy id */
-  oldId?: string | null;
   firstName: string;
   lastName: string;
-  otherNames: string | null;
+  otherNames: string;
   dateOfBirth?: string;
-  residentialAddress ?: string | null;
+  residentialAddress ?: string;
   licenseExpirationDate?: string;
   email: string;
   phoneNumber: string;
-  bio: string | null;
+  bio: string;
   licenseNumber: string;
   consultancyFee: number;
   agreeToTerms: boolean;
   specialization: string;
-  isActive: boolean | null;
+  isActive: boolean;
   isDoctorAvailable: boolean;
   feePercentage: number;
   bankCode: string;
   accountNumber: string;
   name: string;
-  photo: string | null;
-  password: string | null;
+  photo: string;
+  password: string;
   yearsOfExperience: number;
   role: string;
-  deviceToken: string | null;
-  /** Raw license file object or null when not uploaded */
-  licenseFile: LicenseFile | null;
-  licenseName?: string | null;
-  licenseType?: string | null;
-  licenseContent?: string | null;
+  deviceToken: string;
+  licenseFile: LicenseFile;
   languages: string[];
   qualifications: string[];
-  hospital: string | null;
-  profileImage: string | null;
+  hospital: string;
+  profileImage: string;
   averageRating: number;
   totalPatientsServed: number;
-  /**
-   * Approval status: true = approved, false = rejected, null = pending.
-   * Backend returns null for pending requests, so we model that explicitly.
-   */
-  isApproved: boolean | null;
+  isApproved: boolean;
   totalReviews: number;
-  /** Online status e.g. 'Available' | 'Offline' */
-  status: string;
+  status: number;
   userId?: string
-  /** Optional creation date returned for pending approval listings */
-  createdAt?: string;
 }
 export interface CallsStatistics {
   totalEarned: number;
@@ -357,8 +344,6 @@ export interface TransactionsState {
     Date?: string; // single date filter (API appears to accept one date parameter)
     ServiceType?: string;
   };
-  exporting?: boolean;
-  exportError?: string | null;
 }
 
 export interface Refund {
@@ -388,9 +373,6 @@ export interface RefundsState {
   selectedRefund: Refund | null;
   exporting: boolean;
   exportError: string | null;
-  // Flags for exporting a single refund detail
-  exportingDetail?: boolean;
-  exportDetailError?: string | null;
   filters: {
     Page?: number;
     PageSize?: number;
@@ -509,8 +491,6 @@ export interface UserReportsState {
   loadingDetail: boolean;
   errorList: string | null;
   errorDetail: string | null;
-  exportingDetail?: boolean;
-  exportDetailError?: string | null;
   filters: {
     Page?: number;
     PageSize?: number;
@@ -551,3 +531,33 @@ export interface AppointmentReportsState {
     PageSize?: number;
   };
 }
+
+//  ---- Dispatch History --------
+export interface Location {
+  latitude: number;
+  longitude: number;
+}
+
+export interface DispatchHistory {
+  id: string;
+  assignedByUser: string | null;
+  driverName: string | null;
+  respondantName: string | null;
+  ambulanceNumber: string;
+  amountPaid: number;
+  ambulanceType: string;
+  distance: number;
+  pickupLocation: Location;
+  destinationLocation: Location;
+  dateAssigned: string | null;
+  amenities: string;
+  creationDate: string;
+}
+
+export interface DispatchHistoryState {
+  dispatchHistory: DispatchHistory[];
+  loading: boolean;
+  error: string | null;
+}
+//  ---- Dispatch History --------
+

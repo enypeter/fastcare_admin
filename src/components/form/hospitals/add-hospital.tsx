@@ -7,8 +7,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Success from '../../../features/modules/dashboard/success';
+import { Switch } from '@/components/ui/switch';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/services/store';
 import { createHospital, fetchHospitals } from '@/services/thunks';
@@ -16,7 +17,7 @@ import toast from 'react-hot-toast';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { hospitalSchema } from '@/helpers/hospital-schema';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { BankSelect } from '@/components/ui/bank-select';
 
@@ -45,6 +46,7 @@ type HospitalFormValues = z.infer<typeof addHospitalSchema>;
 export default function AddHospital() {
   const [openSuccess, setOpenSuccess] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showRegInput, setShowRegInput] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,11 +57,12 @@ export default function AddHospital() {
   register,
   handleSubmit,
   setValue,
+  setError,
   reset,
   watch,
   formState: { errors },
   } = useForm<HospitalFormValues>({
-    resolver: zodResolver(addHospitalSchema),
+    resolver: zodResolver(hospitalSchema),
     defaultValues: {
       hospitalName: '',
       hospitalCode: '',
@@ -67,6 +70,7 @@ export default function AddHospital() {
       virtualConsultationFee: '',
       hospitalAddresses: '',
       address: '',
+      hospitalNumber: '',
       website: '',
       phoneNumber: '',
       countryCode: '+234',
@@ -76,7 +80,7 @@ export default function AddHospital() {
       bankCode: '',
       invoiceBankCode: '',
     },
-    mode: 'onChange',
+    mode: 'onBlur',
   });
 
   // Ensure fees & numeric fields respect max length constraints on change
@@ -88,12 +92,31 @@ export default function AddHospital() {
     const required: Array<keyof HospitalFormValues> = [
       'hospitalName','hospitalCode','physicalConsultationFee','virtualConsultationFee','hospitalAddresses','address','phoneNumber','email','accountNumber','invoiceAccountNumber','bankCode','invoiceBankCode'
     ];
-    const allFilled = required.every(k => !!watchedValues[k] && (watchedValues[k] as string).trim() !== '');
+
+    // If registration fee toggle active, include it as required
+    if (showRegInput) {
+      requiredKeys.push('registrationFee');
+    }
+
+    // All required keys must be non-empty strings
+    const allFilled = requiredKeys.every(k => {
+      const v = values[k];
+      return typeof v === 'string' && v.trim().length > 0;
+    });
+
     if (!allFilled) return false;
-    // honor current errors only for required fields
-    const hasErr = required.some(k => (errors as Record<string, unknown>)[k]);
-    return !hasErr;
-  })();
+
+    // If any current error among required fields, disable
+    const hasErrors = requiredKeys.some(k => (errors as Record<string, unknown>)[k]);
+    if (hasErrors) return false;
+
+    // Extra numeric length guards
+    if (values.accountNumber?.length !== 10) return false;
+    if (values.invoiceAccountNumber?.length !== 10) return false;
+    if (showRegInput && values.registrationFee && !/^\d+$/.test(values.registrationFee)) return false;
+
+    return true;
+  }, [watch, errors, showRegInput]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -106,13 +129,25 @@ export default function AddHospital() {
   };
 
   const onSubmit = async (values: HospitalFormValues) => {
+    // Conditional validation for registration fee
+    if (showRegInput && !values.registrationFee) {
+      setError('registrationFee', { type: 'manual', message: 'Registration fee is required' });
+      return;
+    }
     setIsLoading(true);
     try {
       const payload = new FormData();
-      // Build FormData 1:1 with backend keys (missing numeric values default to 0)
-      const map: Record<keyof HospitalFormValues, string> = {
+
+      // Ensure defaults for optional/back-end required fields
+      const registrationFeeValue = showRegInput && values.registrationFee ? values.registrationFee : '0';
+      const hospitalNumberValue = values.hospitalNumber || '0';
+      const addressValue = values.address || values.hospitalAddresses; // fallback duplicate
+
+      // Map form keys to backend PascalCase keys
+      const map: Record<string, string> = {
         hospitalName: 'HospitalName',
         hospitalCode: 'HospitalCode',
+        hospitalNumber: 'HospitalNumber',
         physicalConsultationFee: 'PhysicalConsultationFee',
         virtualConsultationFee: 'VirtualConsultationFee',
         hospitalAddresses: 'HospitalAddresses',
@@ -127,20 +162,20 @@ export default function AddHospital() {
         invoiceBankCode: 'InvoiceBankCode',
       };
 
-      const numericKeys: Array<keyof HospitalFormValues> = ['physicalConsultationFee','virtualConsultationFee'];
+      const withDefaults = {
+        ...values,
+        registrationFee: registrationFeeValue,
+        hospitalNumber: hospitalNumberValue,
+        address: addressValue,
+      };
 
-      Object.entries(values).forEach(([k, raw]) => {
-        const key = k as keyof HospitalFormValues;
-        const apiKey = map[key];
-        if (!apiKey) return;
-        const valStr = (raw ?? '').toString().trim();
-        if (!valStr) return; // skip empty optional fields
-        if (numericKeys.includes(key)) {
-          payload.append(apiKey, String(Number(valStr || '0')));
-        } else {
-          payload.append(apiKey, valStr);
+      Object.entries(withDefaults).forEach(([k, v]) => {
+        const apiKey = map[k];
+        if (apiKey && v !== undefined && v !== null && v !== '') {
+          payload.append(apiKey, v as string);
         }
       });
+
       if (logoFile) payload.append('LogoContent', logoFile);
 
   await dispatch(createHospital(payload)).unwrap();
@@ -151,6 +186,7 @@ export default function AddHospital() {
       setTimeout(() => setOpen(false), 200);
 
       reset();
+      setShowRegInput(false);
       setLogoFile(null);
       setPreviewUrl(null);
     } catch (error: unknown) {
@@ -216,6 +252,18 @@ export default function AddHospital() {
               error={errors.hospitalName?.message}
             />
             <Input
+              label="Hospital Number"
+              placeholder="e.g. 12"
+              maxLength={15}
+              {...register('hospitalNumber', {
+                onChange: e => {
+                  const v = clampDigits(e.target.value, 15);
+                  setValue('hospitalNumber', v, { shouldValidate: true });
+                },
+              })}
+              error={errors.hospitalNumber?.message}
+            />
+            <Input
               label="Virtual Consultation Fee"
               type="number"
               min={0}
@@ -263,7 +311,7 @@ export default function AddHospital() {
               error={errors.email?.message}
             />
             <Input
-              label="IP Address"
+              label="Ip Address"
               required
               minLength={5}
               maxLength={150}
@@ -287,48 +335,82 @@ export default function AddHospital() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-            <BankSelect
-              label="Bank"
-              required
-              value={watch('bankCode')}
-              onChange={code => setValue('bankCode', code, { shouldValidate: true })}
-              error={errors.bankCode?.message}
-            />
-            <Input
-              label="Account Number"
-              placeholder="0123456789"
-              required
-              maxLength={10}
-              {...register('accountNumber', {
-                onChange: e => {
-                  const v = clampDigits(e.target.value, 10);
-                  setValue('accountNumber', v, { shouldValidate: true });
-                },
-              })}
-              error={errors.accountNumber?.message}
-            />
-            <BankSelect
-              label="Invoice Bank"
-              required
-              value={watch('invoiceBankCode')}
-              onChange={code => setValue('invoiceBankCode', code, { shouldValidate: true })}
-              error={errors.invoiceBankCode?.message}
-            />
-            <Input
-              label="Invoice Account Number"
-              placeholder="0123456789"
-              required
-              maxLength={10}
-              {...register('invoiceAccountNumber', {
-                onChange: e => {
-                  const v = clampDigits(e.target.value, 10);
-                  setValue('invoiceAccountNumber', v, { shouldValidate: true });
-                },
-              })}
-              error={errors.invoiceAccountNumber?.message}
-            />
+          <div className="mt-6">
+            <div className="flex items-center gap-4">
+              <h1 className="font-semibold text-lg text-gray-800">
+                Registration service fee
+              </h1>
+              <Switch
+                checked={showRegInput}
+                onCheckedChange={checked => {
+                  setShowRegInput(!!checked);
+                  if (!checked) setValue('registrationFee', '');
+                }}
+              />
+            </div>
+            {showRegInput && (
+              <div className="mt-3">
+                <Input
+                  label="Registration Fee"
+                  placeholder="e.g. 3000"
+                  type="number"
+                  min={0}
+                  max={999999}
+                  inputMode="numeric"
+                  {...register('registrationFee', {
+                    onChange: e => {
+                      const v = clampDigits(e.target.value, 6);
+                      setValue('registrationFee', v, { shouldValidate: true });
+                    },
+                  })}
+                  error={errors.registrationFee?.message}
+                />
+              </div>
+            )}
           </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              <BankSelect
+                label="Bank"
+                required
+                value={watch('bankCode')}
+                onChange={code => setValue('bankCode', code, { shouldValidate: true })}
+                error={errors.bankCode?.message}
+              />
+              <Input
+                label="Account Number"
+                placeholder="0123456789"
+                required
+                maxLength={10}
+                {...register('accountNumber', {
+                  onChange: e => {
+                    const v = clampDigits(e.target.value, 10);
+                    setValue('accountNumber', v, { shouldValidate: true });
+                  },
+                })}
+                error={errors.accountNumber?.message}
+              />
+              <BankSelect
+                label="Invoice Bank"
+                required
+                value={watch('invoiceBankCode')}
+                onChange={code => setValue('invoiceBankCode', code, { shouldValidate: true })}
+                error={errors.invoiceBankCode?.message}
+              />
+              <Input
+                label="Invoice Account Number"
+                placeholder="0123456789"
+                required
+                maxLength={10}
+                {...register('invoiceAccountNumber', {
+                  onChange: e => {
+                    const v = clampDigits(e.target.value, 10);
+                    setValue('invoiceAccountNumber', v, { shouldValidate: true });
+                  },
+                })}
+                error={errors.invoiceAccountNumber?.message}
+              />
+            </div>
 
           <div className="mt-8">
             <label className="text-gray-800">Logo Content</label>

@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { fetchTransactions, exportTransactions } from '../thunks';
+import { fetchTransactions } from '../thunks';
 import { TransactionsState } from '@/types';
 
 const initialState: TransactionsState = {
@@ -8,8 +8,6 @@ const initialState: TransactionsState = {
   loading: false,
   error: null,
   filters: {},
-  exporting: false,
-  exportError: null,
 };
 
 const transactionSlice = createSlice({
@@ -37,17 +35,6 @@ const transactionSlice = createSlice({
       .addCase(fetchTransactions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      })
-      .addCase(exportTransactions.pending, state => {
-        state.exporting = true;
-        state.exportError = null;
-      })
-      .addCase(exportTransactions.fulfilled, state => {
-        state.exporting = false;
-      })
-      .addCase(exportTransactions.rejected, (state, action) => {
-        state.exporting = false;
-        state.exportError = action.payload as string;
       });
   },
 });

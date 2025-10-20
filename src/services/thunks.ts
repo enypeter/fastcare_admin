@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiClient from "@/services/axiosInstance";
 import { AmbulanceProvider, CreateAdminPayload, CreateAmbulanceProvider, CreatePasswordT, CreateRolePayload, LoginT, Transaction, Refund } from "@/types";
@@ -120,32 +121,6 @@ export const fetchHospitalById = createAsyncThunk(
   }
 );
 
-// Activate hospital
-export const activateHospital = createAsyncThunk(
-  'hospitals/activate',
-  async (id: number | string, { rejectWithValue }) => {
-    try {
-      const res = await apiClient.put(`/Hospitals/${id}/activate`);
-      return res.data; // expect updated hospital
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error, 'Failed to activate hospital'));
-    }
-  }
-);
-
-// Deactivate hospital
-export const deactivateHospital = createAsyncThunk(
-  'hospitals/deactivate',
-  async (id: number | string, { rejectWithValue }) => {
-    try {
-      const res = await apiClient.put(`/Hospitals/${id}/deactivate`);
-      return res.data; // expect updated hospital or status
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error, 'Failed to deactivate hospital'));
-    }
-  }
-);
-
 
 // Using generic record type for hospital update to avoid any
 export const updateHospital = createAsyncThunk(
@@ -184,6 +159,7 @@ export const updateHospitalFormData = createAsyncThunk(
     }
   }
 );
+
 
 export const fetchDoctors = createAsyncThunk(
   'doctors/fetchDoctors',
@@ -257,23 +233,6 @@ export const approveDoctor = createAsyncThunk(
       return res.data; // return updated doctor info if needed
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, "Approval failed"));
-    }
-  }
-);
-
-// Disapprove (reject) doctor by ID
-export const disapproveDoctor = createAsyncThunk(
-  "doctors/disapproveDoctor",
-  async (
-    payload: { doctorId: string; reason?: string },
-    { rejectWithValue }
-  ) => {
-    const { doctorId, reason } = payload;
-    try {
-      const res = await apiClient.put(`/doctors/${doctorId}/disapprove`, { reason });
-      return res.data; // updated doctor object expected
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error, "Disapproval failed"));
     }
   }
 );
@@ -505,7 +464,7 @@ export const fetchTransactions = createAsyncThunk(
     params: {
       Page?: number;
       PageSize?: number;
-      Status?: string | number; // accept numeric enum or string
+      Status?: string;
       HospitalName?: string;
       PatientName?: string;
       Date?: string; // ISO date (backend seems to accept a single date filter)
@@ -525,32 +484,6 @@ export const fetchTransactions = createAsyncThunk(
       };
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, "Failed to fetch transactions"));
-    }
-  }
-);
-
-// Export transactions (format: csv = 0, excel = 1)
-export const exportTransactions = createAsyncThunk(
-  'transactions/export',
-  async (
-    params: {
-      format: number; // csv = 0, excel = 1
-      Status?: string | number; // allow numeric enum
-      HospitalName?: string;
-      PatientName?: string;
-      Date?: string;
-      ServiceType?: string;
-    },
-    { rejectWithValue }
-  ) => {
-    try {
-      const res = await apiClient.get('/Payment/export', {
-        params,
-        responseType: 'blob',
-      });
-      return { blob: res.data, params };
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error, 'Failed to export transactions'));
     }
   }
 );
@@ -642,29 +575,6 @@ export const exportRefunds = createAsyncThunk(
       return { blob: res.data, params };
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, "Failed to export refunds"));
-    }
-  }
-);
-
-// Export a single refund detail (filtered by its own data) using the general export endpoint
-export const exportRefundDetail = createAsyncThunk(
-  'refunds/exportDetail',
-  async (
-    params: { Status?: number; PatientName?: string; Date?: string; format: 0 | 1 },
-    { rejectWithValue }
-  ) => {
-    try {
-      const { format, ...rest } = params;
-      const res = await apiClient.get('/Refund/export', {
-        params: { ...rest, format },
-        responseType: 'blob',
-      });
-      const blob = new Blob([res.data], {
-        type: format === 0 ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      });
-      return { blob, format, query: rest };
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error, 'Failed to export refund detail'));
     }
   }
 );
@@ -889,29 +799,6 @@ export const fetchUserReportDetail = createAsyncThunk(
   }
 );
 
-// Export user report detail for a specific date
-export const exportUserReportDetail = createAsyncThunk(
-  'userReports/exportDetail',
-  async (
-    params: { Date: string; format: 0 | 1 },
-    { rejectWithValue }
-  ) => {
-    try {
-      const { Date, format } = params;
-      const res = await apiClient.get(`/Account/export/${Date}`, {
-        params: { format },
-        responseType: 'blob',
-      });
-      const blob = new Blob([res.data], {
-        type: format === 0 ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      });
-      return { blob, format };
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error, 'Failed to export user report detail'));
-    }
-  }
-);
-
 // -------------------------------------------------
 // Appointment Reports Thunks
 // -------------------------------------------------
@@ -975,3 +862,17 @@ export const exportAppointmentReports = createAsyncThunk(
     }
   }
 );
+
+// -------- Dispatch History --------
+export const fetchDispatchHistory = createAsyncThunk(
+  "history/fetchAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.get("/AmbulanceBookings/history");
+      return res.data.data; 
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch dispatch history");
+    }
+  }
+);
+

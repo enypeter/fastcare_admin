@@ -1,49 +1,28 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+} from '@/components/ui/dialog';
+
+import {X} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {useState} from 'react';
 import Success from './success';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/services/store';
-import { activateHospital, deactivateHospital, fetchHospitalById } from '@/services/thunks';
-import toast from 'react-hot-toast';
 
 type Props = {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  hospitalId: number | string;
-  isActive: boolean | null | undefined;
 };
 
-export default function ToggleHospitalStatus({ open, setOpen, hospitalId, isActive }: Props) {
+export default function Deactivate({open, setOpen}: Props) {
   const [openSuccess, setOpenSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      if (isActive) {
-        await dispatch(deactivateHospital(hospitalId)).unwrap();
-      } else {
-        await dispatch(activateHospital(hospitalId)).unwrap();
-      }
-      // refresh selected hospital detail
-      dispatch(fetchHospitalById(String(hospitalId)));
-      setOpen(false);
-      setOpenSuccess(true);
-    } catch (e) {
-      toast.error(typeof e === 'string' ? e : 'Action failed');
-    } finally {
-      setLoading(false);
-    }
+  const handleSubmit = () => {
+    setOpen(false);
+    setOpenSuccess(true);
+   
   };
-
-  const actionWord = isActive ? 'Deactivate' : 'Activate';
-  const successText = isActive ? 'Hospital was deactivated successfully' : 'Hospital was activated successfully';
-  const bodyText = isActive
-    ? "Deactivating this hospital will prevent further patient interactions until reactivated. Do you want to continue?"
-    : "Activating this hospital will allow it to receive patient interactions. Proceed?";
 
   return (
     <>
@@ -55,24 +34,45 @@ export default function ToggleHospitalStatus({ open, setOpen, hospitalId, isActi
               type="button"
               className="border border-gray-600 rounded-full "
             >
-              <X className="text-neutral-600 hover:text-neutral-600" />
+              <X className="text-neutral-600  hover:text-neutral-600" />
             </button>
           </DialogHeader>
-          <div className="flex flex-col gap-8 mt-8">
-            <h1 className="text-center text-xl font-semibold text-gray-900">{actionWord} Hospital</h1>
-            <p className="text-lg text-gray-800">{bodyText}</p>
+
+          <div className="flex flex-col gap-8 mt-8 ">
+            <h1 className="text-center text-xl font-semibold text-gray-900 ">
+              Deactivate Account
+            </h1>
+            <p className="text-lg text-gray-800">
+              Deactivating this account will permanently delete this hospital's
+              account. Do you still wish to continue?
+            </p>
           </div>
-          <DialogFooter className="flex items-center justify-between mt-24">
-            <Button className="py-3" variant="link" onClick={() => setOpen(false)}>
-              Cancel
+
+          <DialogFooter className=" flex items-center justify-between mt-24">
+            <Button
+              className="py-3"
+              variant="link"
+              onClick={() => setOpen(false)}
+            >
+              No, cancel
             </Button>
-            <Button onClick={handleSubmit} className="py-3" variant={isActive ? 'destructive' : 'default'} disabled={loading}>
-              {loading ? 'Processing...' : `Yes, ${actionWord.toLowerCase()}`}
+            <Button
+              onClick={handleSubmit}
+              className="py-3"
+              variant="destructive"
+            >
+              Yes, deactivate
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Success open={openSuccess} setOpen={setOpenSuccess} title="Successful" text={successText} />
+
+      <Success
+        open={openSuccess}
+        setOpen={setOpenSuccess}
+        title="Successful"
+        text="Account was deactivated successfully"
+      />
     </>
   );
 }

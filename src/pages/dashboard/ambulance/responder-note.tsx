@@ -1,5 +1,5 @@
 import {DashboardLayout} from '@/layout/dashboard-layout';
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
 import {Button} from '@/components/ui/button';
 
 import {
@@ -24,64 +24,54 @@ import {
 } from '@tanstack/react-table';
 
 import {Pagination} from '@/components/ui/pagination';
-
 import {DoctorFilter} from '@/features/modules/doctor/filter';
 import RespondersNoteDetails from '@/features/modules/ambulance/responder-note-details';
-
-//import {ProviderFilter} from '@/features/modules/providers/filter';
-
-const notes = [
-  {
-    id: '1',
-    note_id: 'N-1005',
-    name: 'Grace Ada',
-    amb_id: 'AMB-007 (Jude)',
-    res_name: 'Samuel Oladimeji',
-    note: 'Patient found unconscious',
-    date: '2023-01-01',
-    action: '',
-  },
-  {
-    id: '2',
-    note_id: 'N-1006',
-    name: 'Grace Ada',
-    amb_id: 'AMB-007 (Jude)',
-    res_name: 'Samuel Oladimeji',
-    note: 'Patient found unconscious',
-    date: '2023-01-01',
-    action: '',
-  },
-  {
-    id: '3',
-    note_id: 'N-1007',
-    name: 'Grace Ada',
-    amb_id: 'AMB-007 (Jude)',
-    res_name: 'Samuel Oladimeji',
-    note: 'Patient found unconscious',
-    date: '2023-01-01',
-    action: '',
-  },
-];
+import {AppDispatch, RootState} from '@/services/store';
+import {useDispatch, useSelector} from 'react-redux';
+import {fetchRespondents} from '@/services/thunks';
+import {Loader} from '@/components/ui/loading';
 
 const ResponderNote = () => {
-  //const [searchTerm, setSearchTerm] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
+  const {respondents, loading, error} = useSelector(
+    (state: RootState) => state.respondents,
+  );
+
+  useEffect(() => {
+    const ambulanceProviderId = 'c4ac7df8-1873-42db-97ba-8b240abc99df';
+    dispatch(fetchRespondents(ambulanceProviderId));
+  }, [dispatch]);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  //   const filteredProviders =notes.filter(item =>
-  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  //   );
 
-  const totalPages = Math.ceil(notes.length / pageSize);
-  const paginatedProviders = useMemo(() => {
+  const tableData = useMemo(() => {
+    if (!respondents.length) return [];
+
+    return respondents.map((respondent, index) => ({
+      id: respondent.id,
+      note_id: `N-${1000 + index}`, // Generate note ID based on index
+      name: 'Patient Name', 
+      amb_id: 'AMB-007 (Jude)', 
+      res_name: respondent.name, 
+      note: `Medical note for ${respondent.name}`, 
+      date: '2023-01-01', 
+      action: '',
+    }));
+  }, [respondents]);
+
+  const totalPages = Math.ceil(tableData.length / pageSize);
+
+  const paginatedData = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return notes.slice(start, start + pageSize);
-  }, [notes, page]);
+    return tableData.slice(start, start + pageSize);
+  }, [tableData, page, pageSize]);
 
   const columns: ColumnDef<any>[] = [
     {
@@ -100,7 +90,7 @@ const ResponderNote = () => {
       accessorKey: 'res_name',
       header: 'Responder Name',
     },
-     {
+    {
       accessorKey: 'note',
       header: 'Note Preview',
       cell: ({row}) => (
@@ -109,27 +99,26 @@ const ResponderNote = () => {
         </span>
       ),
     },
-  
     {
       id: 'action',
       header: 'View',
       enableHiding: false,
       cell: ({row}) => {
-        // Check if row is empty
         const isEmptyRow = !row.original.id && !row.original.name;
-
         if (isEmptyRow) {
-          return null; // nothing rendered for empty row
+          return null;
         }
-        return <div>
+        return (
+          <div>
             <RespondersNoteDetails data={row.original} />
-        </div>;
+          </div>
+        );
       },
     },
   ];
 
   const table = useReactTable({
-    data: paginatedProviders,
+    data: paginatedData, 
     columns,
     state: {
       sorting,
@@ -147,35 +136,67 @@ const ResponderNote = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  //Function to apply filters from FilterDialog
+  // Function to apply filters from FilterDialog
   const handleApplyFilter = (filters: any) => {
     const newFilters: any[] = [];
     if (filters.status) newFilters.push({id: 'status', value: filters.status});
     if (filters.name) newFilters.push({id: 'name', value: filters.name});
-
-    if (filters.date) newFilters.push({id: 'date', value: filters.date}); // make sure your data has a 'date' field
+    if (filters.date) newFilters.push({id: 'date', value: filters.date});
     setColumnFilters(newFilters);
   };
-  //Function to reset filters
+
+  // Function to reset filters
   const handleResetFilter = () => {
     setColumnFilters([]);
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="bg-gray-100 h-full flex items-center justify-center">
+          <Loader />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="bg-gray-100 h-full flex items-center justify-center">
+          <div className="bg-white rounded-md p-8">
+            <div className="text-lg text-red-500">Error: {error}</div>
+            <Button
+              onClick={() => {
+                const ambulanceProviderId =
+                  'c4ac7df8-1873-42db-97ba-8b240abc99df';
+                dispatch(fetchRespondents(ambulanceProviderId));
+              }}
+              className="mt-4"
+            >
+              Retry
+            </Button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
-      <div className="bg-gray-100 overflow-scroll h-full ">
-        <div className="lg:mx-8 mt-10 bg-white  rounded-md flex flex-col h-[600px] mb-36">
+      <div className="bg-gray-100 overflow-scroll h-full">
+        <div className="lg:mx-8 mt-10 bg-white rounded-md flex flex-col h-[600px] mb-36">
           <div className="flex flex-wrap gap-4 justify-between items-center p-6">
             <div className="flex items-center gap-8">
               <h1 className="text-lg text-gray-800">All Responder's Notes</h1>
-
-              {/* <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="border rounded-lg hidden lg:block px-4 py-2 lg:w-96 lg:max-w-2xl focus:outline-none"
-              /> */}
+              {loading && (
+                <div className="flex items-center gap-2">
+                  <Loader />
+                 
+                </div>
+              )}
             </div>
             <div className="flex gap-4 items-center">
               <DoctorFilter
@@ -216,10 +237,10 @@ const ResponderNote = () => {
                     >
                       {row.getVisibleCells().map(cell => (
                         <TableCell
-                          key={cell.id} // ✅ moved key here
+                          key={cell.id}
                           className={
                             cell.column.id === 'action' ? 'text-right' : ''
-                          } // ✅ fixed mismatch
+                          }
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
@@ -235,9 +256,16 @@ const ResponderNote = () => {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      <div className="flex flex-col items-start">
+                      <div className="flex flex-col items-center">
                         <span className="font-medium">
-                          No responder's note found
+                          {respondents.length === 0
+                            ? 'No respondents found'
+                            : 'No responder notes found'}
+                        </span>
+                        <span className="text-sm text-gray-600 mt-1">
+                          {respondents.length === 0
+                            ? 'Add respondents to see their notes here'
+                            : 'Notes will appear here once available'}
                         </span>
                       </div>
                     </TableCell>
@@ -247,7 +275,7 @@ const ResponderNote = () => {
             </Table>
           </div>
 
-          {/* Pagination stuck at bottom */}
+          {/* Pagination */}
           <div className="p-4 flex items-center justify-end">
             <Pagination
               totalEntriesSize={notes.length}

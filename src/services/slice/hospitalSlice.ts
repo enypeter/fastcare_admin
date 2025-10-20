@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { HospitalState, Hospital } from "@/types";
-import { createHospital, fetchHospitalById, fetchHospitals, updateHospital, activateHospital, deactivateHospital } from "../thunks";
+import { createHospital, fetchHospitalById, fetchHospitals, updateHospital } from "../thunks";
 import toast from "react-hot-toast";
 
 const initialState: HospitalState = {
@@ -8,7 +8,7 @@ const initialState: HospitalState = {
   selectedHospital: null,   // ✅ add this
   loading: false,
   error: null,
-    createLoading: false,
+  createLoading: false,
   createError: null,
 };
 
@@ -51,27 +51,6 @@ const hospitalSlice = createSlice({
       // Fetch by ID
       .addCase(fetchHospitalById.fulfilled, (state, action) => {
         state.selectedHospital = action.payload;
-      })
-      .addCase(activateHospital.fulfilled, (state, action) => {
-        // Assume API returns updated hospital
-        const updated: Hospital | undefined = action.payload;
-        if (updated && updated.id) {
-          state.hospitals = state.hospitals.map(h => h.id === updated.id ? { ...h, ...updated, isActive: true } : h);
-          if (state.selectedHospital?.id === updated.id) {
-            state.selectedHospital = { ...state.selectedHospital, ...updated, isActive: true } as Hospital;
-          }
-        }
-        toast.success('Hospital activated');
-      })
-      .addCase(deactivateHospital.fulfilled, (state, action) => {
-        const updated: Hospital | undefined = action.payload;
-        if (updated && updated.id) {
-          state.hospitals = state.hospitals.map(h => h.id === updated.id ? { ...h, ...updated, isActive: false } : h);
-          if (state.selectedHospital?.id === updated.id) {
-            state.selectedHospital = { ...state.selectedHospital, ...updated, isActive: false } as Hospital;
-          }
-        }
-        toast.success('Hospital deactivated');
       })
 
      .addCase(updateHospital.fulfilled, (state, action) => {
