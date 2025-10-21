@@ -139,6 +139,8 @@ export interface Doctor {
   totalReviews: number;
   /** Online status e.g. 'Available' | 'Offline' */
   status: string;
+  /** Registration approval workflow status e.g. 'Pending' | 'Approved' | 'Rejected' | 'InReview' */
+  registrationStatus?: string | null;
   userId?: string
   /** Optional creation date returned for pending approval listings */
   createdAt?: string;
