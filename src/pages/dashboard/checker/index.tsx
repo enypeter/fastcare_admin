@@ -38,7 +38,7 @@ interface CheckerFilters {
   status?: string;
   account?: string;
   startDate?: string;
-  endDate?: string; // ignored server-side
+  endDate?: string;
 }
 
 const Checkers = () => {
@@ -131,13 +131,19 @@ const Checkers = () => {
         const openDetails = () => {
           const mapped = {
             id: refund.id,
+            refundReason: refund.refundReason,
+            refundAmount: refund.refundAmount,
+            requestDate: refund.requestDate,
+            disputeDate: refund.disputeDate,
+            refundReference: refund.refundReference,
             status: refund.status,
-            amount: refund.refundAmount,
-            transaction_id: refund.transactionId,
-            name: refund.patientName,
-            patient_id: refund.patientId || undefined,
-            account: refund.walletNumber || undefined,
-            date: refund.requestDate,
+            transactionId: refund.transactionId,
+            walletNumber: refund.walletNumber,
+            patientName: refund.patientName,
+            patientId: refund.patientId || undefined,
+            approver: refund.approver || undefined,
+            createdBy: refund.createdBy || undefined,
+            document: refund.document || undefined,
           } as unknown as Refund;
           setSelectedTransaction(mapped);
           setOpen(true);
