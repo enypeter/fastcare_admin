@@ -139,6 +139,8 @@ export interface Doctor {
   totalReviews: number;
   /** Online status e.g. 'Available' | 'Offline' */
   status: string;
+  /** Registration approval workflow status e.g. 'Pending' | 'Approved' | 'Rejected' | 'InReview' */
+  registrationStatus?: string | null;
   userId?: string
   /** Optional creation date returned for pending approval listings */
   createdAt?: string;
@@ -152,6 +154,9 @@ export interface CallsStatistics {
   missedCalls: number;
   percentageMissedCalls: number;
   percentageCompletedCalls: number;
+  pendingPayout?: number;
+  commission?: number;
+  refunds?: number;
 }
 
 export interface PerformanceMetric {
@@ -164,6 +169,7 @@ export interface PerformanceMetric {
 export interface DoctorRecentCall {
   patientName: string;
   reason: string;
+  type?: string;
   createdDate: string;
   callDuration: string;
   amount: number;
@@ -173,7 +179,7 @@ export interface DoctorRecentCall {
 export interface DashboardData {
   callsStatistics: CallsStatistics | null;
   performanceMetric: PerformanceMetric | null;
-  doctorRecentCalls: DoctorRecentCall[];
+  doctorRecentCalls: DoctorRecentCall[]; 
 }
 
 export interface DoctorsState {
@@ -398,6 +404,45 @@ export interface RefundsState {
     PatientName?: string;
     Date?: string;
   };
+}
+
+// Emergency Reports
+export interface EmergencyReport {
+  patientName: string;
+  doctorName: string;
+  date: string;
+  duration: string;
+  responseTime: string;
+  status: string;
+}
+
+export interface EmergencyReportState {
+  list: EmergencyReport[];
+  loading: boolean;
+  error: string | null;
+  metaData: MetaData | null;
+  filters: { StartDate?: string; EndDate?: string; Speciality?: string; Status?: string; Page?: number; PageSize?: number };
+}
+
+// Application Feedback
+export interface AppFeedback {
+  id: string; // backend numeric id coerced to string for consistency
+  patientId: string; // may be empty string if null
+  patientName: string;
+  comment: string;
+  rating: number; // parsed from string like "5.0"
+  feedbackCategory: string; // COMPLIMENT | COMPLAINT | SUGGESTION etc.
+  creationDate: string; // ISO date-time
+}
+
+export interface AppFeedbackState {
+  list: AppFeedback[];
+  loading: boolean;
+  error: string | null;
+  exporting: boolean;
+  exportError: string | null;
+  metaData: MetaData | null;
+  filters: { Page?: number; PageSize?: number };
 }
 
 // -----------------------------

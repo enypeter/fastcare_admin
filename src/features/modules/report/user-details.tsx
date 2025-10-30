@@ -84,7 +84,7 @@ const UsersDetails = () => {
       <div className="bg-gray-100 overflow-scroll h-full ">
         <div className="lg:mx-8 mt-10 bg-white  rounded-md flex flex-col h-[600px] mb-36">
           <div
-            onClick={() => navigate('/reports/users')}
+            onClick={() => navigate('/reports?tab=signup')}
             className="flex items-center m-4 gap-2 cursor-pointer"
           >
             <span className="text-white bg-black p-1 rounded-lg">

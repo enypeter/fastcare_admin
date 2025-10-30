@@ -57,10 +57,9 @@ export const ROUTES = {
   },
 
   reports: {
-     users: '/reports/users',
-     userdetails: '/reports/users/user-details/:id',
-     reporting: '/reports/reporting',
-     call: '/reports/emergency-call',
+   root: '/reports',
+   // retain userdetails for deep linking to a specific user detail screen if still needed
+   userdetails: '/reports/users/user-details/:id',
   },
 
   ambulance: {

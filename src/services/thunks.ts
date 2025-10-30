@@ -4,7 +4,7 @@ import { AmbulanceProvider, CreateAdminPayload, CreateAmbulanceProvider, CreateP
 import type { AxiosError } from 'axios';
 
 // Utility to safely extract API error messages including plain text bodies
-const getErrorMessage = (error: unknown, fallback: string): string => {
+export const getErrorMessage = (error: unknown, fallback: string): string => {
   if (typeof error === 'string') return error;
   if (error && typeof error === 'object') {
   const axiosErr = error as AxiosError<unknown>;
@@ -150,9 +150,14 @@ export const deactivateHospital = createAsyncThunk(
 // Using generic record type for hospital update to avoid any
 export const updateHospital = createAsyncThunk(
   "hospitals/updateHospital",
-  async (hospital: Record<string, unknown> & { id: string | number }, { rejectWithValue }) => {
+  async (
+    hospital: Record<string, unknown> & { id: string | number },
+    { rejectWithValue, dispatch }
+  ) => {
     try {
       const response = await apiClient.put(`/Hospitals/${hospital.id}`, hospital);
+      // Immediately trigger a refetch of all hospitals to ensure list stays current
+      dispatch(fetchHospitals());
       return response.data; // updated hospital
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, "Update failed"));
@@ -165,12 +170,14 @@ export const updateHospitalFormData = createAsyncThunk(
   "hospitals/updateHospitalFormData",
   async (
     { id, formData }: { id: string | number; formData: FormData },
-    { rejectWithValue }
+    { rejectWithValue, dispatch }
   ) => {
     try {
       const res = await apiClient.put(`/Hospitals/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      // Refetch hospitals list after form-data update (e.g., logo changes)
+      dispatch(fetchHospitals());
       return res.data;
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, 'Failed to update hospital'));
@@ -671,7 +678,7 @@ export const updateRefundStatus = createAsyncThunk(
   ) => {
     try {
       const { id, status } = payload;
-      const res = await apiClient.put(`/Refund/${id}/status/${status}`);
+      const res = await apiClient.patch(`/Refund/${id}/status/${status}`);
       return res.data; // assume API returns updated refund or status meta
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, 'Failed to update refund status'));
@@ -965,6 +972,96 @@ export const exportAppointmentReports = createAsyncThunk(
       return { blob: res.data, params };
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, 'Failed to export appointment reports'));
+    }
+  }
+);
+
+// -------------------------------------------------
+// Emergency (All Doctors Appointments) Reports Thunks
+// Mirrors emergency call report requirements
+// Endpoint: /Appointment/all-doctors-appointments
+// Query: StartDate, EndDate, Speciality, Status, PageSize, Page
+// Response list shape: { patientName, doctorName, date, duration, responseTime, status }
+// -------------------------------------------------
+export const fetchEmergencyReports = createAsyncThunk(
+  'emergencyReports/fetchAll',
+  async (
+    params: {
+      StartDate?: string;
+      EndDate?: string;
+      Speciality?: string;
+      Status?: string;
+      Page?: number;
+      PageSize?: number;
+    } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get('/Appointment/all-doctors-appointments', { params });
+      const raw: unknown = res.data?.data || [];
+      const list = Array.isArray(raw) ? raw.map(item => {
+        const r = item as { patientName?: string; doctorName?: string; date?: string; duration?: string; responseTime?: string; status?: string };
+        return {
+          patientName: r.patientName || '',
+            doctorName: r.doctorName || '',
+            date: r.date || '',
+            duration: r.duration || '',
+            responseTime: r.responseTime || '',
+            status: r.status || '',
+        };
+      }) : [];
+      return { list, metaData: res.data?.metaData || null };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch emergency call reports'));
+    }
+  }
+);
+
+// -------------------------------------------------
+// Application Feedback Thunks
+// -------------------------------------------------
+export const fetchAppFeedbacks = createAsyncThunk(
+  'appFeedback/fetchAll',
+  async (
+    params: { Page?: number; PageSize?: number } | undefined,
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get('/ApplicationFeedback', { params });
+      const raw: unknown = res.data?.data || [];
+      const list = Array.isArray(raw) ? raw.map(item => {
+        const r = item as { id?: number; patientId?: string | null; patientName?: string; comment?: string; rating?: string | number; feedbackCategory?: string; creationDate?: string };
+        return {
+          id: r.id != null ? String(r.id) : '',
+          patientId: r.patientId || '',
+          patientName: r.patientName || '',
+          comment: r.comment || '',
+          rating: typeof r.rating === 'number' ? r.rating : parseFloat(r.rating || '0') || 0,
+          feedbackCategory: r.feedbackCategory || '',
+          creationDate: r.creationDate || '',
+        };
+      }) : [];
+      return { list, metaData: res.data?.metaData || null };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch feedbacks'));
+    }
+  }
+);
+
+export const exportAppFeedbacks = createAsyncThunk(
+  'appFeedback/export',
+  async (
+    params: { format: 0 | 1 },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await apiClient.get('/ApplicationFeedback/export', {
+        params,
+        responseType: 'blob',
+      });
+      return { blob: res.data, params };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to export feedbacks'));
     }
   }
 );

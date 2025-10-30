@@ -33,7 +33,7 @@ export default function Reject({ open, setOpen, data }: Props) {
     setLoading(true);
     try {
   // Backend no longer requires a reason; send only doctorId
-  await dispatch(disapproveDoctor({ doctorId: data.userId })).unwrap();
+  await dispatch(disapproveDoctor({ doctorId: data.id })).unwrap();
       setOpenSuccess(true);
       setOpen(false);
     } catch (err: unknown) {

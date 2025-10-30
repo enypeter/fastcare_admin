@@ -61,34 +61,39 @@ export default function DoctorVerificationDetails({data, open, setOpen}: Props) 
                 <h1 className="text-primary  text-xl">{data.name}</h1>
 
                 <div className="flex items-center gap-3">
-                  {data.isApproved === null && (
-                    <>
-                      <Button
-                        onClick={handleApprove}
-                        className="py-2 bg-green-500 w-28 border-none"
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        onClick={handleReject}
-                        className="py-2 w-28 bg-red-100 text-red-500 border border-red-500"
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  )}
-
-                  {data.isApproved === true && (
-                    <span className="py-1 px-3 text-green-700 font-semibold rounded bg-green-100">
-                      Approved
-                    </span>
-                  )}
-
-                  {data.isApproved === false && (
-                    <span className="py-1 px-3 text-red-700 font-semibold rounded bg-red-100">
-                      Rejected
-                    </span>
-                  )}
+                  {(() => {
+                    const statusRaw = (data.registrationStatus || '').toLowerCase();
+                    // Action buttons only if pending or in review
+                    if (['pending', 'inreview', 'in_review'].includes(statusRaw)) {
+                      return (
+                        <>
+                          <Button
+                            onClick={handleApprove}
+                            className="py-2 bg-green-500 w-28 border-none"
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            onClick={handleReject}
+                            className="py-2 w-28 bg-red-100 text-red-500 border border-red-500"
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      );
+                    }
+                    // Badge display for terminal states
+                    let label = data.registrationStatus || 'Pending';
+                    const sr = label.toLowerCase();
+                    if (sr === 'inreview' || sr === 'in_review') label = 'In Review';
+                    let classes = 'py-1 px-3 font-semibold rounded ';
+                    if (sr === 'approved') classes += 'bg-green-100 text-green-700';
+                    else if (sr === 'rejected') classes += 'bg-red-100 text-red-700';
+                    else if (sr === 'pending') classes += 'bg-yellow-100 text-yellow-700';
+                    else if (sr === 'inreview' || sr === 'in_review') classes += 'bg-blue-100 text-blue-700';
+                    else classes += 'bg-gray-100 text-gray-600';
+                    return <span className={classes}>{label}</span>;
+                  })()}
                 </div>
               </div>
               <div className="mt-6">

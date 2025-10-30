@@ -80,33 +80,32 @@ const VerificationRequest = () => {
       }
     },
     {
-      accessorKey: 'isApproved',
+      accessorKey: 'registrationStatus',
       header: 'Status',
-      cell: ({getValue}) => {
-        const value = getValue() as boolean | null;
+      cell: ({ getValue }) => {
+        const raw = (getValue() as string | null | undefined) || 'Pending';
+        const status = raw.toLowerCase();
+        let label = raw;
+        // Normalize common statuses
+        if (status === 'pending') label = 'Pending';
+        else if (status === 'approved') label = 'Approved';
+        else if (status === 'rejected') label = 'Rejected';
+        else if (status === 'inreview' || status === 'in_review') label = 'In Review';
+        else label = raw.charAt(0).toUpperCase() + raw.slice(1);
 
-        let statusText = '';
-        let statusClasses = 'py-1 text-md font-semibold w-fit ';
-
-        if (value === true) {
-          statusText = 'Approved';
-          statusClasses += 'text-green-700';
-        } 
-        // else if (value === false) {
-        //   statusText = 'Rejected';
-        //   statusClasses += 'text-red-800';
-        // }
-         else {
-          statusText = 'Pending';
-          statusClasses += 'text-yellow-600';
-        }
-
-        return <span className={statusClasses}>{statusText}</span>;
+        let classes = 'px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap ';
+        if (status === 'approved') classes += 'bg-green-100 text-green-700';
+        else if (status === 'pending') classes += 'bg-yellow-100 text-yellow-700';
+        else if (status === 'rejected') classes += 'bg-red-100 text-red-700';
+        else if (status === 'inreview' || status === 'in_review') classes += 'bg-blue-100 text-blue-700';
+        else classes += 'bg-gray-100 text-gray-600';
+        return <span className={classes}>{label}</span>;
       },
     },
     {
       id: 'action',
       enableHiding: false,
+      header: 'Action',
       cell: ({row}) => {
        
         return (
