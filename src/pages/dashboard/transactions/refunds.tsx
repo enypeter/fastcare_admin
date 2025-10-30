@@ -22,7 +22,6 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 
@@ -46,7 +45,6 @@ import { AppDispatch, RootState } from '@/services/store';
 import { fetchRefunds, exportRefunds } from '@/services/thunks';
 import { Pagination } from '@/components/ui/pagination';
 import { Loader } from '@/components/ui/loading';
-import { formatNaira } from '@/helpers/naira';
 import type { Refund } from '@/types';
 
 interface RefundRow {
@@ -64,8 +62,8 @@ const mapRefundToRow = (r: Refund): RefundRow => ({
   transaction_id: r.transactionId,
   name: r.patientName || '-',
   reason: r.refundReason,
-  amount: formatNaira(r.refundAmount ?? 0),
-  status: r.status?.toLowerCase() === 'approved' ? 'Approved' : r.status,
+  amount: String(r.refundAmount ?? 0), // raw numeric value as string
+  status: r.status || '-', // preserve backend casing
   date: r.requestDate,
 });
 
@@ -75,7 +73,6 @@ const Refunds = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [columnFilters, setColumnFilters] = useState<{ id: string; value: unknown }[]>([]);
 
   const [open, setOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<RefundRow | undefined>(undefined);
@@ -114,7 +111,7 @@ const Refunds = () => {
     }));
   }, [dispatch, page, pageSize, appliedFilters]);
 
-  const mappedRefunds = useMemo(() => refunds.map(mapRefundToRow), [refunds]);
+  const mappedRefunds = useMemo(() => Array.isArray(refunds) ? refunds.map(mapRefundToRow) : [], [refunds]);
 
   const columns: ColumnDef<RefundRow>[] = [
     {
@@ -130,7 +127,6 @@ const Refunds = () => {
         return true;
       },
     },
-
     {
       accessorKey: 'transaction_id',
       header: 'Transaction ID',
@@ -143,12 +139,16 @@ const Refunds = () => {
     {
       accessorKey: 'amount',
       header: 'Refund Amount',
+      cell: ({ getValue }) => {
+        const raw = getValue() as string;
+        // Display backend raw numeric; optionally format later if needed
+        return <span>{raw}</span>;
+      }
     },
     {
       accessorKey: 'reason',
       header: 'Dispute Reason',
-    },
-  
+    },  
     {
       accessorKey: 'status',
       header: 'Status',
@@ -172,42 +172,39 @@ const Refunds = () => {
       },
     },
     {
-              id: 'action',
-              header: 'Action',
-              enableHiding: false,
-              cell: ({ row }) => {
-    
-                  // Check if row is empty
-                  const isEmptyRow = !row.original.id && !row.original.name;
-    
-                  if (isEmptyRow) {
-                      return null; // nothing rendered for empty row
-                  }
-                  return (
-                      <div className="flex text-center justify-start items-center gap-2">
-                          <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <MoreVertical className="text-neutral-400 cursor-pointer" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-[200px]">
-                                  <DropdownMenuItem
-                                      onClick={() => {
-                                    setSelectedTransaction(row.original); // save row data
-                                    setOpen(true);
-                                  }}
-                                  >
-                                      <InfoIcon className="text-neutral-600" />
-                                      View details
-                                  </DropdownMenuItem>
-    
-                                
-    
-                              </DropdownMenuContent>
-                          </DropdownMenu>
-    
-                      </div>
-                  );
-              },
+      id: 'action',
+      header: 'Action',
+      enableHiding: false,
+      cell: ({ row }) => {
+
+          // Check if row is empty
+          const isEmptyRow = !row.original.id && !row.original.name;
+
+          if (isEmptyRow) {
+              return null; // nothing rendered for empty row
+          }
+          return (
+              <div className="flex text-center justify-start items-center gap-2">
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <MoreVertical className="text-neutral-400 cursor-pointer" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[200px]">
+                          <DropdownMenuItem
+                              onClick={() => {
+                            setSelectedTransaction(row.original); // save row data
+                            setOpen(true);
+                          }}
+                          >
+                            <InfoIcon className="text-neutral-600" />
+                            View details
+                          </DropdownMenuItem>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+
+              </div>
+          );
+      },
     },
   ];
 
@@ -218,49 +215,28 @@ const Refunds = () => {
       sorting,
       columnVisibility,
       rowSelection,
-      columnFilters,
     },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const handleApplyFilter = (filters: Record<string, unknown>) => {
-    const newFilters: { id: string; value: unknown }[] = [];
-
-    if (filters.status) {
-      newFilters.push({id: 'status', value: filters.status});
-    }
-    if (filters.type) {
-      newFilters.push({id: 'type', value: filters.type});
-    }
-    if (filters.patient) {
-      newFilters.push({id: 'name', value: filters.patient}); // accessorKey is "name"
-    }
-    if (filters.hospital) {
-      newFilters.push({id: 'hospital', value: filters.hospital});
-    }
-    if (filters.startDate || filters.endDate) {
-      newFilters.push({
-        id: 'date',
-        value: {start: filters.startDate, end: filters.endDate},
-      });
-    }
-
-    setColumnFilters(newFilters);
+  // Server-side filtering only (removed client columnFilters)
+  const handleApplyServerFilter = (filters: Record<string, unknown>) => {
+    setAppliedFilters(filters);
+    setPage(1);
   };
-
-  // Function to reset filters
-  const handleResetFilter = () => {
-    setColumnFilters([]);
+  const handleResetServerFilter = () => {
+    setAppliedFilters({});
+    setPage(1);
   };
 
   const hasData = mappedRefunds.length > 0 && !loading;
+  const isCompletelyEmpty = !loading && mappedRefunds.length === 0 && !hasAppliedFilters;
+  const isFilteredEmpty = !loading && mappedRefunds.length === 0 && hasAppliedFilters;
 
   return (
     <DashboardLayout>
@@ -268,29 +244,32 @@ const Refunds = () => {
         <div className="flex flex-col items-center justify-center h-[70vh] text-center px-4">
           {loading ? (
             <Loader height="h-40" />
-          ) : hasAppliedFilters ? (
+          ) : isFilteredEmpty ? (
             <>
-              <p className="text-lg font-semibold text-gray-800">No refunds match your filters</p>
-              <p className="text-gray-500 mt-2 mb-6">Try adjusting your criteria or reset to see all refunds.</p>
+              <p className="text-lg font-semibold text-gray-800">No results for your current filters</p>
+              <p className="text-gray-500 mt-2 mb-6">Adjust the filters or reset to view all refunds.</p>
               <div className="flex flex-wrap gap-4 justify-center">
-                <Button variant="outline" onClick={() => { setAppliedFilters({}); handleResetFilter(); setPage(1); }}>Reset Filters</Button>
+                <Button variant="outline" onClick={handleResetServerFilter}>Reset Filters</Button>
                 <InitiateARefund />
               </div>
+              {metaData && (
+                <p className="text-xs text-gray-400 mt-4">Server returned 0 of {metaData.totalCount} total matching entries.</p>
+              )}
             </>
-          ) : (
+          ) : isCompletelyEmpty ? (
             <>
-              <p className="text-lg font-semibold text-gray-800">You have not initiated any refunds yet</p>
-              <p className="text-gray-500 mt-2 mb-6">All refunds will appear here once created.</p>
+              <p className="text-lg font-semibold text-gray-800">No refunds have been initiated</p>
+              <p className="text-gray-500 mt-2 mb-6">Once refunds are created they will appear here.</p>
               <InitiateARefund />
             </>
-          )}
+          ) : null}
         </div>
       ) : (
         <div className="bg-gray-200 overflow-scroll h-full ">
           <div className="bg-white p-6 rounded-md flex justify-between items-center mx-8 mt-10">
             <RefundFilter
-              onApply={(f: Record<string, unknown>) => { setAppliedFilters(f); handleApplyFilter(f); setPage(1);} }
-              onReset={() => { setAppliedFilters({}); handleResetFilter(); setPage(1);} }
+              onApply={handleApplyServerFilter}
+              onReset={handleResetServerFilter}
             />
           </div>
 
@@ -308,39 +287,39 @@ const Refunds = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => {
-                      dispatch(exportRefunds({ format: 0, status: appliedFilters.status as number | undefined, PatientName: appliedFilters.patient as string | undefined, Date: appliedFilters.startDate as string | undefined }))
-                        .then(res => {
-                          const action = res as { payload?: { blob: Blob; params: { format: number } } };
-                          if (action.payload?.blob) {
-                            const blob = action.payload.blob;
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = 'refunds_export.csv';
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                            window.URL.revokeObjectURL(url);
-                          }
-                        });
-                    }}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => {
-                      dispatch(exportRefunds({ format: 1, status: appliedFilters.status as number | undefined, PatientName: appliedFilters.patient as string | undefined, Date: appliedFilters.startDate as string | undefined }))
-                        .then(res => {
-                          const action = res as { payload?: { blob: Blob; params: { format: number } } };
-                          if (action.payload?.blob) {
-                            const blob = action.payload.blob;
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = 'refunds_export.xlsx';
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                            window.URL.revokeObjectURL(url);
-                          }
-                        });
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => {
+                    dispatch(exportRefunds({ format: 0, status: appliedFilters.status as number | undefined, PatientName: appliedFilters.patient as string | undefined, Date: appliedFilters.startDate as string | undefined }))
+                      .then(res => {
+                        const action = res as { payload?: { blob: Blob; params: { format: number } } };
+                        if (action.payload?.blob) {
+                          const blob = action.payload.blob;
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'refunds_export.csv';
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(url);
+                        }
+                      });
+                  }}>CSV</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => {
+                    dispatch(exportRefunds({ format: 1, status: appliedFilters.status as number | undefined, PatientName: appliedFilters.patient as string | undefined, Date: appliedFilters.startDate as string | undefined }))
+                      .then(res => {
+                        const action = res as { payload?: { blob: Blob; params: { format: number } } };
+                        if (action.payload?.blob) {
+                          const blob = action.payload.blob;
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'refunds_export.xlsx';
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(url);
+                        }
+                      });
                     }}>Excel</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

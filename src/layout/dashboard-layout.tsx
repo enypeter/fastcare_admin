@@ -98,11 +98,8 @@ export const DashboardLayout = ({children, searchBar}: Props) => {
           name: 'Reports',
           icon: <PieChart className='w-5 h-6' />,
           url: '/reports',
-          children: [
-            {name: 'Users', url: '/reports/users'},
-            {name: 'Reporting', url: '/reports/reporting'},
-            {name: 'Emergency Call', url: '/reports/emergency-call'},
-          ],
+          // unified reports page with internal tabs, no children needed
+          children: [],
         },
 
         {

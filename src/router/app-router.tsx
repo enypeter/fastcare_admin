@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { ROUTES } from './routes';
 
 import SignIn from '@/pages/auth/signin';
@@ -9,9 +9,8 @@ import HospitalDetails from '@/pages/dashboard/hospitals/hospital-details';
 import AllTransactions from '@/pages/dashboard/transactions/all-transactions';
 import Refunds from '@/pages/dashboard/transactions/refunds';
 import Checkers from '@/pages/dashboard/checker';
-import Users from '@/pages/dashboard/reports/users';
 import UsersDetails from '@/features/modules/report/user-details';
-import Reporting from '@/pages/dashboard/reports/reporting';
+import UnifiedReports from '@/pages/dashboard/reports';
 import Settings from '@/pages/dashboard/settings';
 import VerificationRequest from '@/pages/dashboard/doctors/request';
 
@@ -29,7 +28,6 @@ import Tutorials from '@/pages/dashboard/helpdesk/tutorial';
 import Articles from '@/pages/dashboard/helpdesk/articles';
 import ArticleDetails from '@/pages/dashboard/helpdesk/article-details';
 import Feedbacks from '@/pages/dashboard/helpdesk/feedback';
-import EmergencyCall from '@/pages/dashboard/reports/emergency';
 import ProtectedRoutes from './ProtectedRoutes';
 
 import AllDoctors from '@/pages/dashboard/doctors/all-doctors';
@@ -53,10 +51,12 @@ export const AppRouter = () => {
 
         <Route path={ROUTES.checkers} element={<Checkers />} />
 
-        <Route path={ROUTES.reports.users} element={<Users />} />
-        <Route path={ROUTES.reports.userdetails} element={<UsersDetails />} />
-        <Route path={ROUTES.reports.reporting} element={<Reporting />} />
-        <Route path={ROUTES.reports.call} element={<EmergencyCall />} />
+  <Route path={ROUTES.reports.root} element={<UnifiedReports />} />
+  <Route path={ROUTES.reports.userdetails} element={<UsersDetails />} />
+  {/* Redirect legacy paths to new unified reports with tab query */}
+  <Route path="/reports/users" element={<Navigate to="/reports?tab=signup" replace />} />
+  <Route path="/reports/reporting" element={<Navigate to="/reports?tab=appointment" replace />} />
+  <Route path="/reports/emergency-call" element={<Navigate to="/reports?tab=emergency" replace />} />
 
         <Route path={ROUTES.settings} element={<Settings />} />
 

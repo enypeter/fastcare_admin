@@ -62,10 +62,10 @@ export const CheckerFilter = ({ onApply, onReset }: any) => {
 
         {/* Patient */}
         <div className="flex flex-col gap-2 w-full">
-          <Label>Wallet ID</Label>
+          <Label>Patient Name</Label>
           <input
             type="text"
-            placeholder="Enter name"
+            placeholder="Enter Name"
             className="border border-gray-300 rounded-md py-2 px-3 w-full outline-none"
             value={account}
             onChange={e => setAccount(e.target.value)}

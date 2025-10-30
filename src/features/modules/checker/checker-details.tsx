@@ -64,8 +64,16 @@ export default function CheckerDetails({open, setOpen, data}: Props) {
       setOpenSuccess(true);
       // refresh pending list (filter outside or refetch all)
       dispatch(fetchRefunds(undefined));
-    } catch {
-      toast.error('Failed to update refund');
+    } catch (err: unknown) {
+      // err here is the value passed to rejectWithValue (string) or a thrown error
+      const hasMessage = (e: unknown): e is { message: string } =>
+        typeof e === 'object' && e !== null && 'message' in e && typeof (e as { message?: unknown }).message === 'string';
+      const message = typeof err === 'string'
+        ? err
+        : hasMessage(err)
+          ? err.message
+          : 'Failed to update refund';
+      toast.error(message);
     } finally {
       setLoadingAction(null);
     }

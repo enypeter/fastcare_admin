@@ -14,12 +14,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader } from '@/components/ui/loading';
-import { Doctor } from '@/types';
+import { CallsStatistics, DashboardData, Doctor, DoctorRecentCall, PerformanceMetric } from '@/types';
 
 
 type Props = {
   finance: Doctor | null;
-  dashboard: Dashboard | null;
+  dashboard: DashboardData | null;
   loading: boolean;
 };
 
@@ -35,36 +35,36 @@ type Consultation = {
   date: string;
 }
 
-interface CallsStatistics {
-  totalEarned?: number;
-  todayEarned?: number;
-  pendingPayout?: number;
-  commission?: number;
-  refunds?: number;
-}
+// interface CallsStatistics {
+//   totalEarned?: number;
+//   todayEarned?: number;
+//   pendingPayout?: number;
+//   commission?: number;
+//   refunds?: number;
+// }
 
-interface PerformanceMetric {
-  satisfactionPercentage?: number;
-  rating?: string;
-  averageCallDuration?: string;
-  responseTime?: string;
-}
+// interface PerformanceMetric {
+//   satisfactionPercentage?: number;
+//   rating?: string;
+//   averageCallDuration?: string;
+//   responseTime?: string;
+// }
 
-interface RecentCallRaw {
-  patientName?: string;
-  type?: string;
-  callDuration?: string;
-  status?: string;
-  reason?: string;
-  amount?: number | string;
-  createdDate?: string;
-}
+// interface RecentCallRaw {
+//   patientName?: string;
+//   type?: string;
+//   callDuration?: string;
+//   status?: string;
+//   reason?: string;
+//   amount?: number | string;
+//   createdDate?: string;
+// }
 
-interface Dashboard {
-  callsStatistics?: CallsStatistics;
-  performanceMetric?: PerformanceMetric;
-  doctorRecentCalls?: RecentCallRaw[] | null;
-}
+// interface Dashboard {
+//   callsStatistics?: CallsStatistics;
+//   performanceMetric?: PerformanceMetric;
+//   doctorRecentCalls?: RecentCallRaw[] | null;
+// }
 
 // Build stats panels dynamically from callsStatistics (fallback zeros if missing).
 const buildStatsPanels = (callsStatistics: CallsStatistics | null) => {
@@ -121,9 +121,9 @@ const Finance = ({  dashboard, loading }: Props) => {
 
     const callsStatistics: CallsStatistics | null = dashboard?.callsStatistics || null;
     const performanceMetric: PerformanceMetric | null = dashboard?.performanceMetric || null;
-    const doctorRecentCallsRaw: RecentCallRaw[] | null = dashboard?.doctorRecentCalls || null;
+    const doctorRecentCallsRaw: DoctorRecentCall[] | null = dashboard?.doctorRecentCalls || null;
 
-    const doctorRecentCalls: RecentCallRaw[] = useMemo(
+    const doctorRecentCalls: DoctorRecentCall[] = useMemo(
       () => (Array.isArray(doctorRecentCallsRaw) ? doctorRecentCallsRaw : []),
       [doctorRecentCallsRaw]
     );
@@ -145,7 +145,7 @@ const Finance = ({  dashboard, loading }: Props) => {
 
     // ✅ Map API response into table shape
     const mappedConsultations: Consultation[] = useMemo(
-      () => doctorRecentCalls.map((item: RecentCallRaw, index: number) => ({
+      () => doctorRecentCalls.map((item: DoctorRecentCall, index: number) => ({
         id: String(index + 1),
         patientName: item.patientName || '-',
         type: item.type || '-', // optional, default to "-"

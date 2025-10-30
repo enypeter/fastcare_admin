@@ -13,6 +13,8 @@ import referralsReducer from '../slice/referralSlice'
 import adminUsersReducer from '../slice/adminUsersSlice'
 import userReportsReducer from '../slice/userReportsSlice'
 import appointmentReportsReducer from '../slice/appointmentReportsSlice'
+import emergencyReportsReducer from '../slice/emergencyReportsSlice'
+import appFeedbackReducer from '../slice/appFeedbackSlice'
 
 
 export const store = configureStore({
@@ -30,7 +32,9 @@ export const store = configureStore({
     referrals: referralsReducer,
     adminUsers: adminUsersReducer,
     userReports: userReportsReducer,
-    appointmentReports: appointmentReportsReducer
+    appointmentReports: appointmentReportsReducer,
+    emergencyReports: emergencyReportsReducer,
+    appFeedback: appFeedbackReducer
   },
 });
 
