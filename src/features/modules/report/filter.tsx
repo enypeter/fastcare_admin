@@ -9,7 +9,12 @@ import {
 } from '@/components/ui/select';
 import {useState} from 'react';
 
-export const EmergencyFilter = ({onApply, onReset}: any) => {
+interface EmergencyFilterProps {
+  onApply: (filters: { startDate?: string | null; endDate?: string | null; status?: string | null; speciality?: string | null }) => void;
+  onReset: () => void;
+}
+
+export const EmergencyFilter = ({onApply, onReset}: EmergencyFilterProps) => {
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -61,7 +66,7 @@ export const EmergencyFilter = ({onApply, onReset}: any) => {
           </div>
         </div>
 
-        {/* Status */}
+        {/* Status (Completed | Missed) */}
         <div className="flex flex-col gap-2">
           <Label>Status</Label>
           <Select value={status ?? undefined} onValueChange={setStatus}>
@@ -69,23 +74,22 @@ export const EmergencyFilter = ({onApply, onReset}: any) => {
               <SelectValue placeholder="Select Status" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="missed">Missed</SelectItem>
-              <SelectItem value="attended">Attended</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
+        {/* Free-text Speciality input */}
         <div className="flex flex-col gap-2">
           <Label>Doctor Speciality</Label>
-          <Select>
-            <SelectTrigger>
-              <SelectValue placeholder="Select..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="doctor">Doctor</SelectItem>
-            
-            </SelectContent>
-          </Select>
+          <input
+            type="text"
+            placeholder="Enter speciality"
+            value={speciality ?? ''}
+            onChange={e => setSpeciality(e.target.value || null)}
+            className="border border-gray-300 rounded-md py-2 px-3 outline-none"
+          />
         </div>
 
         <div className="mt-6">
