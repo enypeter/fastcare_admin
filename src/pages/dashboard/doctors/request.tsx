@@ -71,14 +71,14 @@ const VerificationRequest = () => {
       accessorKey: 'licenseNumber',
       header: 'License Number',
     },
-    // {
-    //   accessorKey: 'createdAt',
-    //   header: 'Submission Date',
-    //   cell: ({ row }) => {
-    //     const value = (row.original as Doctor).createdAt;
-    //     return value ? new Date(value).toLocaleDateString() : '--';
-    //   }
-    // },
+    {
+      accessorKey: 'createdAt',
+      header: 'Submission Date',
+      cell: ({ row }) => {
+        const value = (row.original as Doctor).createdAt;
+        return value ? new Date(value).toLocaleDateString() : '--';
+      }
+    },
     {
       accessorKey: 'registrationStatus',
       header: 'Status',
