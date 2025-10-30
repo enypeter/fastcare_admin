@@ -197,7 +197,7 @@ export default function CheckerDetails({open, setOpen, data}: Props) {
                       }}
                       className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 border"
                     >
-                      Download
+                      View
                     </button>
                   </div>
                 ) : (
