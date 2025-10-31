@@ -45,21 +45,21 @@ export const EmergencyFilter = ({onApply, onReset}: EmergencyFilterProps) => {
       </div>
 
       {/* Grid Form */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Date range */}
-        <div className="col-span-1">
+        <div className="lg:col-span-2">
           <Label>Date</Label>
           <div className="flex items-center gap-2">
             <input
               type="date"
-              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-36 outline-none"
+              className="flex-1 border border-gray-300 rounded-md py-2 px-1 lg:px-3 outline-none"
               value={startDate ?? ''}
               onChange={e => setStartDate(e.target.value || null)}
             />
             <p className="text-md font-semibold">To</p>
             <input
               type="date"
-              className="border border-gray-300 rounded-md py-2 px-3 w-full lg:w-36 outline-none"
+              className="flex-1 border border-gray-300 rounded-md py-2 px-1 lg:px-3 outline-none"
               value={endDate ?? ''}
               onChange={e => setEndDate(e.target.value || null)}
             />
@@ -80,19 +80,7 @@ export const EmergencyFilter = ({onApply, onReset}: EmergencyFilterProps) => {
           </Select>
         </div>
 
-        {/* Free-text Speciality input */}
-        <div className="flex flex-col gap-2">
-          <Label>Doctor Speciality</Label>
-          <input
-            type="text"
-            placeholder="Enter speciality"
-            value={speciality ?? ''}
-            onChange={e => setSpeciality(e.target.value || null)}
-            className="border border-gray-300 rounded-md py-2 px-3 outline-none"
-          />
-        </div>
-
-        <div className="mt-6">
+        <div className="mt-3">
           <Button className="py-2.5 rounded-md w-44" onClick={handleApply}>
             Apply Filter
           </Button>

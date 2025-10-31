@@ -59,7 +59,7 @@ const UnifiedReports = () => {
   useEffect(() => { dispatch(fetchEmergencyReports({ ...emergencyFilters })); }, [dispatch, emergencyFilters]);
   const emergencyColumns: ColumnDef<EmergencyRow>[] = [
     { accessorKey: 'patientName', header: 'Patient Name' },
-    { accessorKey: 'doctorName', header: 'Doctor Assigned' },
+    // { accessorKey: 'doctorName', header: 'Doctor Assigned' },
     { accessorKey: 'date', header: 'Date', cell: ({ getValue }) => { const raw = getValue<string>(); return raw?.includes('T') ? raw.split('T')[0] : raw; } },
     { accessorKey: 'duration', header: 'Duration' },
     { accessorKey: 'responseTime', header: 'Response Time' },
@@ -86,13 +86,18 @@ const UnifiedReports = () => {
   return (
     <DashboardLayout>
       <div className="bg-gray-100 h-full overflow-auto">
-        <div className="mx-4 md:mx-8 mt-10 bg-white rounded-md p-6">
+        <div className="mx-4 md:mx-8 mt-10 bg-white rounded-md px-2 py-6 lg:p-6">
           <h1 className="text-xl font-semibold text-gray-800 mb-4">Reports</h1>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="flex flex-wrap gap-2 mb-6">
+            <TabsList className="hidden lg:flex flex-wrap gap-2 mb-6">
               <TabsTrigger value="signup">Signup Report</TabsTrigger>
               <TabsTrigger value="appointment">Appointment Report</TabsTrigger>
               <TabsTrigger value="emergency">Emergency Call Report</TabsTrigger>
+            </TabsList>
+            <TabsList className="flex lg:hidden flex-wrap gap-2 mb-6">
+              <TabsTrigger value="signup">Signup</TabsTrigger>
+              <TabsTrigger value="appointment">Appointment</TabsTrigger>
+              <TabsTrigger value="emergency">Emergency Call</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signup" className="focus:outline-none" hidden={activeTab !== 'signup'}>

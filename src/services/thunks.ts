@@ -505,10 +505,10 @@ export const fetchTransactions = createAsyncThunk(
     params: {
       Page?: number;
       PageSize?: number;
-      Status?: string | number; // accept numeric enum or string
+      Status?: string | number;
       HospitalName?: string;
       PatientName?: string;
-      Date?: string; // ISO date (backend seems to accept a single date filter)
+      Date?: string;
       ServiceType?: string;
     } | undefined,
     { rejectWithValue }
