@@ -208,7 +208,7 @@ const UnifiedReports = () => {
               <div className="flex flex-col h-[750px]">
                 <div className="bg-white p-4 rounded-md mb-4">
                   <EmergencyFilter
-                    onApply={(f: { startDate?: string; endDate?: string; speciality?: string; status?: string }) => {
+                    onApply={(f: { startDate?: string | null; endDate?: string | null; speciality?: string | null; status?: string | null }) => {
                       const payload: Partial<typeof emergencyFilters> = {};
                       if (f.startDate) payload.StartDate = f.startDate;
                       if (f.endDate) payload.EndDate = f.endDate;
